@@ -2,9 +2,12 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertOctagon, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { compressImage } from "@/lib/image-compression";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
 import GateAccessDeniedState from "@/components/visitor/gate/GateAccessDeniedState";
 import GateLoadingState from "@/components/visitor/gate/GateLoadingState";
 import GateSuccessState from "@/components/visitor/gate/GateSuccessState";
@@ -26,6 +29,22 @@ type RedFlag = {
   reason?: string | null;
 };
 
+// Haversine formula to calculate exact distance between two GPS coordinates in meters
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // Earth's radius in metres
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; 
+}
+
 function CheckInFormContent() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -37,6 +56,10 @@ function CheckInFormContent() {
   const [companyName, setCompanyName] = useState("");
   const [accessDenied, setAccessDenied] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // --- SECURITY & LIMIT STATES ---
+  const [isQrExpired, setIsQrExpired] = useState(false);
+  const [geofenceError, setGeofenceError] = useState<string | null>(null);
 
   const [rules, setRules] = useState({
     requirePhoto: false,
@@ -69,7 +92,6 @@ function CheckInFormContent() {
   const [isScanning, setIsScanning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // NEW: Terms and Conditions State
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
@@ -83,32 +105,32 @@ function CheckInFormContent() {
   }, []);
 
   useEffect(() => {
-    const fetchCompanyData = async () => {
+    const initializeGate = async () => {
       if (!companyId) return;
 
+      // 1. SECURITY CHECK: Dynamic QR Expiration (5 mins)
+      const tParam = searchParams.get("t");
+      if (tParam) {
+        const qrTime = parseInt(tParam, 10);
+        if (Date.now() - qrTime > 300000) {
+          setIsQrExpired(true);
+          setLoading(false);
+          return; 
+        }
+      }
+
+      // 2. Fetch Company Data (Now includes Geofence coords)
       const { data: company, error } = await supabase
         .from("companies")
-        .select("name, is_locked, subscription_ends_at, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields")
+        .select("name, is_locked, subscription_ends_at, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, enable_geofence, lat, lng, geofence_radius")
         .eq("id", companyId)
         .single();
 
-      if (error || !company) {
+      if (error || !company || company.is_locked) {
         setAccessDenied(true);
         setLoading(false);
         return;
       }
-
-      // --- TEMPORARILY PAUSED SUBSCRIPTION EXPIRATION LOGIC ---
-      // We are commenting this out so manual payments don't block the system.
-      // const isExpired = company.subscription_ends_at ? new Date(company.subscription_ends_at) < new Date() : false;
-      
-      // Now it ONLY checks the manual toggle from your Super Admin dashboard
-      if (company.is_locked /* || isExpired */) {
-        setAccessDenied(true);
-        setLoading(false);
-        return;
-      }
-      // ---------------------------------------------------------
 
       setCompanyName(company.name);
       setRules({
@@ -141,11 +163,39 @@ function CheckInFormContent() {
         console.error("Error fetching hosts/departments", err);
       }
 
-      setLoading(false);
+      // 4. SECURITY CHECK: Geofencing Location Check
+      // Only runs if the company explicitly enabled it in their settings and provided coordinates
+      if (company.enable_geofence && company.lat && company.lng) {
+        if (!navigator.geolocation) {
+           setGeofenceError("Geolocation is not supported by your browser. Please register manually with the guard.");
+           setLoading(false);
+           return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const dist = getDistance(pos.coords.latitude, pos.coords.longitude, company.lat!, company.lng!);
+            const maxRadius = company.geofence_radius || 200;
+            
+            if (dist > maxRadius) {
+              setGeofenceError(`You are too far from the building to register. Please move closer to the gate. (Currently ~${Math.round(dist)}m away, limit is ${maxRadius}m)`);
+            }
+            setLoading(false); // Stop loading after location is verified
+          },
+          (err) => {
+            console.error("Geolocation error:", err);
+            setGeofenceError("Location access is required to check in. Please allow GPS access when prompted, or see the guard.");
+            setLoading(false);
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+      } else {
+        setLoading(false); // End loading immediately if no geofence is required
+      }
     };
 
-    fetchCompanyData();
-  }, [companyId]);
+    initializeGate();
+  }, [companyId, searchParams]);
 
   const filteredDepartments = departments.map(dept => {
     const deptHosts = hosts.filter(h => 
@@ -295,7 +345,7 @@ function CheckInFormContent() {
 
       if (error) throw error;
 
-      // 4. NEW FIX: Notify the host if a host was selected
+      // 4. Notify the host if a host was selected
       if (rules.askHost && newVisitor.host_id) {
         const selectedHost = hosts.find((h) => h.id === newVisitor.host_id);
         
@@ -333,8 +383,43 @@ function CheckInFormContent() {
     }
   };
 
+  // --- UI RENDER STATES ---
+
   if (loading) {
     return <GateLoadingState />;
+  }
+
+  // 1. QR EXPIRED STATE
+  if (isQrExpired) {
+    return (
+      <div className="w-full max-w-md mx-auto relative z-10 px-4">
+        <Card className="border-zinc-200 shadow-xl text-center p-8 bg-white/95 backdrop-blur-md">
+          <AlertOctagon className="w-20 h-20 text-amber-500 mx-auto mb-6" />
+          <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight mb-2">QR Code Expired</CardTitle>
+          <p className="text-zinc-500 font-medium leading-relaxed">
+            For security reasons, this dynamic QR code has expired. Please return to the security desk and scan the code again.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  // 2. GEOFENCE BLOCKED STATE
+  if (geofenceError) {
+    return (
+      <div className="w-full max-w-md mx-auto relative z-10 px-4">
+        <Card className="border-red-100 shadow-xl text-center p-8 bg-white/95 backdrop-blur-md">
+          <MapPin className="w-20 h-20 text-red-500 mx-auto mb-6" />
+          <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight mb-2">Location Required</CardTitle>
+          <p className="text-zinc-600 font-medium leading-relaxed mb-8">
+            {geofenceError}
+          </p>
+          <Button onClick={() => window.location.reload()} className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold h-12 shadow-md">
+            Try Again
+          </Button>
+        </Card>
+      </div>
+    );
   }
 
   if (accessDenied) {

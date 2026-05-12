@@ -6,35 +6,62 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, ShieldCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, ShieldCheck, MapPin, Crosshair } from "lucide-react";
 
 export default function SettingsPage() {
   const [userEmail, setUserEmail] = useState("");
   const [userName, setUserName] = useState("");
+  const [companyId, setCompanyId] = useState("");
   
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loadingPass, setLoadingPass] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
 
+  // --- GEOFENCE STATES ---
+  const [enableGeofence, setEnableGeofence] = useState(false);
+  const [latitude, setLatitude] = useState<string>("");
+  const [longitude, setLongitude] = useState<string>("");
+  const [radius, setRadius] = useState<string>("200");
+  const [loadingGeo, setLoadingGeo] = useState(false);
+  const [geoMessage, setGeoMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
+
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileAndCompany = async () => {
       const { data: authData } = await supabase.auth.getUser();
       if (authData?.user) {
         setUserEmail(authData.user.email || "");
         
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name")
+          .select("full_name, company_id")
           .eq("id", authData.user.id)
           .single();
           
         if (profile) {
           setUserName(profile.full_name || "");
+          
+          if (profile.company_id) {
+            setCompanyId(profile.company_id);
+            // Fetch company geofence settings
+            const { data: comp } = await supabase
+              .from("companies")
+              .select("enable_geofence, lat, lng, geofence_radius")
+              .eq("id", profile.company_id)
+              .single();
+              
+            if (comp) {
+              setEnableGeofence(comp.enable_geofence || false);
+              setLatitude(comp.lat ? comp.lat.toString() : "");
+              setLongitude(comp.lng ? comp.lng.toString() : "");
+              setRadius(comp.geofence_radius ? comp.geofence_radius.toString() : "200");
+            }
+          }
         }
       }
     };
-    fetchProfile();
+    fetchProfileAndCompany();
   }, []);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -55,6 +82,50 @@ export default function SettingsPage() {
     setLoadingPass(false);
   };
 
+  const handleFetchLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoMessage({ type: "error", text: "Geolocation is not supported by your browser." });
+      return;
+    }
+
+    setGeoMessage(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude.toString());
+        setLongitude(position.coords.longitude.toString());
+        setGeoMessage({ type: "success", text: "Location coordinates updated! Remember to save." });
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        setGeoMessage({ type: "error", text: "Failed to get location. Please allow location access in your browser." });
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  const handleSaveGeofence = async () => {
+    if (!companyId) return;
+    setGeoMessage(null);
+    setLoadingGeo(true);
+
+    const { error } = await supabase
+      .from("companies")
+      .update({
+        enable_geofence: enableGeofence,
+        lat: latitude ? parseFloat(latitude) : null,
+        lng: longitude ? parseFloat(longitude) : null,
+        geofence_radius: radius ? parseInt(radius) : 200
+      })
+      .eq("id", companyId);
+
+    if (error) {
+      setGeoMessage({ type: "error", text: "Failed to save geofence settings." });
+    } else {
+      setGeoMessage({ type: "success", text: "Geofence settings saved successfully." });
+    }
+    setLoadingGeo(false);
+  };
+
   // Helper to get initials for the avatar
   const getInitials = (name: string) => {
     if (!name) return "";
@@ -73,7 +144,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Global Message Banner */}
+        {/* Global Message Banner for Password */}
         {message && (
           <div className={`p-4 rounded-xl text-sm font-medium border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm ${
             message.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200'
@@ -135,9 +206,11 @@ export default function SettingsPage() {
             </Card>
           </div>
 
-          {/* Password Update Column (Right side on desktop) */}
-          <div className="md:col-span-7 lg:col-span-8">
-            <Card className="shadow-sm border-zinc-200 bg-white h-full">
+          {/* Right Side Settings Column */}
+          <div className="md:col-span-7 lg:col-span-8 space-y-6">
+            
+            {/* Security Settings (Password) */}
+            <Card className="shadow-sm border-zinc-200 bg-white">
               <CardHeader className="pb-6 border-b border-zinc-100/60 mb-6">
                 <CardTitle className="flex items-center text-xl font-bold">
                   <KeyRound className="mr-2 h-5 w-5 text-zinc-500" /> Security Settings
@@ -184,6 +257,105 @@ export default function SettingsPage() {
                 </form>
               </CardContent>
             </Card>
+
+            {/* NEW: Geofence Settings */}
+            <Card className="shadow-sm border-zinc-200 bg-white">
+              <CardHeader className="pb-6 border-b border-zinc-100/60 mb-6">
+                <CardTitle className="flex items-center text-xl font-bold">
+                  <MapPin className="mr-2 h-5 w-5 text-zinc-500" /> Geofence Verification
+                </CardTitle>
+                <CardDescription>Restrict visitor self-registration to a specific physical radius around your building.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                
+                {geoMessage && (
+                  <div className={`p-3 rounded-md text-sm font-medium border flex items-start gap-2 mb-6 ${
+                    geoMessage.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200'
+                  }`}>
+                    {geoMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                    <span>{geoMessage.text}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between mb-6 p-4 rounded-xl border border-zinc-200 bg-zinc-50">
+                  <div>
+                    <p className="font-bold text-zinc-900">Enable GPS Geofencing</p>
+                    <p className="text-sm text-zinc-500 max-w-[280px] sm:max-w-none">Visitors must be physically present at the building to register.</p>
+                  </div>
+                  <Switch 
+                    checked={enableGeofence} 
+                    onCheckedChange={setEnableGeofence} 
+                  />
+                </div>
+
+                <div className={`space-y-5 transition-opacity duration-300 ${!enableGeofence ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="font-semibold text-zinc-700">Building Latitude</Label>
+                      <Input 
+                        type="number" 
+                        step="any" 
+                        placeholder="-1.2921"
+                        value={latitude} 
+                        onChange={(e) => setLatitude(e.target.value)} 
+                        className="bg-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-semibold text-zinc-700">Building Longitude</Label>
+                      <Input 
+                        type="number" 
+                        step="any" 
+                        placeholder="36.8219"
+                        value={longitude} 
+                        onChange={(e) => setLongitude(e.target.value)} 
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleFetchLocation} 
+                    className="w-full border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100 hover:text-blue-800"
+                  >
+                    <Crosshair className="w-4 h-4 mr-2" /> Fetch My Current Coordinates
+                  </Button>
+
+                  <div className="space-y-2 pt-2 border-t border-zinc-100">
+                    <Label className="font-semibold text-zinc-700">Allowed Radius (Meters)</Label>
+                    <Input 
+                      type="number" 
+                      min="10" 
+                      max="5000"
+                      value={radius} 
+                      onChange={(e) => setRadius(e.target.value)} 
+                      className="max-w-[200px] bg-white"
+                    />
+                    <p className="text-xs text-zinc-500 font-medium">Recommended: 100 to 500 meters. (A standard city block is about 100m).</p>
+                  </div>
+                  
+                </div>
+
+                <div className="pt-8">
+                  <Button 
+                    onClick={handleSaveGeofence} 
+                    disabled={loadingGeo} 
+                    className="w-full sm:w-auto h-11 px-8 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                  >
+                    {loadingGeo ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+                    ) : (
+                      "Save Location Settings"
+                    )}
+                  </Button>
+                </div>
+
+              </CardContent>
+            </Card>
+
           </div>
 
         </div>
