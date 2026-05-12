@@ -1,0 +1,93 @@
+"use client";
+
+import { Loader2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+type Gate = {
+  id: string;
+  name: string;
+};
+
+type EditingGuardData = {
+  id: string;
+  name: string;
+  gateId: string;
+};
+
+type EditGuardModalProps = {
+  gates: Gate[];
+  editingGuardData: EditingGuardData;
+  isEditingGuard: boolean;
+  onClose: () => void;
+  onSubmit: (event: React.FormEvent) => void;
+  onEditingGuardDataChange: (guard: EditingGuardData) => void;
+};
+
+export default function EditGuardModal({
+  gates,
+  editingGuardData,
+  isEditingGuard,
+  onClose,
+  onSubmit,
+  onEditingGuardDataChange,
+}: EditGuardModalProps) {
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-md shadow-2xl relative border-0 rounded-xl overflow-hidden bg-white">
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-full p-1.5 transition-colors"
+        >
+          <X size={18} />
+        </button>
+        <CardHeader className="pt-8 pb-4">
+          <CardTitle className="text-xl font-bold text-zinc-900">Edit Guard Profile</CardTitle>
+          <CardDescription className="text-zinc-500">Update the guard&apos;s name or assigned gate location.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div>
+              <Label className="font-semibold text-zinc-700">Full Name</Label>
+              <Input
+                required
+                value={editingGuardData.name}
+                onChange={(e) => onEditingGuardDataChange({ ...editingGuardData, name: e.target.value })}
+                className="h-11 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 transition-colors"
+              />
+            </div>
+
+            <div>
+              <Label className="font-semibold text-zinc-700">Assigned Gate</Label>
+              <select
+                className="flex h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 transition-colors"
+                value={editingGuardData.gateId}
+                onChange={(e) => onEditingGuardDataChange({ ...editingGuardData, gateId: e.target.value })}
+              >
+                <option value="">Unassigned (Can access all)</option>
+                {gates.map((gate) => (
+                  <option key={gate.id} value={gate.id}>
+                    {gate.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="pt-4">
+              <Button type="submit" className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-transform active:scale-[0.98]" disabled={isEditingGuard}>
+                {isEditingGuard ? (
+                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Saving...</>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

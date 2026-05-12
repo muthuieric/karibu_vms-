@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Pencil, Trash2, X, Loader2 } from "lucide-react";
+import AddDepartmentCard from "@/components/dashboard/company-admin/departments/AddDepartmentCard";
+import DepartmentsHeader from "@/components/dashboard/company-admin/departments/DepartmentsHeader";
+import DepartmentsHostsList from "@/components/dashboard/company-admin/departments/DepartmentsHostsList";
+import DepartmentsSearch from "@/components/dashboard/company-admin/departments/DepartmentsSearch";
 
 type Department = { id: string; name: string };
 type Host = { id: string; name: string; phone: string; email: string; department_id: string };
@@ -36,9 +34,23 @@ export default function DepartmentsPage() {
   const [editingHostData, setEditingHostData] = useState({ name: "", phone: "", email: "" });
   const [isUpdatingHost, setIsUpdatingHost] = useState(false);
 
-  useEffect(() => {
-    fetchCompanyData();
-  }, []);
+  const loadDepartmentsAndHosts = async (compId: string) => {
+    try {
+      const deptsRes = await fetch(`/api/departments?company_id=${compId}`);
+      if (deptsRes.ok) {
+        const deptsJson = await deptsRes.json();
+        if (deptsJson.data) setDepartments(deptsJson.data);
+      }
+
+      const hostsRes = await fetch(`/api/hosts?company_id=${compId}`);
+      if (hostsRes.ok) {
+        const hostsJson = await hostsRes.json();
+        if (hostsJson.data) setHosts(hostsJson.data);
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    }
+  };
 
   const fetchCompanyData = async () => {
     try {
@@ -75,23 +87,11 @@ export default function DepartmentsPage() {
     }
   };
 
-  const loadDepartmentsAndHosts = async (compId: string) => {
-    try {
-      const deptsRes = await fetch(`/api/departments?company_id=${compId}`);
-      if (deptsRes.ok) {
-        const deptsJson = await deptsRes.json();
-        if (deptsJson.data) setDepartments(deptsJson.data);
-      }
-
-      const hostsRes = await fetch(`/api/hosts?company_id=${compId}`);
-      if (hostsRes.ok) {
-        const hostsJson = await hostsRes.json();
-        if (hostsJson.data) setHosts(hostsJson.data);
-      }
-    } catch (err) {
-      console.error("Error fetching data:", err);
-    }
-  };
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCompanyData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- DEPARTMENT CRUD ---
   const handleAddDepartment = async (e: React.FormEvent) => {
@@ -113,6 +113,7 @@ export default function DepartmentsPage() {
         setNewDeptName("");
       }
     } catch (err) {
+      console.error("Unexpected department save error:", err);
       alert("An unexpected error occurred while saving.");
     }
   };
@@ -138,6 +139,7 @@ export default function DepartmentsPage() {
       setDepartments(departments.map(d => d.id === editingDeptId ? { ...d, name: editingDeptName } : d));
       setEditingDeptId(null);
     } catch (error) {
+      console.error("Unexpected department update error:", error);
       alert("An error occurred while updating the department.");
     } finally {
       setIsUpdatingDept(false);
@@ -156,6 +158,7 @@ export default function DepartmentsPage() {
       setDepartments(departments.filter(d => d.id !== id));
       setHosts(hosts.filter(h => h.department_id !== id)); // Remove associated hosts locally
     } catch (error) {
+      console.error("Unexpected department delete error:", error);
       alert("An error occurred while deleting.");
     }
   };
@@ -187,6 +190,7 @@ export default function DepartmentsPage() {
         setSelectedDeptId(null);
       }
     } catch (err) {
+      console.error("Unexpected host save error:", err);
       alert("An unexpected error occurred while saving.");
     }
   };
@@ -216,6 +220,7 @@ export default function DepartmentsPage() {
       setHosts(hosts.map(h => h.id === hostId ? { ...h, ...editingHostData } : h));
       setEditingHostId(null);
     } catch (error) {
+      console.error("Unexpected host update error:", error);
       alert("An error occurred while updating the host.");
     } finally {
       setIsUpdatingHost(false);
@@ -233,10 +238,10 @@ export default function DepartmentsPage() {
 
       setHosts(hosts.filter(h => h.id !== id));
     } catch (error) {
+      console.error("Unexpected host delete error:", error);
       alert("An error occurred while deleting.");
     }
   };
-
 
   if (isLoading) {
     return <div className="p-6 text-center text-gray-500">Loading your workspace...</div>;
@@ -265,221 +270,54 @@ export default function DepartmentsPage() {
 
   return (
     <div className="p-6 space-y-8 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold">Departments & Hosts</h1>
-        <p className="text-gray-500">Manage your organization structure so visitors can easily find who they are visiting.</p>
-      </div>
+      <DepartmentsHeader />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New Department</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAddDepartment} className="flex gap-4 items-end">
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="deptName">Department Name</Label>
-              <Input 
-                id="deptName" 
-                placeholder="e.g. Human Resources" 
-                value={newDeptName}
-                onChange={(e) => setNewDeptName(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="bg-zinc-900 text-white hover:bg-zinc-800">Create</Button>
-          </form>
-        </CardContent>
-      </Card>
+      <AddDepartmentCard
+        newDeptName={newDeptName}
+        onNewDeptNameChange={setNewDeptName}
+        onSubmit={handleAddDepartment}
+      />
 
-      {/* SEARCH FILTER */}
       {departments.length > 0 && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-          <Input 
-            placeholder="Search by department, host name, phone, or email..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12 bg-white text-base shadow-sm border-zinc-300 focus-visible:ring-blue-600"
-          />
-        </div>
+        <DepartmentsSearch
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+        />
       )}
 
-      <div className="space-y-6">
-        {departments.length === 0 && (
-          <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
-            No departments created yet. Create one above to get started!
-          </div>
-        )}
-        
-        {filteredDepartments.map((dept) => (
-          <Card key={dept.id} className="overflow-hidden">
-            
-            {/* DEPARTMENT HEADER WITH EDIT/DELETE */}
-            <CardHeader className="bg-zinc-50 border-b py-3 px-4 sm:px-6">
-              {editingDeptId === dept.id ? (
-                <form onSubmit={handleUpdateDepartment} className="flex flex-1 gap-2 items-center">
-                  <Input 
-                    value={editingDeptName} 
-                    onChange={(e) => setEditingDeptName(e.target.value)} 
-                    className="h-9 max-w-sm bg-white"
-                    autoFocus
-                  />
-                  <Button type="submit" size="sm" disabled={isUpdatingDept} className="h-9 bg-blue-600 hover:bg-blue-700 text-white">
-                    {isUpdatingDept ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
-                  </Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setEditingDeptId(null)} className="h-9">
-                    <X className="w-4 h-4" />
-                  </Button>
-                </form>
-              ) : (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <CardTitle className="text-lg m-0">{dept.name}</CardTitle>
-                    <div className="flex items-center gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-7 w-7 p-0 text-zinc-400 hover:text-blue-600 hover:bg-blue-50"
-                        onClick={() => { setEditingDeptId(dept.id); setEditingDeptName(dept.name); }}
-                        title="Edit Department"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-7 w-7 p-0 text-zinc-400 hover:text-red-600 hover:bg-red-50"
-                        onClick={() => handleDeleteDepartment(dept.id, dept.name)}
-                        title="Delete Department"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedDeptId(dept.id)} className="w-fit">
-                    + Add Host
-                  </Button>
-                </div>
-              )}
-            </CardHeader>
-            
-            <CardContent className="p-0 sm:p-6 sm:pt-4">
-              
-              {/* ADD HOST FORM */}
-              {selectedDeptId === dept.id && (
-                <form onSubmit={handleAddHost} className="m-4 sm:m-0 sm:mb-6 p-4 bg-blue-50/50 rounded-lg border border-blue-100 flex gap-4 items-end flex-wrap">
-                  <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                    <Label>Host Name *</Label>
-                    <Input required value={newHost.name} onChange={(e) => setNewHost({ ...newHost, name: e.target.value })} placeholder="John Doe" className="bg-white" />
-                  </div>
-                  <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                    <Label>Phone Number</Label>
-                    <Input value={newHost.phone} onChange={(e) => setNewHost({ ...newHost, phone: e.target.value })} placeholder="+2547..." className="bg-white" />
-                  </div>
-                  <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                    <Label>Email</Label>
-                    <Input type="email" value={newHost.email} onChange={(e) => setNewHost({ ...newHost, email: e.target.value })} placeholder="john@example.com" className="bg-white" />
-                  </div>
-                  <div className="flex gap-2 w-full sm:w-auto">
-                    <Button type="submit" className="flex-1 sm:flex-none">Save Host</Button>
-                    <Button type="button" variant="ghost" onClick={() => setSelectedDeptId(null)}>Cancel</Button>
-                  </div>
-                </form>
-              )}
-
-              {/* HOSTS TABLE */}
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-zinc-50/50">
-                      <TableHead>Host Name</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dept.hostsToDisplay.map(host => (
-                      editingHostId === host.id ? (
-                        /* INLINE EDIT HOST ROW */
-                        <TableRow key={host.id} className="bg-blue-50/30">
-                          <TableCell className="p-2 align-top">
-                            <Input value={editingHostData.name} onChange={e => setEditingHostData({...editingHostData, name: e.target.value})} className="h-9 min-w-[120px] bg-white"/>
-                          </TableCell>
-                          <TableCell className="p-2 align-top">
-                            <Input value={editingHostData.phone} onChange={e => setEditingHostData({...editingHostData, phone: e.target.value})} className="h-9 min-w-[120px] bg-white"/>
-                          </TableCell>
-                          <TableCell className="p-2 align-top">
-                            <Input value={editingHostData.email} onChange={e => setEditingHostData({...editingHostData, email: e.target.value})} className="h-9 min-w-[120px] bg-white"/>
-                          </TableCell>
-                          <TableCell className="p-2 text-right align-top whitespace-nowrap">
-                             <Button size="sm" onClick={() => handleUpdateHost(host.id)} disabled={isUpdatingHost} className="h-9 bg-blue-600 hover:bg-blue-700 text-white mr-1">
-                               {isUpdatingHost ? <Loader2 className="w-3 h-3 animate-spin"/> : "Save"}
-                             </Button>
-                             <Button size="sm" variant="ghost" onClick={() => setEditingHostId(null)} className="h-9 px-2">
-                               <X className="w-4 h-4"/>
-                             </Button>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        /* NORMAL HOST ROW */
-                        <TableRow key={host.id}>
-                          <TableCell className="font-medium text-zinc-900">{host.name}</TableCell>
-                          <TableCell className="text-zinc-600">{host.phone || "-"}</TableCell>
-                          <TableCell className="text-zinc-600">{host.email || "-"}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 px-2.5 text-blue-600 border-blue-200 hover:bg-blue-50"
-                                onClick={() => {
-                                  setEditingHostId(host.id);
-                                  setEditingHostData({ name: host.name, phone: host.phone || "", email: host.email || "" });
-                                }}
-                              >
-                                <Pencil className="w-3.5 h-3.5 sm:mr-1" />
-                                <span className="hidden sm:inline">Edit</span>
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 px-2.5 text-red-600 border-red-200 hover:bg-red-50"
-                                onClick={() => handleDeleteHost(host.id, host.name)}
-                              >
-                                <Trash2 className="w-3.5 h-3.5 sm:mr-1" />
-                                <span className="hidden sm:inline">Delete</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    ))}
-                    {dept.hostsToDisplay.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-gray-500 py-6 border-b-0">
-                          {searchQuery ? "No matching hosts found in this department." : "No hosts added to this department yet."}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* Empty state when searching yields no results */}
-        {departments.length > 0 && filteredDepartments.length === 0 && (
-          <div className="text-center py-10 text-zinc-500 bg-white rounded-lg border">
-            <p className="font-medium text-zinc-900 mb-1">No results found</p>
-            <p>No departments or hosts matched "{searchQuery}"</p>
-            <Button variant="link" onClick={() => setSearchQuery("")} className="text-blue-600 mt-2">
-              Clear search
-            </Button>
-          </div>
-        )}
-      </div>
+      <DepartmentsHostsList
+        departmentsCount={departments.length}
+        filteredDepartments={filteredDepartments}
+        searchQuery={searchQuery}
+        selectedDeptId={selectedDeptId}
+        newHost={newHost}
+        editingDeptId={editingDeptId}
+        editingDeptName={editingDeptName}
+        isUpdatingDept={isUpdatingDept}
+        editingHostId={editingHostId}
+        editingHostData={editingHostData}
+        isUpdatingHost={isUpdatingHost}
+        onSelectDept={setSelectedDeptId}
+        onNewHostChange={setNewHost}
+        onAddHost={handleAddHost}
+        onEditDeptStart={(id, name) => {
+          setEditingDeptId(id);
+          setEditingDeptName(name);
+        }}
+        onEditingDeptNameChange={setEditingDeptName}
+        onUpdateDepartment={handleUpdateDepartment}
+        onCancelEditDepartment={() => setEditingDeptId(null)}
+        onDeleteDepartment={handleDeleteDepartment}
+        onEditHostStart={(host) => {
+          setEditingHostId(host.id);
+          setEditingHostData({ name: host.name, phone: host.phone || "", email: host.email || "" });
+        }}
+        onEditingHostDataChange={setEditingHostData}
+        onUpdateHost={handleUpdateHost}
+        onCancelEditHost={() => setEditingHostId(null)}
+        onDeleteHost={handleDeleteHost}
+        onClearSearch={() => setSearchQuery("")}
+      />
     </div>
   );
 }

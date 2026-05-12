@@ -2,16 +2,14 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import Image from "next/image";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Camera, Loader2, UserCircle, CheckCircle2, AlertOctagon, ScanLine } from "lucide-react";
-import PhoneInput from "react-phone-input-2";
-import "react-phone-input-2/lib/style.css";
 import { compressImage } from "@/lib/image-compression";
+import GateAccessDeniedState from "@/components/visitor/gate/GateAccessDeniedState";
+import GateLoadingState from "@/components/visitor/gate/GateLoadingState";
+import GateSuccessState from "@/components/visitor/gate/GateSuccessState";
+import VisitorCheckInForm from "@/components/visitor/gate/VisitorCheckInForm";
+import "react-phone-input-2/lib/style.css";
 
 type CustomField = {
   id: string;
@@ -21,6 +19,12 @@ type CustomField = {
 
 type Department = { id: string; name: string };
 type Host = { id: string; name: string; phone: string; email: string; department_id: string };
+type RedFlag = {
+  id_number?: string | null;
+  phone?: string | null;
+  name?: string | null;
+  reason?: string | null;
+};
 
 function CheckInFormContent() {
   const params = useParams();
@@ -221,10 +225,10 @@ function CheckInFormContent() {
       const redFlagsRes = await fetch(`/api/red-flags?company_id=${companyId}`);
       if (redFlagsRes.ok) {
         const redFlagsJson = await redFlagsRes.json();
-        const blacklisted = redFlagsJson.data || [];
+        const blacklisted = (redFlagsJson.data || []) as RedFlag[];
 
         if (blacklisted.length > 0) {
-          const isBanned = blacklisted.find((flag: any) => {
+          const isBanned = blacklisted.find((flag) => {
             const matchId = rules.askId && flag.id_number && newVisitor.id_number && flag.id_number.trim() === newVisitor.id_number.trim();
             const matchPhone = rules.askPhone && flag.phone && finalPhone && flag.phone.trim() === finalPhone.trim();
             const matchName = flag.name && newVisitor.name && flag.name.trim().toLowerCase() === newVisitor.name.trim().toLowerCase();
@@ -242,7 +246,7 @@ function CheckInFormContent() {
           });
 
           if (isBanned) {
-            alert(`⚠️ ACCESS DENIED: You are restricted from entering the premises.\n\nReason: ${isBanned.reason}`);
+            alert(`ACCESS DENIED: You are restricted from entering the premises.\n\nReason: ${isBanned.reason}`);
             setIsSubmitting(false);
             return;
           }
@@ -320,296 +324,54 @@ function CheckInFormContent() {
 
       setSubmitted(true);
 
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(err.message || "Failed to submit registration.");
+      const message = err instanceof Error ? err.message : "Failed to submit registration.";
+      alert(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
-        <div className="flex flex-col items-center">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-4" />
-          <p className="text-zinc-500 font-medium">Loading building rules...</p>
-        </div>
-      </div>
-    );
+    return <GateLoadingState />;
   }
 
   if (accessDenied) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-red-900 bg-zinc-900 text-zinc-100 shadow-2xl text-center p-6">
-          <AlertOctagon className="w-16 h-16 text-red-50 mx-auto mb-4" />
-          <CardTitle className="text-2xl font-bold text-white mb-2">Check-in Unavailable</CardTitle>
-          <CardDescription className="text-zinc-400 text-base">
-            This building's self-registration system is currently offline or suspended. Please speak directly to the security guard at the gate.
-          </CardDescription>
-        </Card>
-      </div>
-    );
+    return <GateAccessDeniedState />;
   }
 
   if (submitted) {
-    return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-zinc-200 shadow-xl text-center p-8 bg-white/90 backdrop-blur-sm">
-          <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
-          <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight mb-2">Registration Sent!</CardTitle>
-          <p className="text-zinc-500 font-medium leading-relaxed">
-            Your details have been securely transmitted. <strong className="text-zinc-900">Please wait for the security guard to approve your entry.</strong>
-          </p>
-        </Card>
-      </div>
-    );
+    return <GateSuccessState />;
   }
 
   return (
-    <Card className="w-full max-w-md shadow-2xl relative border-t-4 border-t-blue-600 bg-white/95 backdrop-blur-sm z-10">
-      <CardHeader className="text-center pb-6">
-        <CardDescription className="uppercase tracking-widest font-bold text-xs text-blue-600 mb-1">Welcome To</CardDescription>
-        <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight">{companyName}</CardTitle>
-        <p className="text-sm text-zinc-500 mt-2">Please fill out this form to register your visit.</p>
-      </CardHeader>
-      
-      <CardContent>
-        <input 
-          type="file" accept="image/*" capture="environment" 
-          className="hidden" ref={fileInputRef} onChange={handleImageCapture} 
-        />
-        
-        <Button 
-          variant="outline" 
-          type="button"
-          className="w-full mb-6 border-dashed border-2 py-8 text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 shadow-sm"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isScanning}
-        >
-          {isScanning ? (
-            <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing ID Card...</>
-          ) : (
-            <><ScanLine className="mr-2 h-5 w-5" /> Auto-Fill using ID Card</>
-          )}
-        </Button>
-
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-200" /></div>
-          <div className="relative flex justify-center text-xs uppercase font-bold tracking-wider"><span className="bg-white px-2 text-zinc-400">Or enter manually</span></div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label className="mb-1 block font-semibold text-zinc-700">Full Name <span className="text-red-500">*</span></Label>
-            <Input required value={newVisitor.name} onChange={(e) => setNewVisitor({...newVisitor, name: e.target.value})} placeholder="e.g. John Doe" className="h-12 bg-zinc-50" autoComplete="name"/>
-          </div>
-
-          {rules.askPhone && (
-            <div>
-              <Label className="mb-1 block font-semibold text-zinc-700">Phone Number <span className="text-red-500">*</span></Label>
-              <PhoneInput 
-                 inputProps={{ autoComplete: 'tel' }}
-                country="ke" 
-                value={newVisitor.phone} 
-                onChange={phone => setNewVisitor({ ...newVisitor, phone })} 
-                inputClass="!w-full !h-12 !text-zinc-900 !bg-zinc-50 !rounded-md !border !border-zinc-300 focus:!ring-2 focus:!ring-blue-600 px-3" 
-                containerClass="w-full" 
-                buttonClass="!border-zinc-300 !bg-zinc-50 !rounded-l-md hover:!bg-zinc-100"
-              />
-            </div>
-          )}
-
-          {rules.askId && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="mb-1 block font-semibold text-zinc-700">Document Type</Label>
-                <select
-                  className="flex h-12 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={newVisitor.doc_type}
-                  onChange={(e) => setNewVisitor({...newVisitor, doc_type: e.target.value})}
-                >
-                  <option value="National ID">National ID</option>
-                  <option value="Passport">Passport</option>
-                  <option value="Driver's License">Driver's License</option>
-                </select>
-              </div>
-              <div>
-                <Label className="mb-1 block font-semibold text-zinc-700">ID Number <span className="text-red-500">*</span></Label>
-                <Input 
-                  required
-                  value={newVisitor.id_number} 
-                  onChange={(e) => setNewVisitor({...newVisitor, id_number: e.target.value})} 
-                  placeholder="Enter ID Number" 
-                  className="h-12 bg-zinc-50"
-                  autoComplete="id number"
-                />
-              </div>
-            </div>
-          )}
-
-          {rules.askHost && (
-            <div className="relative" ref={dropdownRef}>
-              <Label className="mb-1 block font-semibold text-zinc-700">Who are you visiting?</Label>
-              <Input
-                type="text"
-                placeholder="Type to search for a host..."
-                value={hostSearchQuery}
-                onChange={(e) => {
-                  setHostSearchQuery(e.target.value);
-                  setIsHostDropdownOpen(true);
-                  setNewVisitor({ ...newVisitor, host_id: "" });
-                }}
-                onFocus={() => setIsHostDropdownOpen(true)}
-                className="h-12 bg-zinc-50"
-                autoComplete="off"
-              />
-              
-              <input type="text" className="hidden" required value={newVisitor.host_id} onChange={() => {}} />
-
-              {isHostDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-zinc-200 rounded-md shadow-xl max-h-60 overflow-y-auto">
-                  {filteredDepartments.length === 0 ? (
-                    <div className="p-4 text-sm text-zinc-500 text-center">No matching hosts found.</div>
-                  ) : (
-                    filteredDepartments.map((dept) => (
-                      <div key={dept.id}>
-                        <div className="px-3 py-2 text-xs font-bold bg-zinc-100/80 text-zinc-500 uppercase tracking-wider sticky top-0 backdrop-blur-sm">
-                          {dept.name}
-                        </div>
-                        {dept.hosts.map((host: Host) => (
-                          <div
-                            key={host.id}
-                            className="px-4 py-3 text-sm text-zinc-900 hover:bg-blue-50 cursor-pointer border-b border-zinc-50 last:border-0 transition-colors"
-                            onClick={() => {
-                              setNewVisitor({ ...newVisitor, host_id: host.id });
-                              setHostSearchQuery(host.name);
-                              setIsHostDropdownOpen(false);
-                            }}
-                          >
-                            <div className="font-medium">{host.name}</div>
-                          </div>
-                        ))}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {rules.askPurpose && (
-            <div>
-              <Label className="mb-1 block font-semibold text-zinc-700">Purpose of Visit</Label>
-              <Input 
-                value={newVisitor.purpose} 
-                onChange={(e) => setNewVisitor({...newVisitor, purpose: e.target.value})} 
-                placeholder="e.g. Meeting, Delivery, Interview" 
-                className="h-12 bg-zinc-50"
-              />
-            </div>
-          )}
-
-          {rules.askVehicle && (
-            <div>
-              <Label className="mb-1 block font-semibold text-zinc-700">Vehicle Registration</Label>
-              <Input 
-                value={newVisitor.vehicle_reg} 
-                onChange={(e) => setNewVisitor({...newVisitor, vehicle_reg: e.target.value})} 
-                placeholder="e.g. KCA 123A (Leave blank if walk-in)" 
-                className="h-12 bg-zinc-50 uppercase"
-              />
-            </div>
-          )}
-
-          {customFields.map((field) => (
-            <div key={field.id}>
-              <Label className="mb-1 block font-semibold text-zinc-700">{field.label}</Label>
-              <Input 
-                value={customAnswers[field.id] || ""} 
-                onChange={(e) => setCustomAnswers({...customAnswers, [field.id]: e.target.value})} 
-                placeholder={`Enter ${field.label.toLowerCase()}`} 
-                className="h-12 bg-zinc-50"
-              />
-            </div>
-          ))}
-
-          {rules.requirePhoto && (
-            <div className="space-y-3 pt-2 pb-2">
-              <div>
-                <Label className="flex justify-between items-center font-semibold text-zinc-700">
-                  Security Photo
-                  <span className="text-xs text-red-500 font-bold uppercase tracking-wider">* Required</span>
-                </Label>
-                <p className="text-[11px] text-zinc-500 mt-1 font-medium">Accepted formats: JPG, PNG, WEBP, HEIC</p>
-              </div>
-              
-              <div className="flex items-center gap-4 bg-zinc-50 p-3 rounded-xl border border-zinc-200">
-                <div className="w-16 h-16 rounded-full bg-white border-2 border-dashed border-zinc-300 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-                  {selfiePreview ? (
-                    <Image 
-                      src={selfiePreview} 
-                      alt="Selfie preview" 
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover" 
-                      unoptimized
-                    />
-                  ) : (
-                    <UserCircle className="w-8 h-8 text-zinc-300" />
-                  )}
-                </div>
-                
-                <div className="flex-1">
-                  <input 
-                    type="file" accept="image/*" capture="user" 
-                    className="hidden" ref={selfieInputRef} onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setSelfieFile(file);
-                        setSelfiePreview(URL.createObjectURL(file));
-                      }
-                    }} 
-                  />
-                  <Button 
-                    type="button" variant="outline" className="w-full text-sm h-12 bg-white hover:bg-zinc-100 shadow-sm border-zinc-300 text-zinc-700 font-bold"
-                    onClick={() => selfieInputRef.current?.click()}
-                  >
-                    <Camera className="w-5 h-5 mr-2" /> Take Selfie
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* NEW: Terms and Conditions Checkbox Area */}
-          <div className="space-y-3 pt-4 border-t border-zinc-200">
-            <div className="text-xs text-zinc-500 h-24 overflow-y-auto p-3 bg-zinc-50 border border-zinc-200 rounded-md leading-relaxed shadow-inner">
-              <p className="font-bold mb-1 text-zinc-700">Terms and Conditions of Entry</p>
-              <p>By registering, you agree to comply with all building security policies and procedures. You consent to the collection, processing, and temporary storage of your personal data (including identification details and facial capture, if applicable) strictly for building security and safety audit purposes. Management reserves the right to deny entry, conduct searches, or escort individuals off the premises for non-compliance. Your data will be handled in accordance with local data protection laws.</p>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <input
-                type="checkbox"
-                id="terms"
-                required
-                checked={agreedToTerms}
-                onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-0.5 shrink-0 h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
-              />
-              <Label htmlFor="terms" className="text-sm text-zinc-700 leading-snug cursor-pointer font-medium">
-                I agree to the Terms and Conditions and consent to the processing of my data. <span className="text-red-500">*</span>
-              </Label>
-            </div>
-          </div>
-
-          <Button type="submit" className="w-full mt-6 h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg transition-transform active:scale-[0.98]" disabled={isSubmitting || !agreedToTerms}>
-            {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> Processing...</> : "Submit Registration"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <VisitorCheckInForm
+      companyName={companyName}
+      rules={rules}
+      customFields={customFields}
+      customAnswers={customAnswers}
+      newVisitor={newVisitor}
+      hostSearchQuery={hostSearchQuery}
+      isHostDropdownOpen={isHostDropdownOpen}
+      filteredDepartments={filteredDepartments}
+      selfiePreview={selfiePreview}
+      isScanning={isScanning}
+      isSubmitting={isSubmitting}
+      agreedToTerms={agreedToTerms}
+      fileInputRef={fileInputRef}
+      selfieInputRef={selfieInputRef}
+      dropdownRef={dropdownRef}
+      onImageCapture={handleImageCapture}
+      onSubmit={handleSubmit}
+      onNewVisitorChange={setNewVisitor}
+      onHostSearchQueryChange={setHostSearchQuery}
+      onHostDropdownOpenChange={setIsHostDropdownOpen}
+      onCustomAnswersChange={setCustomAnswers}
+      onSelfieFileChange={setSelfieFile}
+      onSelfiePreviewChange={setSelfiePreview}
+      onAgreedToTermsChange={setAgreedToTerms}
+    />
   );
 }
 

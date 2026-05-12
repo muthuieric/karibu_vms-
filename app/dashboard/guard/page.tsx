@@ -1,24 +1,14 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { X, UserCircle, LogOut, Search, Clock, CheckCircle2, UserPlus, Info, DoorOpen, QrCode, Printer, ShieldCheck } from "lucide-react";
-
-// Import the modal component for manual registration
-import AddVisitorModal from "@/components/AddVisitorModal";
+import AddVisitorModal from "@/components/dashboard/guard/add-visitor/AddVisitorModal";
+import GuardDashboardHeader from "@/components/GuardDashboardHeader";
+import GuardStats from "@/components/GuardStats";
+import GuardVisitorsTable from "@/components/GuardVisitorsTable";
+import GuardQrModal from "@/components/GuardQrModal";
+import VisitInfoModal from "@/components/VisitInfoModal";
+import PhotoLightbox from "@/components/PhotoLightbox";
 
 type Visitor = {
   id: string;
@@ -41,7 +31,6 @@ type Visitor = {
 };
 
 export default function GuardDashboard() {
-  const router = useRouter();
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -143,8 +132,8 @@ export default function GuardDashboard() {
 
         if (companyData.custom_fields) {
           const labelMap: Record<string, string> = {};
-          // @ts-ignore
-          companyData.custom_fields.forEach((f: any) => {
+          const customFields = companyData.custom_fields as Array<{ id: string; label: string }>;
+          customFields.forEach((f) => {
             labelMap[f.id] = f.label;
           });
           setCustomFieldLabels(labelMap);
@@ -363,234 +352,46 @@ export default function GuardDashboard() {
 
   return (
     <div className="min-h-screen bg-zinc-50 p-6 relative overflow-x-hidden">
-      
-      {/* --- ENHANCED BACKGROUND --- */}
       <div className="fixed inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
       <div className="fixed top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none z-0" />
       <div className="fixed bottom-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-zinc-400/20 blur-[100px] pointer-events-none z-0" />
-      {/* --------------------------- */}
 
       <div className="max-w-7xl mx-auto space-y-6 relative z-10">
-        
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-zinc-900">Gate Dashboard</h1>
-            <p className="text-zinc-500 flex items-center gap-1.5 mt-1">
-              <DoorOpen className="w-4 h-4" /> 
-              Live monitoring • <span className="font-semibold text-zinc-700">{guardGateName}</span>
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <Button variant="outline" onClick={handleLogout} className="flex-1 sm:flex-initial border-zinc-200 text-zinc-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 bg-white/80 backdrop-blur-sm">
-              <LogOut className="w-4 h-4 mr-2" /> Sign Out
-            </Button>
-            <Button variant="outline" onClick={() => setShowQrModal(true)} className="flex-1 sm:flex-initial bg-white hover:bg-zinc-100 text-zinc-900 border-zinc-200 shadow-sm">
-              <QrCode className="w-4 h-4 mr-2" /> Show QR
-            </Button>
-            {/* Added the 'hidden' class here to hide it without commenting or removing the code */}
-            <Button onClick={() => setShowAddModal(true)} className="hidden flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 shadow-md">
-              <UserPlus className="w-4 h-4 mr-2 hidden sm:inline-block" /> + New Visitor
-            </Button>
+        <GuardDashboardHeader
+          guardGateName={guardGateName}
+          onLogout={handleLogout}
+          onShowQr={() => setShowQrModal(true)}
+          onShowAddVisitor={() => setShowAddModal(true)}
+        />
 
-          </div>
-        </div>
-
-        {/* Dashboard Stats - HIDDEN IF LOCKED */}
         {!isLocked && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <Card className="bg-white/90 backdrop-blur-sm border-zinc-200/60 shadow-sm">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-zinc-500">Total Today</p>
-                  <h3 className="text-3xl font-bold text-zinc-900 mt-1">{totalToday}</h3>
-                </div>
-                <div className="p-3 bg-zinc-100/80 text-zinc-600 rounded-full">
-                  <UserPlus className="w-6 h-6" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/90 backdrop-blur-sm border-zinc-200/60 shadow-sm">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-zinc-500">Pending</p>
-                  <h3 className="text-3xl font-bold text-zinc-900 mt-1">{pendingCount}</h3>
-                </div>
-                <div className="p-3 bg-amber-100/80 text-amber-600 rounded-full">
-                  <Clock className="w-6 h-6" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/90 backdrop-blur-sm border-zinc-200/60 shadow-sm">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-zinc-500">Checked In</p>
-                  <h3 className="text-3xl font-bold text-zinc-900 mt-1">{checkedInCount}</h3>
-                </div>
-                <div className="p-3 bg-green-100/80 text-green-600 rounded-full">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <GuardStats
+            totalToday={totalToday}
+            pendingCount={pendingCount}
+            checkedInCount={checkedInCount}
+          />
         )}
 
-        {/* Live Visitor Table */}
-        <Card className="bg-white/90 backdrop-blur-sm border-zinc-200/60 shadow-sm">
-          <CardHeader className="flex flex-col gap-4 border-b border-zinc-100/50 pb-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
-              <CardTitle>Today's Active Visitors</CardTitle>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-500" />
-                  <Input 
-                    placeholder="Search..." 
-                    className="pl-9 w-full bg-white/80"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex w-full sm:w-auto bg-zinc-100/80 p-1 rounded-md border border-zinc-200/60 overflow-x-auto">
-                  <button
-                    onClick={() => setStatusFilter("all")}
-                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded transition-colors whitespace-nowrap ${statusFilter === "all" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-500 hover:text-zinc-900"}`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setStatusFilter("pending")}
-                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded transition-colors whitespace-nowrap ${statusFilter === "pending" ? "bg-white shadow-sm text-amber-700" : "text-zinc-500 hover:text-zinc-900"}`}
-                  >
-                    Pending
-                  </button>
-                  <button
-                    onClick={() => setStatusFilter("checked_in")}
-                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded transition-colors whitespace-nowrap ${statusFilter === "checked_in" ? "bg-white shadow-sm text-green-700" : "text-zinc-500 hover:text-zinc-900"}`}
-                  >
-                    Checked In
-                  </button>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            {loading ? (
-              <p className="text-zinc-500 py-4">Loading secure data...</p>
-            ) : filteredVisitors.length === 0 ? (
-              <p className="text-zinc-500 py-4">No active visitors match your search.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-zinc-200/50">
-                      <TableHead>Arrived</TableHead>
-                      <TableHead>Visitor Details</TableHead>
-                      <TableHead>Phone & ID</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredVisitors.map((visitor) => {
-                      const hasCustomData = visitor.custom_data && Object.values(visitor.custom_data).some(val => val.trim() !== "");
-                      const hasExtraInfo = visitor.host_name || visitor.purpose || visitor.vehicle_reg || hasCustomData;
-
-                      return (
-                        <TableRow key={visitor.id} className="border-zinc-200/50 hover:bg-zinc-50/50">
-                          {/* Arrival Time */}
-                          <TableCell className="font-medium text-zinc-500 whitespace-nowrap">
-                            {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </TableCell>
-                          
-                          {/* Photo, Name, and Info Button */}
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              {visitor.photo_url ? (
-                                <Image 
-                                  src={visitor.photo_url} 
-                                  alt={`${visitor.name}'s photo`} 
-                                  width={40}
-                                  height={40}
-                                  className="w-10 h-10 rounded-full object-cover border-2 border-zinc-200 cursor-pointer hover:opacity-80 transition-opacity bg-white shrink-0"
-                                  onClick={() => setEnlargedPhoto(visitor.photo_url!)}
-                                  unoptimized
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center border-2 border-zinc-200 text-zinc-400 shrink-0">
-                                  <UserCircle className="w-6 h-6" />
-                                </div>
-                              )}
-                              
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold whitespace-nowrap">{visitor.name}</span>
-                                
-                                {/* Info button - visible on all screens if there is extra info */}
-                                {hasExtraInfo && (
-                                  <button
-                                    onClick={() => setInfoModalVisitor(visitor)}
-                                    className="text-blue-600 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-full transition-colors shrink-0 shadow-sm border border-blue-100"
-                                    title="View Visit Info"
-                                  >
-                                    <Info className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-
-                          <TableCell>
-                            <div className="text-sm whitespace-nowrap">{visitor.phone || "—"}</div>
-                            <div className="text-xs text-zinc-500 whitespace-nowrap">{visitor.id_number || "No ID"}</div>
-                          </TableCell>
-                          
-                          <TableCell>
-                            {visitor.status === "pending" ? (
-                              <span className="inline-flex items-center rounded-full bg-amber-100/80 px-2.5 py-0.5 text-xs font-semibold text-amber-800 whitespace-nowrap border border-amber-200/50">Pending</span>
-                            ) : (
-                              <span className="inline-flex items-center rounded-full bg-green-100/80 px-2.5 py-0.5 text-xs font-semibold text-green-800 whitespace-nowrap border border-green-200/50">Checked In</span>
-                            )}
-                          </TableCell>
-
-                          <TableCell className="text-right">
-                            {visitor.status === "pending" ? (
-                              verifyingId === visitor.id ? (
-                                <div className="flex items-center justify-end gap-2">
-                                  <input 
-                                    type="text" maxLength={4} placeholder="OTP"
-                                    className="w-16 rounded border px-2 py-1 text-center text-sm bg-white"
-                                    value={otpInput} onChange={(e) => setOtpInput(e.target.value)}
-                                  />
-                                  <Button size="sm" onClick={() => handleConfirmOTP(visitor)}>Confirm</Button>
-                                  <Button size="sm" variant="ghost" onClick={() => setVerifyingId(null)}>Cancel</Button>
-                                </div>
-                              ) : (
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => handleSendOTP(visitor.id, visitor.phone)} 
-                                  disabled={sendingOtpId === visitor.id}
-                                  className="whitespace-nowrap bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-200 shadow-sm disabled:opacity-50"
-                                >
-                                  {sendingOtpId === visitor.id ? "Sending..." : "Verify & Send OTP"}
-                                </Button>
-                              )
-                            ) : (
-                              <Button size="sm" variant="secondary" onClick={() => handleCheckOut(visitor.id)} className="whitespace-nowrap bg-white/60 hover:bg-zinc-100 text-zinc-700 shadow-sm">Check Out</Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <GuardVisitorsTable
+          loading={loading}
+          visitors={filteredVisitors}
+          searchTerm={searchTerm}
+          statusFilter={statusFilter}
+          verifyingId={verifyingId}
+          sendingOtpId={sendingOtpId}
+          otpInput={otpInput}
+          onSearchTermChange={setSearchTerm}
+          onStatusFilterChange={setStatusFilter}
+          onPhotoClick={setEnlargedPhoto}
+          onInfoClick={setInfoModalVisitor}
+          onOtpInputChange={setOtpInput}
+          onConfirmOTP={handleConfirmOTP}
+          onCancelOTP={() => setVerifyingId(null)}
+          onSendOTP={handleSendOTP}
+          onCheckOut={handleCheckOut}
+        />
       </div>
 
-      {/* --- ADD VISITOR MODAL COMPONENT --- */}
       <AddVisitorModal 
         isOpen={showAddModal} 
         onClose={() => setShowAddModal(false)}
@@ -604,144 +405,28 @@ export default function GuardDashboard() {
         guardGateId={guardGateId}
       />
 
-      {/* --- QR CODE MODAL --- */}
-      {showQrModal && companyId && (
-        <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowQrModal(false)}>
-          <Card className="w-full max-w-sm shadow-2xl relative border-0 rounded-xl overflow-hidden bg-white" onClick={(e) => e.stopPropagation()}>
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
-            <button onClick={() => setShowQrModal(false)} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-full p-1.5 transition-colors">
-              <X size={18} />
-            </button>
-            <CardHeader className="pt-8 pb-2 text-center">
-              <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight">Scan to Register</CardTitle>
-              <CardDescription className="text-zinc-500 font-medium">Visitor Self-Check-In</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center p-6 space-y-6">
-              <div className="p-4 bg-white border-2 border-zinc-200 rounded-2xl shadow-sm">
-                {/* Generates QR Code dynamically pointing to this specific gate */}
-                <Image 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/${companyId}/gate${guardGateId ? `?gateId=${guardGateId}` : ''}`)}`}
-                  alt="Check-in QR Code"
-                  width={250}
-                  height={250}
-                  className="rounded-lg"
-                  unoptimized
-                />
-              </div>
-              <p className="text-sm text-zinc-500 text-center max-w-[250px]">
-                Have the visitor scan this code with their smartphone camera to open the registration form.
-              </p>
-              <div className="flex gap-3 w-full mt-2">
-                <Button variant="outline" className="flex-1" onClick={() => {
-                  const url = `${window.location.origin}/${companyId}/gate${guardGateId ? `?gateId=${guardGateId}` : ''}`;
-                  navigator.clipboard.writeText(url);
-                  alert("Link copied to clipboard!");
-                }}>
-                  Copy Link
-                </Button>
-                <Button className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white" onClick={handlePrintQr}>
-                  <Printer className="w-4 h-4 mr-2" /> Print QR
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {showQrModal && (
+        <GuardQrModal
+          companyId={companyId}
+          guardGateId={guardGateId}
+          onClose={() => setShowQrModal(false)}
+          onPrintQr={handlePrintQr}
+        />
       )}
 
-      {/* --- EXTRA VISIT INFO MODAL --- */}
       {infoModalVisitor && (
-        <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-sm shadow-2xl relative border-0 overflow-hidden bg-white max-h-[80vh] overflow-y-auto">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
-            <button onClick={() => setInfoModalVisitor(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-full p-1.5 transition-colors">
-              <X size={18} />
-            </button>
-            <CardHeader className="pt-8 pb-4 border-b border-zinc-100/50">
-              <CardTitle className="text-xl font-bold">Visit Details</CardTitle>
-              <CardDescription>Extra information provided by {infoModalVisitor.name}.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-5 bg-zinc-50/50">
-              
-              {/* Standard Fields */}
-              {infoModalVisitor.host_name && (
-                <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Host Name</p>
-                  <p className="font-medium text-zinc-900 text-lg leading-snug">{infoModalVisitor.host_name}</p>
-                </div>
-              )}
-
-              {/* HOST STATUS INDICATOR (NEW) */}
-              {infoModalVisitor.host_name && (
-                <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Host Status</p>
-                  {infoModalVisitor.host_confirmed ? (
-                    <div className="flex items-center text-green-600 font-semibold text-base mt-1">
-                      <ShieldCheck className="w-5 h-5 mr-1.5" /> 
-                      Host confirmed arrival
-                    </div>
-                  ) : (
-                    <div className="flex items-center text-amber-600 font-medium text-base mt-1">
-                      <Clock className="w-5 h-5 mr-1.5" /> 
-                      Pending host confirmation
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {infoModalVisitor.purpose && (
-                <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Purpose of Visit</p>
-                  <p className="font-medium text-zinc-900 text-lg leading-snug">{infoModalVisitor.purpose}</p>
-                </div>
-              )}
-              {infoModalVisitor.vehicle_reg && (
-                <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Vehicle Registration</p>
-                  <p className="font-mono font-medium text-zinc-900 text-lg leading-snug">{infoModalVisitor.vehicle_reg}</p>
-                </div>
-              )}
-
-              {/* DYNAMIC CUSTOM FIELDS */}
-              {infoModalVisitor.custom_data && Object.entries(infoModalVisitor.custom_data).map(([fieldId, value]) => {
-                if (!value.trim()) return null; // Don't show empty fields
-                const label = customFieldLabels[fieldId] || "Custom Field";
-                return (
-                  <div key={fieldId}>
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">{label}</p>
-                    <p className="font-medium text-zinc-900 text-lg leading-snug">{value}</p>
-                  </div>
-                );
-              })}
-              
-            </CardContent>
-          </Card>
-        </div>
+        <VisitInfoModal
+          visitor={infoModalVisitor}
+          customFieldLabels={customFieldLabels}
+          onClose={() => setInfoModalVisitor(null)}
+        />
       )}
 
-      {/* --- ENLARGED PHOTO LIGHTBOX MODAL --- */}
       {enlargedPhoto && (
-        <div 
-          className="fixed inset-0 bg-black/90 z-[80] flex flex-col items-center justify-center p-4 cursor-pointer backdrop-blur-sm" 
-          onClick={() => setEnlargedPhoto(null)}
-        >
-          <div className="relative max-w-2xl w-full flex flex-col items-center">
-            <button 
-              className="absolute -top-12 right-0 text-white/70 hover:text-white transition-colors p-2"
-              onClick={(e) => { e.stopPropagation(); setEnlargedPhoto(null); }}
-            >
-              <X size={32} />
-            </button>
-            <Image 
-              src={enlargedPhoto} 
-              alt="Enlarged security photo" 
-              width={1000}
-              height={1000}
-              className="w-full h-auto rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] border-4 border-zinc-800 object-contain max-h-[85vh]" 
-              onClick={(e) => e.stopPropagation()} 
-              unoptimized
-            />
-          </div>
-        </div>
+        <PhotoLightbox
+          photoUrl={enlargedPhoto}
+          onClose={() => setEnlargedPhoto(null)}
+        />
       )}
     </div>
   );
