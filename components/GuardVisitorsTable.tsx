@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Info, Search, UserCircle } from "lucide-react";
+import { CheckCircle2, Info, Search, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ type Visitor = {
   otp_code?: string;
   company_id: string;
   photo_url?: string;
+  host_id?: string | null;
   host_name?: string;
   host_confirmed?: boolean;
   purpose?: string;
@@ -39,6 +40,7 @@ type GuardVisitorsTableProps = {
   visitors: Visitor[];
   searchTerm: string;
   statusFilter: "all" | "pending" | "checked_in";
+  planTier: string;
   verifyingId: string | null;
   sendingOtpId: string | null;
   otpInput: string;
@@ -51,6 +53,8 @@ type GuardVisitorsTableProps = {
   onCancelOTP: () => void;
   onSendOTP: (id: string, phone: string) => void;
   onCheckOut: (id: string) => void;
+  onDirectApprove: (visitor: Visitor) => void;
+  onManualOverride: (visitor: Visitor) => void;
 };
 
 export default function GuardVisitorsTable({
@@ -58,6 +62,7 @@ export default function GuardVisitorsTable({
   visitors,
   searchTerm,
   statusFilter,
+  planTier,
   verifyingId,
   sendingOtpId,
   otpInput,
@@ -70,6 +75,8 @@ export default function GuardVisitorsTable({
   onCancelOTP,
   onSendOTP,
   onCheckOut,
+  onDirectApprove,
+  onManualOverride,
 }: GuardVisitorsTableProps) {
   return (
     <Card className="bg-white/90 backdrop-blur-sm border-zinc-200/60 shadow-sm">
@@ -181,6 +188,8 @@ export default function GuardVisitorsTable({
                       <TableCell>
                         {visitor.status === "pending" ? (
                           <span className="inline-flex items-center rounded-full bg-amber-100/80 px-2.5 py-0.5 text-xs font-semibold text-amber-800 whitespace-nowrap border border-amber-200/50">Pending</span>
+                        ) : visitor.custom_data?.manual_override === "true" ? (
+                          <span className="inline-flex items-center rounded-full bg-purple-100/80 px-2.5 py-0.5 text-xs font-semibold text-purple-800 whitespace-nowrap border border-purple-200/50">Inside (Override)</span>
                         ) : (
                           <span className="inline-flex items-center rounded-full bg-green-100/80 px-2.5 py-0.5 text-xs font-semibold text-green-800 whitespace-nowrap border border-green-200/50">Checked In</span>
                         )}
@@ -188,28 +197,46 @@ export default function GuardVisitorsTable({
 
                       <TableCell className="text-right">
                         {visitor.status === "pending" ? (
-                          verifyingId === visitor.id ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <input
-                                type="text"
-                                maxLength={4}
-                                placeholder="OTP"
-                                className="w-16 rounded border px-2 py-1 text-center text-sm bg-white"
-                                value={otpInput}
-                                onChange={(e) => onOtpInputChange(e.target.value)}
-                              />
-                              <Button size="sm" onClick={() => onConfirmOTP(visitor)}>Confirm</Button>
-                              <Button size="sm" variant="ghost" onClick={onCancelOTP}>Cancel</Button>
-                            </div>
-                          ) : (
+                          planTier === "basic" ? (
                             <Button
                               size="sm"
-                              onClick={() => onSendOTP(visitor.id, visitor.phone)}
-                              disabled={sendingOtpId === visitor.id}
-                              className="whitespace-nowrap bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-200 shadow-sm disabled:opacity-50"
+                              onClick={() => onDirectApprove(visitor)}
+                              className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                             >
-                              {sendingOtpId === visitor.id ? "Sending..." : "Verify & Send OTP"}
+                              <CheckCircle2 className="w-4 h-4 mr-1.5" /> Approve Entry
                             </Button>
+                          ) : (
+                            visitor.custom_data?.source === "guard_desk" ? (
+                              <Button
+                                size="sm"
+                                onClick={() => onManualOverride(visitor)}
+                                className="whitespace-nowrap bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-1.5" /> Override
+                              </Button>
+                            ) : verifyingId === visitor.id ? (
+                              <div className="flex items-center justify-end gap-2">
+                                <input
+                                  type="text"
+                                  maxLength={4}
+                                  placeholder="OTP"
+                                  className="w-16 rounded border px-2 py-1 text-center text-sm bg-white"
+                                  value={otpInput}
+                                  onChange={(e) => onOtpInputChange(e.target.value)}
+                                />
+                                <Button size="sm" onClick={() => onConfirmOTP(visitor)}>Confirm</Button>
+                                <Button size="sm" variant="ghost" onClick={onCancelOTP}>Cancel</Button>
+                              </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => onSendOTP(visitor.id, visitor.phone)}
+                                disabled={sendingOtpId === visitor.id}
+                                className="whitespace-nowrap bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-200 shadow-sm disabled:opacity-50"
+                              >
+                                {sendingOtpId === visitor.id ? "Sending..." : "Verify & Send OTP"}
+                              </Button>
+                            )
                           )
                         ) : (
                           <Button size="sm" variant="secondary" onClick={() => onCheckOut(visitor.id)} className="whitespace-nowrap bg-white/60 hover:bg-zinc-100 text-zinc-700 shadow-sm">Check Out</Button>

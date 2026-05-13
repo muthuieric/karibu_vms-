@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { Loader2, AlertOctagon, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { compressImage } from "@/lib/image-compression";
-import { Card, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { getDistanceInMeters } from "@/lib/geo";
 
+import GateExpiredState from "@/components/GateExpiredState";
+import GateGeofenceErrorState from "@/components/GateGeofenceErrorState";
+import PublicGatePageShell from "@/components/PublicGatePageShell";
 import GateAccessDeniedState from "@/components/visitor/gate/GateAccessDeniedState";
 import GateLoadingState from "@/components/visitor/gate/GateLoadingState";
 import GateSuccessState from "@/components/visitor/gate/GateSuccessState";
@@ -28,22 +29,6 @@ type RedFlag = {
   name?: string | null;
   reason?: string | null;
 };
-
-// Haversine formula to calculate exact distance between two GPS coordinates in meters
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371e3; 
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c; 
-}
 
 function CheckInFormContent() {
   const params = useParams();
@@ -175,7 +160,7 @@ function CheckInFormContent() {
 
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            const dist = getDistance(pos.coords.latitude, pos.coords.longitude, company.lat!, company.lng!);
+            const dist = getDistanceInMeters(pos.coords.latitude, pos.coords.longitude, company.lat!, company.lng!);
             const maxRadius = company.geofence_radius || 200;
             
             if (dist > maxRadius) {
@@ -352,33 +337,15 @@ function CheckInFormContent() {
 
   // --- SECURITY RENDERS ---
   if (isQrExpired) {
-    return (
-      <div className="w-full max-w-md mx-auto relative z-10 px-4">
-        <Card className="border-zinc-200 shadow-xl text-center p-8 bg-white/95 backdrop-blur-md">
-          <AlertOctagon className="w-20 h-20 text-amber-500 mx-auto mb-6" />
-          <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight mb-2">QR Code Expired</CardTitle>
-          <p className="text-zinc-500 font-medium leading-relaxed">
-            For security reasons, this dynamic QR code has expired. Please return to the security desk and scan the code again.
-          </p>
-        </Card>
-      </div>
-    );
+    return <GateExpiredState />;
   }
 
   if (geofenceError) {
     return (
-      <div className="w-full max-w-md mx-auto relative z-10 px-4">
-        <Card className="border-red-100 shadow-xl text-center p-8 bg-white/95 backdrop-blur-md">
-          <MapPin className="w-20 h-20 text-red-500 mx-auto mb-6" />
-          <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight mb-2">Location Required</CardTitle>
-          <p className="text-zinc-600 font-medium leading-relaxed mb-8">
-            {geofenceError}
-          </p>
-          <Button onClick={() => window.location.reload()} className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold h-12 shadow-md">
-            Try Again
-          </Button>
-        </Card>
-      </div>
+      <GateGeofenceErrorState
+        message={geofenceError}
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
@@ -422,17 +389,8 @@ function CheckInFormContent() {
 
 export default function PublicGateCheckInWrapper() {
   return (
-    <div className="min-h-screen bg-zinc-50 p-4 py-8 flex items-center justify-center relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] h-[300px] w-[300px] rounded-full bg-blue-400/20 blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] h-[300px] w-[300px] rounded-full bg-amber-400/20 blur-[100px] pointer-events-none" />
-      
-      <Suspense fallback={
-        <div className="flex flex-col items-center z-10">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-4" />
-        </div>
-      }>
-        <CheckInFormContent />
-      </Suspense>
-    </div>
+    <PublicGatePageShell>
+      <CheckInFormContent />
+    </PublicGatePageShell>
   );
 }

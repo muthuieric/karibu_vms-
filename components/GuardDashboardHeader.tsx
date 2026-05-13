@@ -40,7 +40,7 @@ export default function GuardDashboardHeader({
         >
           <QrCode className="w-4 h-4 mr-2" /> Show QR
         </Button>
-        <Button onClick={onShowAddVisitor} className="hidden flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 shadow-md">
+        <Button onClick={onShowAddVisitor} className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 shadow-md">
           <UserPlus className="w-4 h-4 mr-2 hidden sm:inline-block" /> + New Visitor
         </Button>
       </div>

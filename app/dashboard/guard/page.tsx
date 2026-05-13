@@ -1,53 +1,28 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { X, UserCircle, LogOut, Search, Clock, CheckCircle2, UserPlus, Info, DoorOpen, QrCode, Printer, ShieldCheck, RefreshCw } from "lucide-react";
+import { filterGuardVisitors, getDynamicGateQrUrl, printGateQrPoster } from "@/lib/guard-dashboard";
+import type { CustomField, Visitor } from "@/types/guard";
 
-import AddVisitorModal from "@/components/dashboard/guard/add-visitor/AddVisitorModal";
+import GuardDashboardHeader from "@/components/GuardDashboardHeader";
+import GuardProfileErrorState from "@/components/GuardProfileErrorState";
+import GuardStats from "@/components/GuardStats";
+import GuardVisitorsTable from "@/components/GuardVisitorsTable";
 
-type Visitor = {
-  id: string;
-  name: string;
-  phone: string;
-  status: "pending" | "checked_in" | "checked_out" | "auto_checked_out";
-  created_at: string;
-  checked_in_at?: string;
-  document_type: string;
-  id_number?: string;
-  otp_code?: string;
-  company_id: string;
-  photo_url?: string;
-  host_id?: string | null;
-  host_name?: string;
-  host_confirmed?: boolean; 
-  purpose?: string;
-  vehicle_reg?: string;
-  custom_data?: Record<string, string>; 
-  gate_id?: string | null; 
-};
+const AddVisitorModal = dynamic(() => import("@/components/dashboard/guard/add-visitor/AddVisitorModal"), { ssr: false });
+const GuardQrModal = dynamic(() => import("@/components/dashboard/guard/GuardQrModal"), { ssr: false });
+const VisitInfoModal = dynamic(() => import("@/components/dashboard/guard/VisitInfoModal"), { ssr: false });
+const PhotoLightbox = dynamic(() => import("@/components/dashboard/guard/PhotoLightbox"), { ssr: false });
 
 export default function GuardDashboard() {
-  const router = useRouter();
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string>("");
-  const [planTier, setPlanTier] = useState<string>("basic"); // NEW: Track the plan
+  const [planTier, setPlanTier] = useState<string>("basic");
   const [guardGateId, setGuardGateId] = useState<string | null>(null);
   const [guardGateName, setGuardGateName] = useState<string>("All Gates");
   const [customFieldLabels, setCustomFieldLabels] = useState<Record<string, string>>({});
@@ -72,12 +47,11 @@ export default function GuardDashboard() {
   const [enlargedPhoto, setEnlargedPhoto] = useState<string | null>(null);
   const [infoModalVisitor, setInfoModalVisitor] = useState<Visitor | null>(null);
   
-  const [qrTimestamp, setQrTimestamp] = useState<number>(Date.now());
+  const [qrTimestamp, setQrTimestamp] = useState<number>(0);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (showQrModal) {
-      setQrTimestamp(Date.now()); 
       interval = setInterval(() => {
         setQrTimestamp(Date.now()); 
       }, 300000); 
@@ -97,20 +71,13 @@ export default function GuardDashboard() {
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("company_id, gate_id, is_locked")
+        .select("company_id, gate_id")
         .eq("id", authData.user.id)
         .single();
 
       if (profileError || !profileData?.company_id) {
         console.error("Could not load guard profile:", profileError);
         setLoading(false);
-        return;
-      }
-
-      if (profileData.is_locked) {
-        alert("Account locked due to plan downgrade.");
-        await supabase.auth.signOut();
-        window.location.href = "/login";
         return;
       }
 
@@ -151,8 +118,10 @@ export default function GuardDashboard() {
 
         if (companyData.custom_fields) {
           const labelMap: Record<string, string> = {};
-          // @ts-ignore
-          companyData.custom_fields.forEach((f: any) => {
+          const fields = Array.isArray(companyData.custom_fields)
+            ? (companyData.custom_fields as CustomField[])
+            : [];
+          fields.forEach((f) => {
             labelMap[f.id] = f.label;
           });
           setCustomFieldLabels(labelMap);
@@ -237,7 +206,6 @@ export default function GuardDashboard() {
     window.location.href = "/login";
   };
 
-  // --- NEW: DIRECT APPROVE FOR BASIC PLAN (No OTP Cost) ---
   const handleDirectApprove = async (visitor: Visitor) => {
     await supabase.from("visitors").update({ 
       status: "checked_in",
@@ -245,7 +213,6 @@ export default function GuardDashboard() {
     }).eq("id", visitor.id);
   };
 
-  // --- NEW: MANUAL OVERRIDE (Premium/Custom) ---
   const handleManualOverride = async (visitor: Visitor) => {
     if (!window.confirm("Bypass OTP security and manually check in this visitor?")) return;
     
@@ -280,7 +247,6 @@ export default function GuardDashboard() {
     }
   };
 
-  // --- PREMIUM/CUSTOM ONLY: OTP LOGIC ---
   const handleSendOTP = async (id: string, phone: string) => {
     if (sendingOtpId === id) return; 
     setSendingOtpId(id); 
@@ -289,7 +255,9 @@ export default function GuardDashboard() {
       let code = "";
       let isUnique = false;
       while (!isUnique) {
-        code = Math.floor(1000 + Math.random() * 9000).toString();
+        const randomValues = new Uint32Array(1);
+        crypto.getRandomValues(randomValues);
+        code = (1000 + (randomValues[0] % 9000)).toString();
         const { data } = await supabase.from("visitors").select("id").eq("otp_code", code).in("status", ["pending", "checked_in"]);
         if (!data || data.length === 0) isUnique = true; 
       }
@@ -335,79 +303,19 @@ export default function GuardDashboard() {
   };
 
   const handlePrintQr = () => {
-    const url = `${window.location.origin}/${companyId}/gate${guardGateId ? `?gateId=${guardGateId}` : ''}`;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(url)}`;
-    
-    const printWindow = window.open('', '', 'width=800,height=800');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Print Gate QR Code</title>
-            <style>
-              body { font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #18181b; }
-              .container { text-align: center; border: 2px dashed #e4e4e7; padding: 40px; border-radius: 24px; max-width: 500px; }
-              h1 { margin-bottom: 8px; font-size: 36px; font-weight: 900; letter-spacing: -0.02em; }
-              p { color: #71717a; margin-bottom: 32px; font-size: 18px; font-weight: 500; }
-              img { width: 300px; height: 300px; display: block; margin: 0 auto; border-radius: 12px; }
-              .footer { margin-top: 32px; font-size: 16px; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-              @media print {
-                .container { border: none; padding: 0; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>Scan to Check In</h1>
-              <p>Point your smartphone camera at this code to register your visit.</p>
-              <img src="${qrUrl}" onload="setTimeout(() => { window.print(); window.close(); }, 500);" />
-              <div class="footer">${guardGateName}</div>
-            </div>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }
+    printGateQrPoster(window.location.origin, companyId, guardGateId, guardGateName);
   };
-
-  const filteredVisitors = visitors.filter((v) => {
-    const query = searchTerm.toLowerCase();
-    
-    let matchesSearch = v.name?.toLowerCase().includes(query) ||
-                        v.phone?.includes(searchTerm) ||
-                        v.id_number?.includes(searchTerm) ||
-                        v.host_name?.toLowerCase().includes(query) ||
-                        v.vehicle_reg?.toLowerCase().includes(query);
-
-    if (!matchesSearch && v.custom_data) {
-      matchesSearch = Object.values(v.custom_data).some(val => 
-        val && val.toLowerCase().includes(query)
-      );
-    }
-
-    const matchesStatus = statusFilter === "all" || v.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredVisitors = filterGuardVisitors(visitors, searchTerm, statusFilter);
   
   const totalToday = visitors.length;
   const checkedInCount = visitors.filter(v => v.status === "checked_in").length;
   const pendingCount = visitors.filter(v => v.status === "pending").length;
 
   const getDynamicQrUrl = () => {
-    if (!companyId) return "";
-    const baseUrl = `${window.location.origin}/${companyId}/gate`;
-    const queryParams = new URLSearchParams();
-    if (guardGateId) queryParams.append("gateId", guardGateId);
-    queryParams.append("t", qrTimestamp.toString()); 
-    return `${baseUrl}?${queryParams.toString()}`;
+    return getDynamicGateQrUrl(window.location.origin, companyId, guardGateId, qrTimestamp);
   };
-
   if (!companyId && !loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <p className="text-red-600 font-medium">Error: Could not load guard profile. Are you logged in?</p>
-      </div>
-    );
+    return <GuardProfileErrorState />;
   }
 
   return (
@@ -419,236 +327,45 @@ export default function GuardDashboard() {
 
       <div className="max-w-7xl mx-auto space-y-6 relative z-10">
         
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-zinc-900">Gate Dashboard</h1>
-            <p className="text-zinc-500 flex items-center gap-1.5 mt-1">
-              <DoorOpen className="w-4 h-4" /> 
-              Live monitoring • <span className="font-semibold text-zinc-700">{guardGateName}</span>
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <Button variant="outline" onClick={handleLogout} className="flex-1 sm:flex-initial border-zinc-200 text-zinc-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 bg-white/80 backdrop-blur-sm">
-              <LogOut className="w-4 h-4 mr-2" /> Sign Out
-            </Button>
-            <Button variant="outline" onClick={() => setShowQrModal(true)} className="flex-1 sm:flex-initial bg-white hover:bg-zinc-100 text-zinc-900 border-zinc-200 shadow-sm">
-              <QrCode className="w-4 h-4 mr-2" /> Show QR
-            </Button>
-            <Button onClick={() => setShowAddModal(true)} className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 shadow-md">
-              <UserPlus className="w-4 h-4 mr-2 hidden sm:inline-block" /> + New Visitor
-            </Button>
-          </div>
-        </div>
+        <GuardDashboardHeader
+          guardGateName={guardGateName}
+          onLogout={handleLogout}
+          onShowQr={() => {
+            setQrTimestamp(Date.now());
+            setShowQrModal(true);
+          }}
+          onShowAddVisitor={() => setShowAddModal(true)}
+        />
 
         {!isLocked && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <Card className="bg-white/90 backdrop-blur-sm border-zinc-200/60 shadow-sm">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-zinc-500">Total Today</p>
-                  <h3 className="text-3xl font-bold text-zinc-900 mt-1">{totalToday}</h3>
-                </div>
-                <div className="p-3 bg-zinc-100/80 text-zinc-600 rounded-full">
-                  <UserPlus className="w-6 h-6" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/90 backdrop-blur-sm border-zinc-200/60 shadow-sm">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-zinc-500">Pending</p>
-                  <h3 className="text-3xl font-bold text-zinc-900 mt-1">{pendingCount}</h3>
-                </div>
-                <div className="p-3 bg-amber-100/80 text-amber-600 rounded-full">
-                  <Clock className="w-6 h-6" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white/90 backdrop-blur-sm border-zinc-200/60 shadow-sm">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-zinc-500">Checked In</p>
-                  <h3 className="text-3xl font-bold text-zinc-900 mt-1">{checkedInCount}</h3>
-                </div>
-                <div className="p-3 bg-green-100/80 text-green-600 rounded-full">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <GuardStats
+            totalToday={totalToday}
+            pendingCount={pendingCount}
+            checkedInCount={checkedInCount}
+          />
         )}
 
-        <Card className="bg-white/90 backdrop-blur-sm border-zinc-200/60 shadow-sm">
-          <CardHeader className="flex flex-col gap-4 border-b border-zinc-100/50 pb-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
-              <CardTitle>Today's Active Visitors</CardTitle>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-500" />
-                  <Input 
-                    placeholder="Search..." 
-                    className="pl-9 w-full bg-white/80"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex w-full sm:w-auto bg-zinc-100/80 p-1 rounded-md border border-zinc-200/60 overflow-x-auto">
-                  <button
-                    onClick={() => setStatusFilter("all")}
-                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded transition-colors whitespace-nowrap ${statusFilter === "all" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-500 hover:text-zinc-900"}`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setStatusFilter("pending")}
-                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded transition-colors whitespace-nowrap ${statusFilter === "pending" ? "bg-white shadow-sm text-amber-700" : "text-zinc-500 hover:text-zinc-900"}`}
-                  >
-                    Pending
-                  </button>
-                  <button
-                    onClick={() => setStatusFilter("checked_in")}
-                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded transition-colors whitespace-nowrap ${statusFilter === "checked_in" ? "bg-white shadow-sm text-green-700" : "text-zinc-500 hover:text-zinc-900"}`}
-                  >
-                    Checked In
-                  </button>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            {loading ? (
-              <p className="text-zinc-500 py-4">Loading secure data...</p>
-            ) : filteredVisitors.length === 0 ? (
-              <p className="text-zinc-500 py-4">No active visitors match your search.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-zinc-200/50">
-                      <TableHead>Arrived</TableHead>
-                      <TableHead>Visitor Details</TableHead>
-                      <TableHead>Phone & ID</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredVisitors.map((visitor) => {
-                      const hasCustomData = visitor.custom_data && Object.values(visitor.custom_data).some(val => val.trim() !== "");
-                      const hasExtraInfo = visitor.host_name || visitor.purpose || visitor.vehicle_reg || hasCustomData;
-
-                      return (
-                        <TableRow key={visitor.id} className="border-zinc-200/50 hover:bg-zinc-50/50">
-                          <TableCell className="font-medium text-zinc-500 whitespace-nowrap">
-                            {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </TableCell>
-                          
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              {visitor.photo_url ? (
-                                <Image 
-                                  src={visitor.photo_url} 
-                                  alt={`${visitor.name}'s photo`} 
-                                  width={40}
-                                  height={40}
-                                  className="w-10 h-10 rounded-full object-cover border-2 border-zinc-200 cursor-pointer hover:opacity-80 transition-opacity bg-white shrink-0"
-                                  onClick={() => setEnlargedPhoto(visitor.photo_url!)}
-                                  unoptimized
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center border-2 border-zinc-200 text-zinc-400 shrink-0">
-                                  <UserCircle className="w-6 h-6" />
-                                </div>
-                              )}
-                              
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold whitespace-nowrap">{visitor.name}</span>
-                                {hasExtraInfo && (
-                                  <button
-                                    onClick={() => setInfoModalVisitor(visitor)}
-                                    className="text-blue-600 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-full transition-colors shrink-0 shadow-sm border border-blue-100"
-                                    title="View Visit Info"
-                                  >
-                                    <Info className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-
-                          <TableCell>
-                            <div className="text-sm whitespace-nowrap">{visitor.phone || "—"}</div>
-                            <div className="text-xs text-zinc-500 whitespace-nowrap">{visitor.id_number || "No ID"}</div>
-                          </TableCell>
-                          
-                          <TableCell>
-                            {visitor.status === "pending" ? (
-                              <span className="inline-flex items-center rounded-full bg-amber-100/80 px-2.5 py-0.5 text-xs font-semibold text-amber-800 whitespace-nowrap border border-amber-200/50">Pending</span>
-                            ) : visitor.custom_data?.manual_override === "true" ? (
-                              <span className="inline-flex items-center rounded-full bg-purple-100/80 px-2.5 py-0.5 text-xs font-semibold text-purple-800 whitespace-nowrap border border-purple-200/50">Inside (Override)</span>
-                            ) : (
-                              <span className="inline-flex items-center rounded-full bg-green-100/80 px-2.5 py-0.5 text-xs font-semibold text-green-800 whitespace-nowrap border border-green-200/50">Checked In</span>
-                            )}
-                          </TableCell>
-
-                          {/* ACTION COLUMN: Checks Plan Tier */}
-                          <TableCell className="text-right">
-                            {visitor.status === "pending" ? (
-                              planTier === "basic" ? (
-                                // BASIC PLAN: Instant Approve (No OTP Cost)
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => handleDirectApprove(visitor)} 
-                                  className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                                >
-                                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Approve Entry
-                                </Button>
-                              ) : (
-                                // PREMIUM/CUSTOM PLAN: Full OTP Flow
-                                visitor.custom_data?.source === "guard_desk" ? (
-                                  <Button 
-                                    size="sm" 
-                                    onClick={() => handleManualOverride(visitor)} 
-                                    className="whitespace-nowrap bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
-                                  >
-                                    <CheckCircle2 className="w-4 h-4 mr-1.5" /> Override
-                                  </Button>
-                                ) : verifyingId === visitor.id ? (
-                                  <div className="flex items-center justify-end gap-2">
-                                    <input 
-                                      type="text" maxLength={4} placeholder="OTP"
-                                      className="w-16 rounded border px-2 py-1 text-center text-sm bg-white"
-                                      value={otpInput} onChange={(e) => setOtpInput(e.target.value)}
-                                    />
-                                    <Button size="sm" onClick={() => handleConfirmOTP(visitor)}>Confirm</Button>
-                                    <Button size="sm" variant="ghost" onClick={() => setVerifyingId(null)}>Cancel</Button>
-                                  </div>
-                                ) : (
-                                  <Button 
-                                    size="sm" 
-                                    onClick={() => handleSendOTP(visitor.id, visitor.phone)} 
-                                    disabled={sendingOtpId === visitor.id}
-                                    className="whitespace-nowrap bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-200 shadow-sm disabled:opacity-50"
-                                  >
-                                    {sendingOtpId === visitor.id ? "Sending..." : "Verify & Send OTP"}
-                                  </Button>
-                                )
-                              )
-                            ) : (
-                              <Button size="sm" variant="secondary" onClick={() => handleCheckOut(visitor.id)} className="whitespace-nowrap bg-white/60 hover:bg-zinc-100 text-zinc-700 shadow-sm">Check Out</Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <GuardVisitorsTable
+          loading={loading}
+          visitors={filteredVisitors}
+          searchTerm={searchTerm}
+          statusFilter={statusFilter}
+          planTier={planTier}
+          verifyingId={verifyingId}
+          sendingOtpId={sendingOtpId}
+          otpInput={otpInput}
+          onSearchTermChange={setSearchTerm}
+          onStatusFilterChange={setStatusFilter}
+          onPhotoClick={setEnlargedPhoto}
+          onInfoClick={setInfoModalVisitor}
+          onOtpInputChange={setOtpInput}
+          onConfirmOTP={handleConfirmOTP}
+          onCancelOTP={() => setVerifyingId(null)}
+          onSendOTP={handleSendOTP}
+          onCheckOut={handleCheckOut}
+          onDirectApprove={handleDirectApprove}
+          onManualOverride={handleManualOverride}
+        />
       </div>
 
       <AddVisitorModal 
@@ -664,162 +381,22 @@ export default function GuardDashboard() {
         guardGateId={guardGateId}
       />
 
-      {/* --- QR CODE MODAL --- */}
-      {showQrModal && companyId && (
-        <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowQrModal(false)}>
-          <Card className="w-full max-w-sm shadow-2xl relative border-0 rounded-xl overflow-hidden bg-white" onClick={(e) => e.stopPropagation()}>
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
-            <button onClick={() => setShowQrModal(false)} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-full p-1.5 transition-colors">
-              <X size={18} />
-            </button>
-            <CardHeader className="pt-8 pb-2 text-center">
-              <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight">Scan to Register</CardTitle>
-              <CardDescription className="text-zinc-500 font-medium">
-                Visitor Self-Check-In
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center p-6 space-y-6">
-              <div className="p-4 bg-white border-2 border-zinc-200 rounded-2xl shadow-sm relative group">
-                <div className="absolute -top-3 -right-3 bg-blue-100 text-blue-700 p-1.5 rounded-full shadow-sm animate-pulse">
-                  <RefreshCw size={16} />
-                </div>
-                
-                <Image 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(getDynamicQrUrl())}`}
-                  alt="Check-in QR Code"
-                  width={250}
-                  height={250}
-                  className="rounded-lg"
-                  unoptimized
-                />
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-zinc-500 max-w-[250px] mx-auto font-medium">
-                  Have the visitor scan this code with their smartphone camera.
-                </p>
-                <p className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider mt-2 bg-emerald-50 py-1 px-2 rounded inline-block">
-                  <ShieldCheck className="w-3 h-3 inline mr-1 mb-0.5"/> Code auto-rotates for security
-                </p>
-              </div>
-
-              <div className="w-full flex gap-2">
-                <Input readOnly value={getDynamicQrUrl()} className="h-10 text-xs bg-zinc-50 text-zinc-500" />
-                <Button 
-                  variant="outline" 
-                  className="h-10 shrink-0 border-zinc-200"
-                  onClick={(e) => {
-                    navigator.clipboard.writeText(getDynamicQrUrl());
-                    const btn = e.currentTarget;
-                    const oldText = btn.innerText;
-                    btn.innerText = "Copied!";
-                    setTimeout(() => { btn.innerText = oldText; }, 2000);
-                  }}
-                >
-                  Copy
-                </Button>
-              </div>
-              
-              <div className="flex gap-3 w-full mt-2 pt-4 border-t border-zinc-100">
-                <Button className="w-full bg-zinc-900 hover:bg-zinc-800 text-white" onClick={handlePrintQr}>
-                  <Printer className="w-4 h-4 mr-2" /> Print Static Poster
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* --- EXTRA VISIT INFO MODAL --- */}
-      {infoModalVisitor && (
-        <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-sm shadow-2xl relative border-0 overflow-hidden bg-white max-h-[80vh] overflow-y-auto">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
-            <button onClick={() => setInfoModalVisitor(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-full p-1.5 transition-colors">
-              <X size={18} />
-            </button>
-            <CardHeader className="pt-8 pb-4 border-b border-zinc-100/50">
-              <CardTitle className="text-xl font-bold">Visit Details</CardTitle>
-              <CardDescription>Extra information provided by {infoModalVisitor.name}.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-5 bg-zinc-50/50">
-              
-              {infoModalVisitor.host_name && (
-                <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Host Name</p>
-                  <p className="font-medium text-zinc-900 text-lg leading-snug">{infoModalVisitor.host_name}</p>
-                </div>
-              )}
-
-              {infoModalVisitor.host_name && (
-                <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Host Status</p>
-                  {infoModalVisitor.host_confirmed ? (
-                    <div className="flex items-center text-green-600 font-semibold text-base mt-1">
-                      <ShieldCheck className="w-5 h-5 mr-1.5" /> 
-                      Host confirmed arrival
-                    </div>
-                  ) : (
-                    <div className="flex items-center text-amber-600 font-medium text-base mt-1">
-                      <Clock className="w-5 h-5 mr-1.5" /> 
-                      Pending host confirmation
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {infoModalVisitor.purpose && (
-                <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Purpose of Visit</p>
-                  <p className="font-medium text-zinc-900 text-lg leading-snug">{infoModalVisitor.purpose}</p>
-                </div>
-              )}
-              {infoModalVisitor.vehicle_reg && (
-                <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Vehicle Registration</p>
-                  <p className="font-mono font-medium text-zinc-900 text-lg leading-snug">{infoModalVisitor.vehicle_reg}</p>
-                </div>
-              )}
-
-              {infoModalVisitor.custom_data && Object.entries(infoModalVisitor.custom_data).map(([fieldId, value]) => {
-                if (!value.trim()) return null; 
-                const label = customFieldLabels[fieldId] || "Custom Field";
-                return (
-                  <div key={fieldId}>
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">{label}</p>
-                    <p className="font-medium text-zinc-900 text-lg leading-snug">{value}</p>
-                  </div>
-                );
-              })}
-              
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {enlargedPhoto && (
-        <div 
-          className="fixed inset-0 bg-black/90 z-[80] flex flex-col items-center justify-center p-4 cursor-pointer backdrop-blur-sm" 
-          onClick={() => setEnlargedPhoto(null)}
-        >
-          <div className="relative max-w-2xl w-full flex flex-col items-center">
-            <button 
-              className="absolute -top-12 right-0 text-white/70 hover:text-white transition-colors p-2"
-              onClick={(e) => { e.stopPropagation(); setEnlargedPhoto(null); }}
-            >
-              <X size={32} />
-            </button>
-            <Image 
-              src={enlargedPhoto} 
-              alt="Enlarged security photo" 
-              width={1000}
-              height={1000}
-              className="w-full h-auto rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] border-4 border-zinc-800 object-contain max-h-[85vh]" 
-              onClick={(e) => e.stopPropagation()} 
-              unoptimized
-            />
-          </div>
-        </div>
-      )}
+      <GuardQrModal
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+        qrUrl={getDynamicQrUrl()}
+        guardGateName={guardGateName}
+        handlePrintQr={handlePrintQr}
+      />
+      <VisitInfoModal
+        visitor={infoModalVisitor}
+        onClose={() => setInfoModalVisitor(null)}
+        customFieldLabels={customFieldLabels}
+      />
+      <PhotoLightbox
+        photoUrl={enlargedPhoto}
+        onClose={() => setEnlargedPhoto(null)}
+      />
     </div>
   );
 }

@@ -22,35 +22,18 @@ export async function POST(request: Request) {
 
     if (updateError) throw updateError;
 
-    if (planTier === "basic") {
-      const { data: guards } = await supabaseAdmin
-        .from('profiles')
-        .select('id')
-        .eq('company_id', companyId)
-        .eq('role', 'guard')
-        .order('created_at', { ascending: true });
-
-      if (guards && guards.length > 1) {
-        const extraGuards = guards.slice(1);
-        const extraGuardIds = extraGuards.map(g => g.id);
-
-        await supabaseAdmin
-          .from('profiles')
-          .update({ is_locked: true })
-          .in('id', extraGuardIds);
-      }
-    } else if (planTier === "premium" || planTier === "custom") {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ is_locked: false })
-        .eq('company_id', companyId)
-        .eq('role', 'guard');
-    }
+    // Ensure all guards are unlocked regardless of plan
+    await supabaseAdmin
+      .from("profiles")
+      .update({ is_locked: false })
+      .eq("company_id", companyId)
+      .eq("role", "guard");
 
     return NextResponse.json({ success: true, newTier: planTier });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Update Plan Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

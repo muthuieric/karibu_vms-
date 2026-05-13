@@ -251,17 +251,17 @@ export default function LandingPage() {
         {/* --- PRICING SECTION --- */}
         <div id="pricing" className="mt-32 w-full text-center">
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">Simple, Transparent Pricing</h2>
-          <p className="text-slate-500 font-medium text-lg max-w-2xl mx-auto mb-16">Choose the plan that fits your facility's security needs.</p>
+          <p className="text-slate-500 font-medium text-lg max-w-2xl mx-auto mb-16">Choose the plan that fits your facility&apos;s security needs.</p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto text-left">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto text-left">
             {/* Basic Plan */}
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 relative">
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Basic Plan</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Basic</h3>
               <p className="text-slate-500 font-medium mb-6">For small offices and basic entry logs.</p>
-              <div className="text-4xl font-black text-slate-900 mb-8">Free <span className="text-lg font-medium text-slate-500">/ forever</span></div>
+              <div className="text-4xl font-black text-slate-900 mb-8">$29 <span className="text-lg font-medium text-slate-500">/ month</span></div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center gap-3 font-semibold text-slate-700">
-                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Maximum 1 Guard Account
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Unlimited Guard Accounts
                 </li>
                 <li className="flex items-center gap-3 font-semibold text-slate-700">
                   <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Direct Guard Approval
@@ -270,7 +270,10 @@ export default function LandingPage() {
                   <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Static Printed QR Codes
                 </li>
                 <li className="flex items-center gap-3 font-semibold text-slate-700">
-                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> No Photo/ID Scanning
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Full Digital Logbook
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Custom Registration Fields
                 </li>
               </ul>
               <Link href="/register">
@@ -281,9 +284,10 @@ export default function LandingPage() {
             {/* Premium Plan */}
             <div className="bg-indigo-600 p-8 rounded-3xl border border-indigo-700 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none"><Zap size={100} /></div>
-              <h3 className="text-2xl font-bold text-white mb-2 relative z-10">Premium Plan</h3>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-white text-indigo-600 text-xs font-black uppercase tracking-wider py-1 px-4 rounded-b-xl shadow-sm">Most Popular</div>
+              <h3 className="text-2xl font-bold text-white mb-2 relative z-10 pt-2">Premium</h3>
               <p className="text-indigo-100 font-medium mb-6 relative z-10">For high-security facilities and estates.</p>
-              <div className="text-4xl font-black text-white mb-8 relative z-10">Custom <span className="text-lg font-medium text-indigo-200">/ volume-based</span></div>
+              <div className="text-4xl font-black text-white mb-8 relative z-10">$99 <span className="text-lg font-medium text-indigo-200">/ month</span></div>
               <ul className="space-y-4 mb-8 relative z-10">
                 <li className="flex items-center gap-3 font-semibold text-white">
                   <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> Unlimited Guard Accounts
@@ -300,9 +304,39 @@ export default function LandingPage() {
                 <li className="flex items-center gap-3 font-semibold text-white">
                   <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> Guard AI ID Scanning
                 </li>
+                <li className="flex items-center gap-3 font-semibold text-white">
+                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> Selfie Verification
+                </li>
               </ul>
               <Link href="/register">
-                <Button className="w-full h-12 bg-white hover:bg-zinc-100 text-indigo-600 rounded-xl relative z-10">Contact Sales</Button>
+                <Button className="w-full h-12 bg-white hover:bg-zinc-100 text-indigo-600 rounded-xl relative z-10">Get Started</Button>
+              </Link>
+            </div>
+
+            {/* Custom Plan */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 relative">
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Custom</h3>
+              <p className="text-slate-500 font-medium mb-6">Tailored for large corporate estates & compounds.</p>
+              <div className="text-4xl font-black text-slate-900 mb-8">Custom</div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Everything in Premium
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Custom White-label Branding
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Boom Barrier Integrations
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Dedicated Account Manager
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Custom API Access
+                </li>
+              </ul>
+              <Link href="/register">
+                <Button variant="outline" className="w-full h-12 text-slate-900 rounded-xl border-slate-200">Contact Sales</Button>
               </Link>
             </div>
           </div>
