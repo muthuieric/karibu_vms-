@@ -65,9 +65,6 @@ export default function AddVisitorModal({
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
 
-  const [isScanning, setIsScanning] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   // NEW: Terms and Conditions State
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
@@ -135,44 +132,6 @@ export default function AddVisitorModal({
   }).filter(dept => dept.hosts.length > 0);
 
   if (!isOpen) return null;
-
-  const handleImageCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsScanning(true);
-
-    try {
-      const compressedFile = await compressImage(file);
-
-      // FIX 1: Send as FormData instead of Base64 JSON to match the new backend
-      const formDataPayload = new FormData();
-      formDataPayload.append("file", compressedFile);
-
-      const response = await fetch("/api/ocr", {
-        method: "POST",
-        body: formDataPayload,
-      });
-
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        setNewVisitor((prev) => ({
-          ...prev,
-          // FIX 2: Use exact keys matching the new Google Cloud Vision route
-          name: result.data.name || prev.name,
-          id_number: result.data.id_number || prev.id_number,
-        }));
-      } else {
-        alert("Could not read the ID clearly. Please type it manually.");
-      }
-      setIsScanning(false);
-    } catch (error) {
-      console.error(error);
-      setIsScanning(false);
-      alert("Error scanning ID. Please try manually.");
-    }
-  };
 
   const handleAddVisitor = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -327,7 +286,6 @@ export default function AddVisitorModal({
 
   return (
     <AddVisitorForm
-      planTier={planTier}
       askPhone={askPhone}
       askId={askId}
       askHost={askHost}
@@ -335,7 +293,6 @@ export default function AddVisitorModal({
       askVehicle={askVehicle}
       requirePhoto={requirePhoto}
       isSubmitting={isSubmitting}
-      isScanning={isScanning}
       newVisitor={newVisitor}
       customFields={customFields}
       customAnswers={customAnswers}
@@ -344,12 +301,10 @@ export default function AddVisitorModal({
       filteredDepartments={filteredDepartments}
       selfiePreview={selfiePreview}
       agreedToTerms={agreedToTerms}
-      fileInputRef={fileInputRef}
       selfieInputRef={selfieInputRef}
       dropdownRef={dropdownRef}
       onClose={onClose}
       onSubmit={handleAddVisitor}
-      onImageCapture={handleImageCapture}
       onNewVisitorChange={setNewVisitor}
       onCustomAnswersChange={setCustomAnswers}
       onHostSearchQueryChange={setHostSearchQuery}

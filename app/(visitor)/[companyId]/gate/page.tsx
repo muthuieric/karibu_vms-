@@ -44,13 +44,10 @@ function CheckInFormContent() {
       isHostDropdownOpen={gate.isHostDropdownOpen}
       filteredDepartments={gate.filteredDepartments}
       selfiePreview={gate.selfiePreview}
-      isScanning={false}
       isSubmitting={gate.isSubmitting}
       agreedToTerms={gate.agreedToTerms}
-      fileInputRef={gate.fileInputRef}
       selfieInputRef={gate.selfieInputRef}
       dropdownRef={gate.dropdownRef}
-      onImageCapture={() => {}}
       onSubmit={gate.handleSubmit}
       onNewVisitorChange={gate.setNewVisitor}
       onHostSearchQueryChange={gate.setHostSearchQuery}

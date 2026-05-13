@@ -52,7 +52,6 @@ export function usePublicGateCheckIn() {
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
@@ -290,7 +289,6 @@ export function usePublicGateCheckIn() {
     selfiePreview,
     isSubmitting,
     agreedToTerms,
-    fileInputRef,
     selfieInputRef,
     dropdownRef,
     handleSubmit,

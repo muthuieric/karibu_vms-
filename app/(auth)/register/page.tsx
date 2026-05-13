@@ -86,8 +86,8 @@ export default function RegisterPage() {
                   value={formData.planTier}
                   onChange={(e) => setFormData({...formData, planTier: e.target.value})}
                 >
-                  <option value="basic">Basic Plan (Core Features, No SMS/OCR)</option>
-                  <option value="premium">Premium Plan (Full Security, OTP & OCR)</option>
+                  <option value="basic">Basic Plan (Core Features)</option>
+                  <option value="premium">Premium Plan (Full Security & OTP)</option>
                   <option value="custom">Enterprise Custom (Contact Us)</option>
                 </select>
                 {/* Custom dropdown arrow */}

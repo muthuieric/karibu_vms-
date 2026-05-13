@@ -87,7 +87,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-white mb-3">Live Guard Dashboard</h3>
               <p className="text-indigo-100 font-medium leading-relaxed">
-                Real-time monitoring for guards with OCR ID scanning, instant blacklist alerts, and 1-click checkout tools.
+                Real-time monitoring for guards with instant blacklist alerts, photo verification, and 1-click checkout tools.
               </p>
             </div>
 
@@ -302,7 +302,7 @@ export default function LandingPage() {
                   <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> 5-Min Dynamic QR Codes
                 </li>
                 <li className="flex items-center gap-3 font-semibold text-white">
-                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> Guard AI ID Scanning
+                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> Guard Visit Controls
                 </li>
                 <li className="flex items-center gap-3 font-semibold text-white">
                   <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> Selfie Verification

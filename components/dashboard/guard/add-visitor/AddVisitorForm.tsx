@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Camera, Loader2, ScanLine, UserCircle, X } from "lucide-react";
+import { Camera, Loader2, UserCircle, X } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,6 @@ type VisitorFormData = {
 };
 
 type AddVisitorFormProps = {
-  planTier: string;
   askPhone: boolean;
   askId: boolean;
   askHost: boolean;
@@ -36,7 +35,6 @@ type AddVisitorFormProps = {
   askVehicle: boolean;
   requirePhoto: boolean;
   isSubmitting: boolean;
-  isScanning: boolean;
   newVisitor: VisitorFormData;
   customFields: CustomField[];
   customAnswers: Record<string, string>;
@@ -45,12 +43,10 @@ type AddVisitorFormProps = {
   filteredDepartments: DepartmentWithHosts[];
   selfiePreview: string | null;
   agreedToTerms: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
   selfieInputRef: React.RefObject<HTMLInputElement | null>;
   dropdownRef: React.RefObject<HTMLDivElement | null>;
   onClose: () => void;
   onSubmit: (event: React.FormEvent) => void;
-  onImageCapture: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onNewVisitorChange: (visitor: VisitorFormData) => void;
   onCustomAnswersChange: (answers: Record<string, string>) => void;
   onHostSearchQueryChange: (value: string) => void;
@@ -61,7 +57,6 @@ type AddVisitorFormProps = {
 };
 
 export default function AddVisitorForm({
-  planTier,
   askPhone,
   askId,
   askHost,
@@ -69,7 +64,6 @@ export default function AddVisitorForm({
   askVehicle,
   requirePhoto,
   isSubmitting,
-  isScanning,
   newVisitor,
   customFields,
   customAnswers,
@@ -78,12 +72,10 @@ export default function AddVisitorForm({
   filteredDepartments,
   selfiePreview,
   agreedToTerms,
-  fileInputRef,
   selfieInputRef,
   dropdownRef,
   onClose,
   onSubmit,
-  onImageCapture,
   onNewVisitorChange,
   onCustomAnswersChange,
   onHostSearchQueryChange,
@@ -102,46 +94,6 @@ export default function AddVisitorForm({
           <CardTitle>Register Visitor</CardTitle>
         </CardHeader>
         <CardContent>
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={onImageCapture}
-          />
-
-          {planTier !== "basic" ? (
-            <Button
-              variant="outline"
-              className="w-full mb-6 border-dashed border-2 py-8 text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isScanning}
-            >
-              {isScanning ? (
-                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing ID Card...</>
-              ) : (
-                <><ScanLine className="mr-2 h-5 w-5" /> Auto-Fill using ID Card</>
-              )}
-            </Button>
-          ) : (
-            <div className="w-full mb-6 relative">
-              <Button
-                variant="outline"
-                className="w-full border-dashed border-2 py-8 text-zinc-400 border-zinc-200 bg-zinc-50 hover:bg-zinc-50 cursor-not-allowed"
-                disabled
-              >
-                <ScanLine className="mr-2 h-5 w-5" /> Auto-Fill using ID Card
-              </Button>
-              <p className="text-center text-xs text-amber-600 mt-2 font-medium">ID Scanning is a Premium feature.</p>
-            </div>
-          )}
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-            <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-zinc-500">Or enter manually</span></div>
-          </div>
-
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <Label className="mb-1 block font-semibold text-zinc-700">Full Name <span className="text-red-500">*</span></Label>

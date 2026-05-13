@@ -46,13 +46,10 @@ type VisitorCheckInFormProps = {
   isHostDropdownOpen: boolean;
   filteredDepartments: DepartmentWithHosts[];
   selfiePreview: string | null;
-  isScanning: boolean;
   isSubmitting: boolean;
   agreedToTerms: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
   selfieInputRef: React.RefObject<HTMLInputElement | null>;
   dropdownRef: React.RefObject<HTMLDivElement | null>;
-  onImageCapture: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (event: React.FormEvent) => void;
   onNewVisitorChange: (visitor: VisitorFormData) => void;
   onHostSearchQueryChange: (value: string) => void;
