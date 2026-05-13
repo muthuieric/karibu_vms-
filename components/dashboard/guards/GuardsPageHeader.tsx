@@ -29,8 +29,8 @@ export default function GuardsPageHeader({ onAddGuard, isAddGuardDisabled }: Gua
           <Plus className="mr-2 h-5 w-5" /> Add New Guard
         </Button>
         {isAddGuardDisabled && (
-          <p className="text-xs text-amber-600 font-medium max-w-xs text-right">
-            Basic plan is limited to 1 guard account. Please contact support to upgrade to Premium.
+          <p className="text-red-500 text-xs">
+            Basic plan is limited to 1 guard. Upgrade to Premium for unlimited guards.
           </p>
         )}
       </div>

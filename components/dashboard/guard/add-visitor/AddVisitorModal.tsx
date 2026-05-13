@@ -281,6 +281,32 @@ export default function AddVisitorModal({
 
       if (error) throw error;
 
+      console.log("Checking email trigger - Plan Tier:", planTier, "Host ID:", newVisitor.host_id);
+      if (askHost && newVisitor.host_id && planTier !== "basic") {
+        const selectedHost = hosts.find((h) => h.id === newVisitor.host_id);
+
+        if (selectedHost && selectedHost.email) {
+          try {
+            await fetch('/api/notify-host', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                hostEmail: selectedHost.email,
+                hostName: selectedHost.name,
+                visitorName: newVisitor.name,
+                visitorPhone: finalPhone || 'Not provided',
+                companyName: companyName,
+                purpose: newVisitor.purpose || 'Not stated',
+                visitorPhoto: uploadedPhotoUrl,
+                companyId: companyId
+              })
+            });
+          } catch (notifyError) {
+            console.error("Failed to trigger host notification:", notifyError);
+          }
+        }
+      }
+
       // Reset form
       setNewVisitor({ name: "", phone: "", id_number: "", doc_type: "National ID", host_id: "", purpose: "", vehicle_reg: "" });
       setHostSearchQuery("");
@@ -301,6 +327,7 @@ export default function AddVisitorModal({
 
   return (
     <AddVisitorForm
+      planTier={planTier}
       askPhone={askPhone}
       askId={askId}
       askHost={askHost}

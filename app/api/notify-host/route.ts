@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, data });
 
   } catch (error: any) {
-    console.error("Server Error:", error);
+    console.error("RESEND API ERROR:", error);
     return NextResponse.json({ error: "Failed to send notification email." }, { status: 500 });
   }
 }

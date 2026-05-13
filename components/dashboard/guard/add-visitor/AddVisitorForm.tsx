@@ -28,6 +28,7 @@ type VisitorFormData = {
 };
 
 type AddVisitorFormProps = {
+  planTier: string;
   askPhone: boolean;
   askId: boolean;
   askHost: boolean;
@@ -60,6 +61,7 @@ type AddVisitorFormProps = {
 };
 
 export default function AddVisitorForm({
+  planTier,
   askPhone,
   askId,
   askHost,
@@ -109,18 +111,31 @@ export default function AddVisitorForm({
             onChange={onImageCapture}
           />
 
-          <Button
-            variant="outline"
-            className="w-full mb-6 border-dashed border-2 py-8 text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isScanning}
-          >
-            {isScanning ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing ID Card...</>
-            ) : (
-              <><ScanLine className="mr-2 h-5 w-5" /> Auto-Fill using ID Card</>
-            )}
-          </Button>
+          {planTier !== "basic" ? (
+            <Button
+              variant="outline"
+              className="w-full mb-6 border-dashed border-2 py-8 text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isScanning}
+            >
+              {isScanning ? (
+                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing ID Card...</>
+              ) : (
+                <><ScanLine className="mr-2 h-5 w-5" /> Auto-Fill using ID Card</>
+              )}
+            </Button>
+          ) : (
+            <div className="w-full mb-6 relative">
+              <Button
+                variant="outline"
+                className="w-full border-dashed border-2 py-8 text-zinc-400 border-zinc-200 bg-zinc-50 hover:bg-zinc-50 cursor-not-allowed"
+                disabled
+              >
+                <ScanLine className="mr-2 h-5 w-5" /> Auto-Fill using ID Card
+              </Button>
+              <p className="text-center text-xs text-amber-600 mt-2 font-medium">ID Scanning is a Premium feature.</p>
+            </div>
+          )}
 
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>

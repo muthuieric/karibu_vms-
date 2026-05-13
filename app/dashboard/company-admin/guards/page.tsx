@@ -62,6 +62,16 @@ export default function ManageGuards() {
       if (profileData?.company_id) {
         setCompanyId(profileData.company_id);
         
+        // Fetch company plan tier
+        const { data: companyData } = await supabase
+          .from("companies")
+          .select("plan_tier")
+          .eq("id", profileData.company_id)
+          .single();
+        if (companyData) {
+          setPlanTier(companyData.plan_tier || "basic");
+        }
+
         // 2. Fetch all profiles that belong to this building AND have the 'guard' role
         const { data: guardsData } = await supabase
           .from("profiles")

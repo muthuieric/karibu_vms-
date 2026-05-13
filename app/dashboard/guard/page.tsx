@@ -31,6 +31,7 @@ type Visitor = {
   otp_code?: string;
   company_id: string;
   photo_url?: string;
+  host_id?: string | null;
   host_name?: string;
   host_confirmed?: boolean; 
   purpose?: string;
@@ -45,6 +46,7 @@ export default function GuardDashboard() {
   const [loading, setLoading] = useState(true);
   
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>("");
   const [planTier, setPlanTier] = useState<string>("basic"); // NEW: Track the plan
   const [guardGateId, setGuardGateId] = useState<string | null>(null);
   const [guardGateName, setGuardGateName] = useState<string>("All Gates");
@@ -95,13 +97,20 @@ export default function GuardDashboard() {
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("company_id, gate_id")
+        .select("company_id, gate_id, is_locked")
         .eq("id", authData.user.id)
         .single();
 
       if (profileError || !profileData?.company_id) {
         console.error("Could not load guard profile:", profileError);
         setLoading(false);
+        return;
+      }
+
+      if (profileData.is_locked) {
+        alert("Account locked due to plan downgrade.");
+        await supabase.auth.signOut();
+        window.location.href = "/login";
         return;
       }
 
@@ -123,11 +132,12 @@ export default function GuardDashboard() {
 
       const { data: companyData } = await supabase
         .from("companies")
-        .select("require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier")
+        .select("name, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier")
         .eq("id", currentCompanyId)
         .single();
         
       if (companyData) {
+        setCompanyName(companyData.name || "");
         setPlanTier(companyData.plan_tier || "basic");
         setRequirePhoto(companyData.require_photo || false);
         setAskPhone(companyData.ask_phone !== false);
@@ -244,6 +254,30 @@ export default function GuardDashboard() {
       checked_in_at: new Date().toISOString(),
       custom_data: { ...(visitor.custom_data || {}), manual_override: "true" }
     }).eq("id", visitor.id);
+
+    if (visitor.host_id && planTier !== "basic") {
+      const { data: host } = await supabase.from('hosts').select('email, name').eq('id', visitor.host_id).single();
+      if (host && host.email) {
+        try {
+          await fetch('/api/notify-host', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              hostEmail: host.email,
+              hostName: host.name,
+              visitorName: visitor.name,
+              visitorPhone: visitor.phone || 'Not provided',
+              companyName: companyName,
+              purpose: visitor.purpose || 'Not stated',
+              visitorPhoto: visitor.photo_url || null,
+              companyId: companyId
+            })
+          });
+        } catch (notifyError) {
+          console.error("Failed to trigger host notification:", notifyError);
+        }
+      }
+    }
   };
 
   // --- PREMIUM/CUSTOM ONLY: OTP LOGIC ---

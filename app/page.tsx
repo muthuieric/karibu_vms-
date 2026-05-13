@@ -10,7 +10,8 @@ import {
   Zap,
   ShieldAlert,
   Building2,
-  Bell
+  Bell,
+  CheckCircle2
 } from "lucide-react";
 import SmartChatbot from "@/components/SmartChatbot";
 import { Button } from "@/components/ui/button";
@@ -247,7 +248,65 @@ export default function LandingPage() {
           </div>
         </div>
 
-       
+        {/* --- PRICING SECTION --- */}
+        <div id="pricing" className="mt-32 w-full text-center">
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">Simple, Transparent Pricing</h2>
+          <p className="text-slate-500 font-medium text-lg max-w-2xl mx-auto mb-16">Choose the plan that fits your facility's security needs.</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto text-left">
+            {/* Basic Plan */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 relative">
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Basic Plan</h3>
+              <p className="text-slate-500 font-medium mb-6">For small offices and basic entry logs.</p>
+              <div className="text-4xl font-black text-slate-900 mb-8">Free <span className="text-lg font-medium text-slate-500">/ forever</span></div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Maximum 1 Guard Account
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Direct Guard Approval
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> Static Printed QR Codes
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-slate-700">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-indigo-600" /></div> No Photo/ID Scanning
+                </li>
+              </ul>
+              <Link href="/register">
+                <Button className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-xl">Get Started</Button>
+              </Link>
+            </div>
+
+            {/* Premium Plan */}
+            <div className="bg-indigo-600 p-8 rounded-3xl border border-indigo-700 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none"><Zap size={100} /></div>
+              <h3 className="text-2xl font-bold text-white mb-2 relative z-10">Premium Plan</h3>
+              <p className="text-indigo-100 font-medium mb-6 relative z-10">For high-security facilities and estates.</p>
+              <div className="text-4xl font-black text-white mb-8 relative z-10">Custom <span className="text-lg font-medium text-indigo-200">/ volume-based</span></div>
+              <ul className="space-y-4 mb-8 relative z-10">
+                <li className="flex items-center gap-3 font-semibold text-white">
+                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> Unlimited Guard Accounts
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-white">
+                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> SMS OTP & Host Emails
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-white">
+                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> GPS Geofencing
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-white">
+                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> 5-Min Dynamic QR Codes
+                </li>
+                <li className="flex items-center gap-3 font-semibold text-white">
+                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-white" /></div> Guard AI ID Scanning
+                </li>
+              </ul>
+              <Link href="/register">
+                <Button className="w-full h-12 bg-white hover:bg-zinc-100 text-indigo-600 rounded-xl relative z-10">Contact Sales</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
 
       </main>
 
