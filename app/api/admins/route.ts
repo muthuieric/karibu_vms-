@@ -42,10 +42,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: "Company Admin account created successfully." });
 
-  } catch (error: any) {
-    console.error("Admin Creation Error:", error.message || error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to create admin account";
+    console.error("Admin Creation Error:", message);
     return NextResponse.json(
-      { error: error.message || "Failed to create admin account" }, 
+      { error: message },
       { status: 500 }
     );
   }

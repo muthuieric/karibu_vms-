@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import Africastalking from "africastalking";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const rateLimitResponse = checkRateLimit(request, { keyPrefix: "sms" });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // 1. --- DIAGNOSTIC LOGS ---
     console.log("--- DIAGNOSTIC CHECK ---");
@@ -62,10 +66,11 @@ export async function POST(request: Request) {
     console.log("SMS Success:", response);
     return NextResponse.json({ success: true, data: response });
     
-  } catch (error: any) {
-    console.error("SMS Error:", error.message || error);
+  } catch (error: unknown) {
+    const details = error instanceof Error ? error.message : "Unknown SMS error";
+    console.error("SMS Error:", details);
     return NextResponse.json(
-      { error: "Failed to send SMS", details: error.message },
+      { error: "Failed to send SMS", details },
       { status: 500 }
     );
   }

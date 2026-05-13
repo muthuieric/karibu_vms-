@@ -2,12 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, AlertOctagon, CheckCircle2, LogOut, KeyRound } from "lucide-react";
+
+type CheckoutVisitor = {
+  name: string;
+  phone?: string | null;
+  photo_url?: string | null;
+  created_at?: string | null;
+};
 
 export default function PublicGateCheckOut() {
   const params = useParams();
@@ -23,20 +30,18 @@ export default function PublicGateCheckOut() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   // 2-Step State
-  const [visitorDetails, setVisitorDetails] = useState<any | null>(null);
+  const [visitorDetails, setVisitorDetails] = useState<CheckoutVisitor | null>(null);
   const [checkedOutName, setCheckedOutName] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCompanyData = async () => {
       if (!companyId) return;
 
-      const { data: company, error } = await supabase
-        .from("companies")
-        .select("name, is_locked, subscription_ends_at")
-        .eq("id", companyId)
-        .single();
+      const companyResponse = await fetch(`/api/public/company?company_id=${companyId}`);
+      const companyJson = await companyResponse.json();
+      const company = companyJson.data;
 
-      if (error || !company) {
+      if (!companyResponse.ok || !company) {
         setAccessDenied(true);
         setLoading(false);
         return;
@@ -73,8 +78,8 @@ export default function PublicGateCheckOut() {
       // Success! Show details on screen.
       setVisitorDetails(result.visitor);
 
-    } catch (err: any) {
-      setErrorMsg(err.message);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Failed to find visit.");
     } finally {
       setIsSubmitting(false);
     }
@@ -103,8 +108,8 @@ export default function PublicGateCheckOut() {
       // Success! Show goodbye screen.
       setCheckedOutName(result.visitorName || visitorDetails.name);
 
-    } catch (err: any) {
-      setErrorMsg(err.message);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Failed to check out.");
     } finally {
       setIsSubmitting(false);
     }
@@ -128,7 +133,7 @@ export default function PublicGateCheckOut() {
           <AlertOctagon className="w-16 h-16 text-red-50 mx-auto mb-4" />
           <CardTitle className="text-2xl font-bold text-white mb-2">System Unavailable</CardTitle>
           <CardDescription className="text-zinc-400 text-base">
-            This building's self-service system is currently offline. Please speak directly to the security guard at the gate to check out.
+            This building&apos;s self-service system is currently offline. Please speak directly to the security guard at the gate to check out.
           </CardDescription>
         </Card>
       </div>
@@ -199,7 +204,7 @@ export default function PublicGateCheckOut() {
                 {/* Image display if available */}
                 {visitorDetails.photo_url && (
                   <div className="flex justify-center mb-4">
-                    <img src={visitorDetails.photo_url} alt="Visitor" className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200 shadow-sm" />
+                    <Image src={visitorDetails.photo_url} alt="Visitor" width={80} height={80} unoptimized className="w-20 h-20 rounded-full object-cover border-2 border-zinc-200 shadow-sm" />
                   </div>
                 )}
 

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -9,125 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertOctagon, Flag, Loader2, Plus, X } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
+import { useCompanyBlacklist } from "@/hooks/useCompanyBlacklist";
 import "react-phone-input-2/lib/style.css";
 
-type RedFlag = {
-  id: string;
-  name: string;
-  id_number: string;
-  phone: string;
-  reason: string;
-};
-
 export default function BlacklistPage() {
-  const [companyId, setCompanyId] = useState<string | null>(null);
-  const [redFlags, setRedFlags] = useState<RedFlag[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Red Flag Form State
+  const blacklist = useCompanyBlacklist();
   const [showRedFlagModal, setShowRedFlagModal] = useState(false);
-  const [isSubmittingRedFlag, setIsSubmittingRedFlag] = useState(false);
-  const [newRedFlag, setNewRedFlag] = useState({ name: "", id_number: "", phone: "", reason: "" });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    const { data: authData } = await supabase.auth.getUser();
-    
-    if (authData?.user) {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("company_id")
-        .eq("id", authData.user.id)
-        .single();
-
-      if (profileData?.company_id) {
-        setCompanyId(profileData.company_id);
-        
-        // Fetch via secure API Route instead of direct client-side query
-        try {
-          const res = await fetch(`/api/red-flags?company_id=${profileData.company_id}`);
-          if (res.ok) {
-            const json = await res.json();
-            if (json.data) setRedFlags(json.data);
-          }
-        } catch (err) {
-          console.error("Error fetching red flags:", err);
-        }
-      }
-    }
-    setLoading(false);
-  };
-
-  const handleCreateRedFlag = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!companyId) return;
-
-    setIsSubmittingRedFlag(true);
-    try {
-      // Format phone number before saving
-      let finalPhone = newRedFlag.phone;
-      if (finalPhone && !finalPhone.startsWith('+')) {
-        finalPhone = `+${finalPhone}`;
-      }
-
-      // Securely create via API route to bypass RLS blocks
-      const response = await fetch('/api/red-flags', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          company_id: companyId,
-          name: newRedFlag.name,
-          id_number: newRedFlag.id_number,
-          phone: finalPhone,
-          reason: newRedFlag.reason
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error);
-      }
-
-      setNewRedFlag({ name: "", id_number: "", phone: "", reason: "" });
-      setShowRedFlagModal(false);
-      fetchData(); // Refresh list
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message || "Failed to add red flag. Make sure the API route exists.");
-    } finally {
-      setIsSubmittingRedFlag(false);
-    }
-  };
-
-  const handleDeleteRedFlag = async (id: string, name: string) => {
-    const confirmDelete = window.confirm(`Are you sure you want to remove the red flag for ${name}? They will be allowed to enter the building again.`);
-    if (!confirmDelete) return;
-
-    try {
-      // Securely delete via API route
-      const response = await fetch(`/api/red-flags?id=${id}`, {
-        method: 'DELETE',
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error);
-      }
-
-      setRedFlags((prev) => prev.filter((r) => r.id !== id));
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message || "Failed to remove red flag.");
-    }
-  };
-
-  if (!companyId && !loading) {
+  if (!blacklist.companyId && !blacklist.loading) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
         <div className="bg-red-50 text-red-700 p-6 rounded-xl border border-red-200 text-center max-w-md shadow-sm">
@@ -166,9 +54,9 @@ export default function BlacklistPage() {
             <CardDescription>These individuals will be strictly prohibited from passing the security gates.</CardDescription>
           </CardHeader>
           <CardContent className="p-0 sm:p-6 sm:pt-6 bg-zinc-50/30">
-            {loading ? (
+            {blacklist.loading ? (
                <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-zinc-400" /></div>
-            ) : redFlags.length === 0 ? (
+            ) : blacklist.redFlags.length === 0 ? (
                <div className="text-center py-16 text-zinc-500 bg-white sm:rounded-xl border border-dashed border-zinc-200 m-0 sm:m-2">
                  <div className="bg-zinc-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-100 shadow-sm">
                     <Flag className="w-8 h-8 text-zinc-300" />
@@ -189,7 +77,7 @@ export default function BlacklistPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {redFlags.map((flag) => (
+                    {blacklist.redFlags.map((flag) => (
                       <TableRow key={flag.id} className="hover:bg-red-50/30 transition-colors">
                         <TableCell className="font-bold text-zinc-900 whitespace-nowrap pl-4 sm:pl-6">{flag.name}</TableCell>
                         <TableCell className="font-mono text-zinc-600 whitespace-nowrap bg-zinc-50/50">{flag.id_number}</TableCell>
@@ -199,7 +87,7 @@ export default function BlacklistPage() {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => handleDeleteRedFlag(flag.id, flag.name)}
+                            onClick={() => blacklist.handleDeleteRedFlag(flag.id, flag.name)}
                             className="h-8 px-3 text-zinc-600 border-zinc-200 hover:bg-zinc-100 hover:text-zinc-900 transition-colors shadow-sm"
                             title="Remove from Blacklist"
                           >
@@ -235,14 +123,14 @@ export default function BlacklistPage() {
               <CardDescription className="text-zinc-500">Prevent a specific individual from registering at any gate.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCreateRedFlag} className="space-y-4">
+              <form onSubmit={(event) => blacklist.handleCreateRedFlag(event, () => setShowRedFlagModal(false))} className="space-y-4">
                 <div>
                   <Label className="font-semibold text-zinc-700">Visitor Name <span className="text-red-500">*</span></Label>
                   <Input 
                     required 
                     placeholder="e.g. John Doe" 
-                    value={newRedFlag.name} 
-                    onChange={(e) => setNewRedFlag({...newRedFlag, name: e.target.value})} 
+                    value={blacklist.newRedFlag.name} 
+                    onChange={(e) => blacklist.setNewRedFlag({...blacklist.newRedFlag, name: e.target.value})} 
                     className="h-11 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-red-600 transition-colors"
                   />
                 </div>
@@ -253,8 +141,8 @@ export default function BlacklistPage() {
                     <Input 
                       required 
                       placeholder="e.g. 12345678" 
-                      value={newRedFlag.id_number} 
-                      onChange={(e) => setNewRedFlag({...newRedFlag, id_number: e.target.value})} 
+                      value={blacklist.newRedFlag.id_number} 
+                      onChange={(e) => blacklist.setNewRedFlag({...blacklist.newRedFlag, id_number: e.target.value})} 
                       className="h-11 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-red-600 transition-colors"
                     />
                   </div>
@@ -262,8 +150,8 @@ export default function BlacklistPage() {
                     <Label className="font-semibold text-zinc-700">Phone Number <span className="text-red-500">*</span></Label>
                     <PhoneInput 
                       country="ke" 
-                      value={newRedFlag.phone} 
-                      onChange={phone => setNewRedFlag({ ...newRedFlag, phone })} 
+                      value={blacklist.newRedFlag.phone} 
+                      onChange={phone => blacklist.setNewRedFlag({ ...blacklist.newRedFlag, phone })} 
                       inputClass="!w-full !h-11 !text-zinc-900 !bg-zinc-50 !rounded-md !border !border-zinc-300 focus:!ring-2 focus:!ring-red-600 px-3" 
                       containerClass="w-full" 
                       buttonClass="!border-zinc-300 !bg-zinc-50 !rounded-l-md hover:!bg-zinc-100"
@@ -280,15 +168,15 @@ export default function BlacklistPage() {
                   <Input 
                     required 
                     placeholder="e.g. Hostile behavior, banned by management" 
-                    value={newRedFlag.reason} 
-                    onChange={(e) => setNewRedFlag({...newRedFlag, reason: e.target.value})} 
+                    value={blacklist.newRedFlag.reason} 
+                    onChange={(e) => blacklist.setNewRedFlag({...blacklist.newRedFlag, reason: e.target.value})} 
                     className="h-11 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-red-600 transition-colors"
                   />
                 </div>
                 
                 <div className="pt-4">
-                  <Button type="submit" variant="destructive" className="w-full h-12 text-base font-bold shadow-sm transition-transform active:scale-[0.98]" disabled={isSubmittingRedFlag}>
-                    {isSubmittingRedFlag ? (
+                  <Button type="submit" variant="destructive" className="w-full h-12 text-base font-bold shadow-sm transition-transform active:scale-[0.98]" disabled={blacklist.isSubmittingRedFlag}>
+                    {blacklist.isSubmittingRedFlag ? (
                       <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Saving...</>
                     ) : (
                       "Add to Blacklist"

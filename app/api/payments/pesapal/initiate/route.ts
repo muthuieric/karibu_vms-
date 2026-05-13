@@ -143,8 +143,9 @@ export async function POST(req: Request) {
       throw new Error("Invalid response from Pesapal");
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to initiate payment";
     console.error("Pesapal Initiate Error:", error);
-    return NextResponse.json({ error: error.message || "Failed to initiate payment" }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

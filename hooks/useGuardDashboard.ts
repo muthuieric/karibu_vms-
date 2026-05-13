@@ -1,0 +1,288 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { filterGuardVisitors, getDynamicGateQrUrl, printGateQrPoster } from "@/lib/guard-dashboard";
+import type { CustomField, Visitor } from "@/types/guard";
+
+export function useGuardDashboard() {
+  const [visitors, setVisitors] = useState<Visitor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState("");
+  const [planTier, setPlanTier] = useState("basic");
+  const [guardGateId, setGuardGateId] = useState<string | null>(null);
+  const [guardGateName, setGuardGateName] = useState("All Gates");
+  const [customFieldLabels, setCustomFieldLabels] = useState<Record<string, string>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "checked_in">("all");
+  const [requirePhoto, setRequirePhoto] = useState(false);
+  const [askPhone, setAskPhone] = useState(true);
+  const [askId, setAskId] = useState(true);
+  const [askHost, setAskHost] = useState(false);
+  const [askPurpose, setAskPurpose] = useState(false);
+  const [askVehicle, setAskVehicle] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [sendingOtpId, setSendingOtpId] = useState<string | null>(null);
+  const [otpInput, setOtpInput] = useState("");
+  const [qrTimestamp, setQrTimestamp] = useState(0);
+
+  const tickQrTimestamp = () => setQrTimestamp(Date.now());
+
+  useEffect(() => {
+    const initializeDashboard = async () => {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !authData.user) {
+        console.error("Authentication error:", authError);
+        setLoading(false);
+        return undefined;
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("company_id, gate_id")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (profileError || !profileData?.company_id) {
+        console.error("Could not load guard profile:", profileError);
+        setLoading(false);
+        return undefined;
+      }
+
+      const currentCompanyId = profileData.company_id;
+      const currentGateId = profileData.gate_id;
+
+      setCompanyId(currentCompanyId);
+      setGuardGateId(currentGateId);
+
+      if (currentGateId) {
+        const { data: gateData } = await supabase.from("gates").select("name").eq("id", currentGateId).single();
+        if (gateData) setGuardGateName(gateData.name);
+      }
+
+      const { data: companyData } = await supabase
+        .from("companies")
+        .select("name, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier")
+        .eq("id", currentCompanyId)
+        .single();
+
+      if (companyData) {
+        setCompanyName(companyData.name || "");
+        setPlanTier(companyData.plan_tier || "basic");
+        setRequirePhoto(companyData.require_photo || false);
+        setAskPhone(companyData.ask_phone !== false);
+        setAskId(companyData.ask_id !== false);
+        setAskHost(companyData.ask_host || false);
+        setAskPurpose(companyData.ask_purpose || false);
+        setAskVehicle(companyData.ask_vehicle || false);
+        setIsLocked(companyData.is_locked || (companyData.subscription_ends_at ? new Date(companyData.subscription_ends_at) < new Date() : false));
+
+        if (companyData.custom_fields) {
+          const labelMap: Record<string, string> = {};
+          const fields = Array.isArray(companyData.custom_fields) ? (companyData.custom_fields as CustomField[]) : [];
+          fields.forEach((field) => {
+            labelMap[field.id] = field.label;
+          });
+          setCustomFieldLabels(labelMap);
+        }
+      }
+
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      try {
+        await supabase
+          .from("visitors")
+          .update({
+            status: "auto_checked_out",
+            checked_out_at: new Date().toISOString(),
+            otp_code: null,
+          })
+          .eq("company_id", currentCompanyId)
+          .in("status", ["pending", "checked_in"])
+          .lt("created_at", startOfToday.toISOString());
+      } catch (err) {
+        console.error("Auto-checkout script failed:", err);
+      }
+
+      let query = supabase
+        .from("visitors")
+        .select("*")
+        .eq("company_id", currentCompanyId)
+        .gte("created_at", startOfToday.toISOString())
+        .in("status", ["pending", "checked_in"])
+        .order("created_at", { ascending: false });
+
+      if (currentGateId) {
+        query = query.eq("gate_id", currentGateId);
+      }
+
+      const { data: visitorData, error: visitorError } = await query;
+      if (!visitorError) setVisitors(visitorData || []);
+      setLoading(false);
+
+      const channel = supabase
+        .channel("guard-dashboard")
+        .on("postgres_changes", { event: "*", schema: "public", table: "visitors" }, (payload) => {
+          if (payload.eventType === "INSERT") {
+            const newVisitor = payload.new as Visitor;
+            if (!currentGateId || newVisitor.gate_id === currentGateId) {
+              setVisitors((prev) => [newVisitor, ...prev]);
+            }
+          } else if (payload.eventType === "UPDATE") {
+            if (payload.new.status === "checked_out" || payload.new.status === "auto_checked_out") {
+              setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.new.id));
+            } else {
+              setVisitors((prev) =>
+                prev.map((visitor) => (visitor.id === payload.new.id ? (payload.new as Visitor) : visitor))
+              );
+            }
+          } else if (payload.eventType === "DELETE") {
+            setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.old.id));
+          }
+        })
+        .subscribe();
+
+      return () => supabase.removeChannel(channel);
+    };
+
+    const cleanup = initializeDashboard();
+    return () => {
+      cleanup.then((fn) => fn && fn());
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  };
+
+  const handleDirectApprove = async (visitor: Visitor) => {
+    await supabase.from("visitors").update({ status: "checked_in", checked_in_at: new Date().toISOString() }).eq("id", visitor.id);
+  };
+
+  const handleManualOverride = async (visitor: Visitor) => {
+    if (!window.confirm("Bypass OTP security and manually check in this visitor?")) return;
+
+    await supabase
+      .from("visitors")
+      .update({
+        status: "checked_in",
+        checked_in_at: new Date().toISOString(),
+        custom_data: { ...(visitor.custom_data || {}), manual_override: "true" },
+      })
+      .eq("id", visitor.id);
+
+    if (visitor.host_id && planTier !== "basic") {
+      const { data: host } = await supabase.from("hosts").select("email, name").eq("id", visitor.host_id).single();
+      if (host?.email) {
+        try {
+          await fetch("/api/notify-host", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              hostEmail: host.email,
+              hostName: host.name,
+              visitorName: visitor.name,
+              visitorPhone: visitor.phone || "Not provided",
+              companyName,
+              purpose: visitor.purpose || "Not stated",
+              visitorPhoto: visitor.photo_url || null,
+              companyId,
+            }),
+          });
+        } catch (notifyError) {
+          console.error("Failed to trigger host notification:", notifyError);
+        }
+      }
+    }
+  };
+
+  const handleSendOTP = async (id: string, phone: string) => {
+    if (sendingOtpId === id) return;
+    setSendingOtpId(id);
+
+    try {
+      let code = "";
+      let isUnique = false;
+      while (!isUnique) {
+        const randomValues = new Uint32Array(1);
+        crypto.getRandomValues(randomValues);
+        code = (1000 + (randomValues[0] % 9000)).toString();
+        const { data } = await supabase.from("visitors").select("id").eq("otp_code", code).in("status", ["pending", "checked_in"]);
+        if (!data || data.length === 0) isUnique = true;
+      }
+
+      await supabase.from("visitors").update({ otp_code: code }).eq("id", id);
+      setVerifyingId(id);
+      setOtpInput("");
+
+      await fetch("/api/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, message: `Your building entry code is: ${code}` }),
+      });
+    } catch (err) {
+      console.error(err);
+      alert("[SMS API Error] Could not send message. Please try again.");
+    } finally {
+      setSendingOtpId(null);
+    }
+  };
+
+  const handleConfirmOTP = async (visitor: Visitor) => {
+    const { data } = await supabase.from("visitors").select("otp_code").eq("id", visitor.id).single();
+    if (!data || data.otp_code !== otpInput.trim()) return alert("Incorrect OTP.");
+
+    await supabase.from("visitors").update({ status: "checked_in", checked_in_at: new Date().toISOString() }).eq("id", visitor.id);
+    setVerifyingId(null);
+  };
+
+  const handleCheckOut = async (id: string) => {
+    await supabase
+      .from("visitors")
+      .update({ status: "checked_out", checked_out_at: new Date().toISOString(), otp_code: null })
+      .eq("id", id);
+  };
+
+  return {
+    companyId,
+    visitors,
+    loading,
+    planTier,
+    guardGateId,
+    guardGateName,
+    customFieldLabels,
+    searchTerm,
+    statusFilter,
+    requirePhoto,
+    askPhone,
+    askId,
+    askHost,
+    askPurpose,
+    askVehicle,
+    isLocked,
+    verifyingId,
+    sendingOtpId,
+    otpInput,
+    filteredVisitors: filterGuardVisitors(visitors, searchTerm, statusFilter),
+    totalToday: visitors.length,
+    checkedInCount: visitors.filter((visitor) => visitor.status === "checked_in").length,
+    pendingCount: visitors.filter((visitor) => visitor.status === "pending").length,
+    setSearchTerm,
+    setStatusFilter,
+    setOtpInput,
+    setVerifyingId,
+    tickQrTimestamp,
+    handleLogout,
+    handleDirectApprove,
+    handleManualOverride,
+    handleSendOTP,
+    handleConfirmOTP,
+    handleCheckOut,
+    handlePrintQr: () => printGateQrPoster(window.location.origin, companyId, guardGateId, guardGateName),
+    getDynamicQrUrl: () => getDynamicGateQrUrl(window.location.origin, companyId, guardGateId, qrTimestamp),
+  };
+}

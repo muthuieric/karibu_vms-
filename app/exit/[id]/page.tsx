@@ -76,7 +76,7 @@ export default function ExitPassPage() {
           <AlertOctagon className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <CardTitle className="text-2xl font-bold text-white mb-2">Pass Not Found</CardTitle>
           <CardDescription className="text-zinc-400 text-base">
-            We couldn't find a valid exit pass for this link. The pass may have expired or the link is broken.
+            We couldn&apos;t find a valid exit pass for this link. The pass may have expired or the link is broken.
           </CardDescription>
         </Card>
       </div>

@@ -1,102 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LifeBuoy, Loader2, MessageSquare, Send, Clock, CheckCircle2 } from "lucide-react";
-
-type Ticket = {
-  id: string;
-  subject: string;
-  description: string;
-  status: "pending" | "in_progress" | "resolved";
-  created_at: string;
-};
+import { useCompanySupport } from "@/hooks/useCompanySupport";
 
 export default function SupportPage() {
-  const [companyId, setCompanyId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
+  const support = useCompanySupport();
 
-  // Form State
-  const [subject, setSubject] = useState("");
-  const [description, setDescription] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    const { data: authData } = await supabase.auth.getUser();
-    
-    if (authData?.user) {
-      setUserId(authData.user.id);
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("company_id")
-        .eq("id", authData.user.id)
-        .single();
-
-      if (profileData?.company_id) {
-        setCompanyId(profileData.company_id);
-        
-        try {
-          const res = await fetch(`/api/support?company_id=${profileData.company_id}`);
-          if (res.ok) {
-            const json = await res.json();
-            if (json.data) setTickets(json.data);
-          }
-        } catch (err) {
-          console.error("Error fetching tickets:", err);
-        }
-      }
-    }
-    setLoading(false);
-  };
-
-  const handleSubmitTicket = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!companyId || !userId || !subject.trim() || !description.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      const response = await fetch('/api/support', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          company_id: companyId,
-          created_by: userId,
-          subject,
-          description
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error);
-      }
-
-      setTickets([result.data, ...tickets]);
-      setSubject("");
-      setDescription("");
-      alert("Ticket submitted successfully! Our team will review it shortly.");
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message || "Failed to submit ticket.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (!companyId && !loading) {
+  if (!support.companyId && !support.loading) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
         <p className="text-red-500 font-medium">Profile error. Please log in again.</p>
@@ -131,14 +46,14 @@ export default function SupportPage() {
                 <CardDescription>Need assistance? Let us know below.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
-                <form onSubmit={handleSubmitTicket} className="space-y-4">
+                <form onSubmit={support.handleSubmitTicket} className="space-y-4">
                   <div>
                     <Label className="font-semibold text-zinc-700">Subject</Label>
                     <Input 
                       required 
                       placeholder="e.g. Need to add more gates" 
-                      value={subject} 
-                      onChange={(e) => setSubject(e.target.value)} 
+                      value={support.subject} 
+                      onChange={(e) => support.setSubject(e.target.value)} 
                       className="h-11 bg-zinc-50 mt-1.5"
                     />
                   </div>
@@ -147,13 +62,13 @@ export default function SupportPage() {
                     <textarea 
                       required 
                       placeholder="Please describe the issue or request in detail..." 
-                      value={description} 
-                      onChange={(e) => setDescription(e.target.value)} 
+                      value={support.description} 
+                      onChange={(e) => support.setDescription(e.target.value)} 
                       className="flex min-h-[120px] w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm shadow-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 mt-1.5 resize-none"
                     />
                   </div>
-                  <Button type="submit" className="w-full h-11 bg-zinc-900 hover:bg-zinc-800 text-white font-bold" disabled={isSubmitting || !subject.trim() || !description.trim()}>
-                    {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</> : <><Send className="w-4 h-4 mr-2" /> Submit Ticket</>}
+                  <Button type="submit" className="w-full h-11 bg-zinc-900 hover:bg-zinc-800 text-white font-bold" disabled={support.isSubmitting || !support.subject.trim() || !support.description.trim()}>
+                    {support.isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</> : <><Send className="w-4 h-4 mr-2" /> Submit Ticket</>}
                   </Button>
                 </form>
               </CardContent>
@@ -168,15 +83,15 @@ export default function SupportPage() {
                 <CardDescription>Track the status of your previous requests.</CardDescription>
               </CardHeader>
               <CardContent className="p-0 sm:p-6 sm:pt-6 bg-zinc-50/30">
-                {loading ? (
+                {support.loading ? (
                    <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-zinc-400" /></div>
-                ) : tickets.length === 0 ? (
+                ) : support.tickets.length === 0 ? (
                    <div className="text-center py-16 text-zinc-500 bg-white sm:rounded-xl border border-dashed border-zinc-200 m-0 sm:m-2">
                      <div className="bg-zinc-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-100 shadow-sm">
                         <MessageSquare className="w-8 h-8 text-zinc-300" />
                      </div>
                      <p className="font-bold text-zinc-800 text-lg">No support tickets.</p>
-                     <p className="text-sm mt-1 max-w-sm mx-auto text-zinc-500">You haven't submitted any requests yet.</p>
+                     <p className="text-sm mt-1 max-w-sm mx-auto text-zinc-500">You haven&apos;t submitted any requests yet.</p>
                    </div>
                 ) : (
                   <div className="rounded-none sm:rounded-md border-y sm:border overflow-x-auto bg-white shadow-sm">
@@ -189,7 +104,7 @@ export default function SupportPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {tickets.map((ticket) => (
+                        {support.tickets.map((ticket) => (
                           <TableRow key={ticket.id} className="hover:bg-zinc-50/50 transition-colors">
                             <TableCell className="pl-4 sm:pl-6 max-w-[250px]">
                               <p className="font-bold text-zinc-900 truncate">{ticket.subject}</p>

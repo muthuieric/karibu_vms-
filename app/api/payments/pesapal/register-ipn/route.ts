@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPesapalToken } from "@/lib/pesapal";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const token = await getPesapalToken();
     
@@ -28,7 +28,8 @@ export async function GET(req: Request) {
       pesapalResponse: data
     });
 
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to register IPN";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

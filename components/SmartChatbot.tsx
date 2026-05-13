@@ -3,9 +3,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import { MessageSquare, X, Send } from "lucide-react";
 
+type ChatMessage = {
+  id: number;
+  text: string;
+  sender: "bot" | "user";
+  action?: {
+    label: string;
+    url: string;
+  };
+};
+
 export default function SmartChatbot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     { id: 1, text: "Hello! 👋 I'm the karibu-vms assistant. Ask me about pricing, how it works, type 'register' to get started, or type 'support' to report an issue.", sender: "bot" }
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -35,9 +45,8 @@ export default function SmartChatbot() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = inputValue.trim();
+  const sendMessage = (messageText: string) => {
+    const text = messageText.trim();
     if (!text) return;
 
     // Add User Message immediately
@@ -174,6 +183,11 @@ export default function SmartChatbot() {
     }, 600);
   };
 
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(inputValue);
+  };
+
   const quickActions = [
     { label: "Report a Problem", text: "I need support for a problem" },
     { label: "Check Pricing", text: "Tell me about pricing" },
@@ -203,7 +217,7 @@ export default function SmartChatbot() {
 
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-zinc-50">
-            {messages.map((msg: any) => (
+            {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] flex flex-col gap-2 ${msg.sender === "user" ? "items-end" : "items-start"}`}>
                   <div className={`p-3.5 rounded-2xl text-sm font-medium leading-relaxed shadow-sm ${
@@ -238,8 +252,7 @@ export default function SmartChatbot() {
                   <button 
                     key={i} 
                     onClick={() => {
-                      setInputValue(action.text);
-                      handleSendMessage({ preventDefault: () => {} } as any);
+                      sendMessage(action.text);
                     }}
                     className="whitespace-nowrap px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold rounded-full transition-colors border border-zinc-200"
                   >

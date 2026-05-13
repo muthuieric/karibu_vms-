@@ -3,12 +3,21 @@
 import { useState, Suspense } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, UserCircle, Search, ShieldCheck, ArrowLeft } from "lucide-react";
+
+type HostConfirmVisitor = {
+  id: string;
+  name: string;
+  phone?: string | null;
+  purpose?: string | null;
+  photo_url?: string | null;
+  host_confirmed?: boolean | null;
+  status?: string | null;
+};
 
 function HostConfirmContent() {
   const params = useParams();
@@ -16,7 +25,7 @@ function HostConfirmContent() {
 
   const [step, setStep] = useState<1 | 2 | 3>(1); 
   const [otpInput, setOtpInput] = useState("");
-  const [visitor, setVisitor] = useState<any>(null);
+  const [visitor, setVisitor] = useState<HostConfirmVisitor | null>(null);
   
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -28,33 +37,36 @@ function HostConfirmContent() {
     setErrorMsg("");
     setIsLoading(true);
 
-    const { data, error } = await supabase
-      .from("visitors")
-      .select("*")
-      .eq("company_id", companyId)
-      .eq("otp_code", otpInput.trim())
-      .order("created_at", { ascending: false }) 
-      .limit(1)
-      .single();
+    try {
+      const response = await fetch("/api/host-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, otp: otpInput.trim(), action: "lookup" }),
+      });
+      const result = await response.json();
 
-    setIsLoading(false);
+      if (!response.ok || !result.visitor) {
+        throw new Error(result.error || "No active visitor found with this OTP code.");
+      }
 
-    if (error || !data) {
-      setErrorMsg("No active visitor found with this OTP code.");
-      return;
-    }
+      setVisitor(result.visitor);
 
-    setVisitor(data);
-
-    // If already confirmed by the host, skip to success
-    if (data.host_confirmed === true || data.status === "approved" || data.status === "visited") {
-      setStep(3);
-    } else {
-      setStep(2);
+      // If already confirmed by the host, skip to success
+      if (result.visitor.host_confirmed === true || result.visitor.status === "approved" || result.visitor.status === "visited") {
+        setStep(3);
+      } else {
+        setStep(2);
+      }
+    } catch (error: unknown) {
+      setErrorMsg(error instanceof Error ? error.message : "No active visitor found with this OTP code.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleConfirmVisit = async () => {
+    if (!visitor) return;
+
     setIsLoading(true);
     setErrorMsg("");
 
@@ -74,7 +86,7 @@ function HostConfirmContent() {
 
       // Success! Go to step 3
       setStep(3); 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setErrorMsg("Failed to confirm visit. Please try again.");
     } finally {

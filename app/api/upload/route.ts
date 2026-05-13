@@ -83,7 +83,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, url: publicUrl });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Cloudflare Upload Error:", error);
     return NextResponse.json({ success: false, error: "Failed to process upload" }, { status: 500 });
   }

@@ -1,0 +1,305 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { compressImage } from "@/lib/image-compression";
+import { getDistanceInMeters } from "@/lib/geo";
+
+type CustomField = { id: string; label: string; active: boolean };
+type Department = { id: string; name: string };
+type Host = { id: string; name: string; phone: string; email: string; department_id: string };
+type RedFlag = { id_number?: string | null; phone?: string | null; name?: string | null; reason?: string | null };
+
+export function usePublicGateCheckIn() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const companyId = params.companyId as string;
+  const urlGateId = searchParams.get("gateId");
+
+  const [loading, setLoading] = useState(true);
+  const [companyName, setCompanyName] = useState("");
+  const [planTier, setPlanTier] = useState("basic");
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [isQrExpired, setIsQrExpired] = useState(false);
+  const [geofenceError, setGeofenceError] = useState<string | null>(null);
+  const [rules, setRules] = useState({
+    requirePhoto: false,
+    askPhone: true,
+    askId: true,
+    askHost: false,
+    askPurpose: false,
+    askVehicle: false,
+  });
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newVisitor, setNewVisitor] = useState({
+    name: "",
+    phone: "",
+    id_number: "",
+    doc_type: "National ID",
+    host_id: "",
+    purpose: "",
+    vehicle_reg: "",
+  });
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [hosts, setHosts] = useState<Host[]>([]);
+  const [hostSearchQuery, setHostSearchQuery] = useState("");
+  const [isHostDropdownOpen, setIsHostDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
+  const selfieInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsHostDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      if (!companyId) return;
+
+      const tParam = searchParams.get("t");
+      if (tParam) {
+        const qrTime = parseInt(tParam, 10);
+        if (Date.now() - qrTime > 300000) {
+          setIsQrExpired(true);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const companyResponse = await fetch(`/api/public/company?company_id=${companyId}`);
+      const companyJson = await companyResponse.json();
+      const company = companyJson.data;
+
+      if (!companyResponse.ok || !company) {
+        setAccessDenied(true);
+        setLoading(false);
+        return;
+      }
+
+      setCompanyName(company.name);
+      setPlanTier(company.plan_tier || "basic");
+      setRules({
+        requirePhoto: company.plan_tier === "basic" ? false : company.require_photo || false,
+        askPhone: company.ask_phone !== false,
+        askId: company.ask_id !== false,
+        askHost: company.ask_host || false,
+        askPurpose: company.ask_purpose || false,
+        askVehicle: company.ask_vehicle || false,
+      });
+
+      if (company.custom_fields) {
+        setCustomFields((company.custom_fields as CustomField[]).filter((field) => field.active));
+      }
+
+      try {
+        const deptsRes = await fetch(`/api/departments?company_id=${companyId}`);
+        if (deptsRes.ok) {
+          const deptsJson = await deptsRes.json();
+          if (deptsJson.data) setDepartments(deptsJson.data);
+        }
+
+        const hostsRes = await fetch(`/api/hosts?company_id=${companyId}`);
+        if (hostsRes.ok) {
+          const hostsJson = await hostsRes.json();
+          if (hostsJson.data) setHosts(hostsJson.data);
+        }
+      } catch (err) {
+        console.error("Error fetching hosts/departments", err);
+      }
+
+      if (company.enable_geofence && company.plan_tier !== "basic" && company.lat && company.lng) {
+        if (!navigator.geolocation) {
+          setGeofenceError("Geolocation is not supported by your browser. Please register manually with the guard.");
+          setLoading(false);
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const dist = getDistanceInMeters(pos.coords.latitude, pos.coords.longitude, company.lat!, company.lng!);
+            const maxRadius = company.geofence_radius || 200;
+
+            if (dist > maxRadius) {
+              setGeofenceError(`You are too far from the building to register. Please move closer to the gate. (Currently ~${Math.round(dist)}m away, limit is ${maxRadius}m)`);
+            }
+            setLoading(false);
+          },
+          (err) => {
+            console.error("Geolocation error:", err);
+            setGeofenceError("Location access is required to check in. Please allow GPS access when prompted, or see the guard.");
+            setLoading(false);
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+      } else {
+        setLoading(false);
+      }
+    };
+
+    fetchCompanyData();
+  }, [companyId, searchParams]);
+
+  const filteredDepartments = useMemo(() => {
+    return departments
+      .map((department) => ({
+        ...department,
+        hosts: hosts.filter(
+          (host) => host.department_id === department.id && host.name.toLowerCase().includes(hostSearchQuery.toLowerCase())
+        ),
+      }))
+      .filter((department) => department.hosts.length > 0);
+  }, [departments, hostSearchQuery, hosts]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!agreedToTerms) return alert("You must agree to the Terms and Conditions to proceed.");
+    if (rules.requirePhoto && !selfieFile) return alert("A security photo is required by building management.");
+    if (rules.askHost && !newVisitor.host_id) return alert("Please select a valid host from the dropdown list.");
+
+    setIsSubmitting(true);
+    let uploadedPhotoUrl = null;
+
+    try {
+      let finalPhone = null;
+      if (rules.askPhone && newVisitor.phone) {
+        finalPhone = newVisitor.phone.startsWith("+") ? newVisitor.phone : `+${newVisitor.phone}`;
+      }
+
+      const redFlagsRes = await fetch(`/api/red-flags?company_id=${companyId}`);
+      if (redFlagsRes.ok) {
+        const redFlagsJson = await redFlagsRes.json();
+        const blacklisted = (redFlagsJson.data || []) as RedFlag[];
+        const isBanned = blacklisted.find((flag) => {
+          const matchId = rules.askId && flag.id_number && newVisitor.id_number && flag.id_number.trim() === newVisitor.id_number.trim();
+          const matchPhone = rules.askPhone && flag.phone && finalPhone && flag.phone.trim() === finalPhone.trim();
+          const matchName = flag.name && newVisitor.name && flag.name.trim().toLowerCase() === newVisitor.name.trim().toLowerCase();
+
+          if (matchId || matchPhone) return true;
+          if (matchName) {
+            const hasDifferentId = rules.askId && newVisitor.id_number && flag.id_number && newVisitor.id_number.trim() !== flag.id_number.trim();
+            const hasDifferentPhone = rules.askPhone && finalPhone && flag.phone && finalPhone.trim() !== flag.phone.trim();
+            return !(hasDifferentId || hasDifferentPhone);
+          }
+          return false;
+        });
+
+        if (isBanned) {
+          alert(`ACCESS DENIED: You are restricted from entering the premises.\n\nReason: ${isBanned.reason}`);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (selfieFile) {
+        const compressedFile = await compressImage(selfieFile);
+        const formDataPayload = new FormData();
+        formDataPayload.append("file", compressedFile);
+        formDataPayload.append("companyId", companyId);
+
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formDataPayload });
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) {
+          uploadedPhotoUrl = uploadData.url;
+        } else {
+          throw new Error(uploadData.error || uploadData.message || "Backend rejected the photo for an unknown reason.");
+        }
+      }
+
+      const { error } = await supabase.from("visitors").insert([
+        {
+          company_id: companyId,
+          name: newVisitor.name,
+          phone: finalPhone,
+          document_type: rules.askId ? newVisitor.doc_type : null,
+          id_number: rules.askId ? newVisitor.id_number : null,
+          host_id: rules.askHost && newVisitor.host_id ? newVisitor.host_id : null,
+          host_name: rules.askHost && newVisitor.host_id ? hostSearchQuery : null,
+          purpose: rules.askPurpose ? newVisitor.purpose : null,
+          vehicle_reg: rules.askVehicle ? newVisitor.vehicle_reg : null,
+          status: "pending",
+          photo_url: uploadedPhotoUrl,
+          custom_data: customAnswers,
+          gate_id: urlGateId || null,
+        },
+      ]);
+
+      if (error) throw error;
+
+      if (rules.askHost && newVisitor.host_id && planTier !== "basic") {
+        const selectedHost = hosts.find((host) => host.id === newVisitor.host_id);
+        if (selectedHost?.email) {
+          try {
+            await fetch("/api/notify-host", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                hostEmail: selectedHost.email,
+                hostName: selectedHost.name,
+                visitorName: newVisitor.name,
+                visitorPhone: finalPhone || "Not provided",
+                companyName,
+                purpose: newVisitor.purpose || "Not stated",
+                visitorPhoto: uploadedPhotoUrl,
+                companyId,
+              }),
+            });
+          } catch (notifyError) {
+            console.error("Failed to trigger host notification:", notifyError);
+          }
+        }
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : "Failed to submit registration.";
+      alert(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return {
+    loading,
+    companyName,
+    accessDenied,
+    submitted,
+    isQrExpired,
+    geofenceError,
+    rules,
+    customFields,
+    customAnswers,
+    newVisitor,
+    hostSearchQuery,
+    isHostDropdownOpen,
+    filteredDepartments,
+    selfiePreview,
+    isSubmitting,
+    agreedToTerms,
+    fileInputRef,
+    selfieInputRef,
+    dropdownRef,
+    handleSubmit,
+    setNewVisitor,
+    setHostSearchQuery,
+    setIsHostDropdownOpen,
+    setCustomAnswers,
+    setSelfieFile,
+    setSelfiePreview,
+    setAgreedToTerms,
+  };
+}

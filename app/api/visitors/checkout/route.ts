@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: "Checked out successfully", visitorName: activeVisitor.name });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Checkout API Error:", error);
     return NextResponse.json({ error: "Server Error during checkout" }, { status: 500 });
   }

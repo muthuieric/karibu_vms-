@@ -79,8 +79,9 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ success: false, status: statusData.payment_status_description });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Server Error";
     console.error("Verification Error:", error);
-    return NextResponse.json({ success: false, error: error.message || "Server Error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

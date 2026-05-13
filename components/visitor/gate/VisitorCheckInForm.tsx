@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Camera, Loader2, ScanLine, UserCircle } from "lucide-react";
+import { Camera, Loader2, UserCircle } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,13 +73,10 @@ export default function VisitorCheckInForm({
   isHostDropdownOpen,
   filteredDepartments,
   selfiePreview,
-  isScanning,
   isSubmitting,
   agreedToTerms,
-  fileInputRef,
   selfieInputRef,
   dropdownRef,
-  onImageCapture,
   onSubmit,
   onNewVisitorChange,
   onHostSearchQueryChange,

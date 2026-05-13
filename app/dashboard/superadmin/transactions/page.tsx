@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,6 +16,10 @@ type Transaction = {
   companies: { name: string } | null; // Supabase relation join
 };
 
+type TransactionRow = Omit<Transaction, "companies"> & {
+  companies: { name: string } | { name: string }[] | null;
+};
+
 export default function SuperadminTransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,8 +30,43 @@ export default function SuperadminTransactionsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Fetch all transactions and JOIN the company name automatically.
+      const { data: txData, error: txError } = await supabase
+        .from("transactions")
+        .select("id, created_at, amount, tracking_id, status, companies(name)")
+        .order("created_at", { ascending: false });
+
+      if (txError) throw txError;
+
+      // Safely map and cast the returned data to satisfy TypeScript
+      const formattedData: Transaction[] = ((txData || []) as TransactionRow[]).map((tx) => ({
+        id: tx.id,
+        created_at: tx.created_at,
+        amount: tx.amount,
+        tracking_id: tx.tracking_id,
+        status: tx.status,
+        // Safely extract the object if Supabase returns an array
+        companies: Array.isArray(tx.companies) ? tx.companies[0] : tx.companies,
+      }));
+
+      setTransactions(formattedData);
+    } catch (err: unknown) {
+      console.error("Error fetching master transactions:", err);
+      setError(err instanceof Error ? err.message : "An error occurred while loading the global transaction history.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchTransactions();
+    queueMicrotask(() => {
+      void fetchTransactions();
+    });
 
     // Set up real-time listener for new transactions across the entire platform
     const channel = supabase
@@ -48,40 +87,7 @@ export default function SuperadminTransactionsPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
-
-  const fetchTransactions = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Fetch all transactions and JOIN the company name automatically.
-      const { data: txData, error: txError } = await supabase
-        .from("transactions")
-        .select("id, created_at, amount, tracking_id, status, companies(name)")
-        .order("created_at", { ascending: false });
-
-      if (txError) throw txError;
-
-      // Safely map and cast the returned data to satisfy TypeScript
-      const formattedData: Transaction[] = (txData || []).map((tx: any) => ({
-        id: tx.id,
-        created_at: tx.created_at,
-        amount: tx.amount,
-        tracking_id: tx.tracking_id,
-        status: tx.status,
-        // Safely extract the object if Supabase returns an array
-        companies: Array.isArray(tx.companies) ? tx.companies[0] : tx.companies,
-      }));
-
-      setTransactions(formattedData);
-    } catch (err: any) {
-      console.error("Error fetching master transactions:", err);
-      setError(err.message || "An error occurred while loading the global transaction history.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchTransactions]);
 
   // --- FILTER LOGIC ---
   const filteredTransactions = transactions.filter((tx) => {
@@ -194,7 +200,7 @@ export default function SuperadminTransactionsPage() {
           ) : filteredTransactions.length === 0 ? (
             <div className="text-center py-12 text-zinc-500 px-4">
               <p className="font-bold text-zinc-900">No matching results</p>
-              <p className="text-sm mt-1">Try adjusting your search or filters to find what you're looking for.</p>
+              <p className="text-sm mt-1">Try adjusting your search or filters to find what you&apos;re looking for.</p>
             </div>
           ) : (
             <>

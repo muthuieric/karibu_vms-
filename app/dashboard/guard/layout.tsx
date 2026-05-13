@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { AlertOctagon, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertOctagon } from "lucide-react";
 
 export default function GuardLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
@@ -44,11 +41,6 @@ export default function GuardLayout({ children }: { children: React.ReactNode })
 
     verifyGuardAccess();
   }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
 
   if (loading) {
     return (

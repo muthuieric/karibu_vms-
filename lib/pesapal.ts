@@ -1,3 +1,26 @@
+type PesapalOrderData = {
+  id: string;
+  currency: string;
+  amount: number;
+  description: string;
+  callback_url: string;
+  notification_id?: string;
+  billing_address: {
+    email_address: string;
+    phone_number: string;
+    country_code: string;
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+    line_1: string;
+    line_2: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    zip_code: string;
+  };
+};
+
 export async function getPesapalToken() {
   const response = await fetch(`${process.env.PESAPAL_BASE_URL}/api/Auth/RequestToken`, {
     method: "POST",
@@ -33,7 +56,7 @@ export async function getTransactionStatus(orderTrackingId: string) {
 
 // --- NEW FUNCTION ADDED BELOW ---
 // This takes the order data from your initiate route and securely sends it to Pesapal
-export async function submitOrder(orderData: any) {
+export async function submitOrder(orderData: PesapalOrderData) {
   // 1. Get the secure auth token first
   const token = await getPesapalToken();
 

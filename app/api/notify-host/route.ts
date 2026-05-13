@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  const rateLimitResponse = checkRateLimit(request, { keyPrefix: "notify-host" });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -71,7 +75,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, data });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("RESEND API ERROR:", error);
     return NextResponse.json({ error: "Failed to send notification email." }, { status: 500 });
   }

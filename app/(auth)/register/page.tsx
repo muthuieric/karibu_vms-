@@ -1,66 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Loader2, Building2, User, Mail, Lock, ArrowRight, ShieldCheck, Phone, MapPin, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useRegisterPage } from "@/hooks/useAuthPages";
 
 export default function RegisterPage() {
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    companyName: "",
-    address: "",
-    fullName: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    planTier: "basic", // NEW: Added plan tracking state
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // 1. Check if passwords match
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match. Please try again.");
-      return;
-    }
-
-    // 2. ENHANCED SECURITY: Check password strength
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(formData.password)) {
-      alert("Weak Password: It must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (data.error) {
-        alert(`Registration failed: ${data.error}`);
-      } else {
-        setSuccess(true);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("A network error occurred. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { loading, success, formData, setFormData, handleSubmit } = useRegisterPage();
 
   if (success) {
     return (

@@ -92,10 +92,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: "Guard account created successfully." });
 
-  } catch (error: any) {
-    console.error("Guard Creation Error:", error.message || error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to create guard account";
+    console.error("Guard Creation Error:", message);
     return NextResponse.json(
-      { error: error.message || "Failed to create guard account" }, 
+      { error: message },
       { status: 500 }
     );
   }
@@ -136,10 +137,11 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true, message: "Guard account permanently deleted." });
 
-  } catch (error: any) {
-    console.error("Guard Deletion Error:", error.message || error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to delete guard account";
+    console.error("Guard Deletion Error:", message);
     return NextResponse.json(
-      { error: error.message || "Failed to delete guard account" }, 
+      { error: message },
       { status: 500 }
     );
   }
@@ -183,8 +185,9 @@ export async function PUT(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ success: true, message: "Guard profile updated successfully." });
-  } catch (error: any) {
-    console.error("Guard Update Error:", error.message || error);
-    return NextResponse.json({ error: error.message || "Failed to update guard account" }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to update guard account";
+    console.error("Guard Update Error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

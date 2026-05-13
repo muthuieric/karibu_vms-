@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -112,7 +113,7 @@ export default function QRCodeGenerator() {
         <div className="border-b border-zinc-200 pb-3 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 hide-on-print">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-zinc-900">Printable Gate Codes</h1>
-            <p className="text-xs md:text-sm text-zinc-500 mt-0.5">Display these posters at your building's entrance and exit points.</p>
+            <p className="text-xs md:text-sm text-zinc-500 mt-0.5">Display these posters at your building&apos;s entrance and exit points.</p>
           </div>
           <Button onClick={handlePrint} size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 shadow-sm w-full sm:w-auto h-9 px-4 text-xs font-medium">
             <Printer className="mr-2 h-4 w-4" /> Print Posters
@@ -138,7 +139,7 @@ export default function QRCodeGenerator() {
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4 print:space-y-10 pt-4 print:pt-8 pb-6 print:pb-14">
                 <div className="p-2 bg-white border-4 print:border-8 border-zinc-100 rounded-2xl print:rounded-3xl shadow-sm inline-block">
-                  <img src={gateQrCodeUrl} alt="Gate Check-in QR" className="w-36 h-36 print:w-72 print:h-72 object-contain rounded-lg print:rounded-xl" />
+                  <Image src={gateQrCodeUrl} alt="Gate Check-in QR" width={144} height={144} unoptimized className="w-36 h-36 print:w-72 print:h-72 object-contain rounded-lg print:rounded-xl" />
                 </div>
                 
                 <div className="w-full max-w-[240px] print:max-w-xs space-y-2 print:space-y-3 text-left bg-zinc-50 p-3 print:p-6 rounded-xl print:rounded-2xl border border-zinc-100">
@@ -192,7 +193,7 @@ export default function QRCodeGenerator() {
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4 print:space-y-10 pt-4 print:pt-8 pb-6 print:pb-14">
                 <div className="p-2 bg-white border-4 print:border-8 border-zinc-100 rounded-2xl print:rounded-3xl shadow-sm inline-block">
-                  <img src={checkoutQrCodeUrl} alt="Gate Checkout QR" className="w-36 h-36 print:w-72 print:h-72 object-contain rounded-lg print:rounded-xl" />
+                  <Image src={checkoutQrCodeUrl} alt="Gate Checkout QR" width={144} height={144} unoptimized className="w-36 h-36 print:w-72 print:h-72 object-contain rounded-lg print:rounded-xl" />
                 </div>
                 
                 <div className="w-full max-w-[240px] print:max-w-xs space-y-2 print:space-y-3 text-left bg-zinc-50 p-3 print:p-6 rounded-xl print:rounded-2xl border border-zinc-100">

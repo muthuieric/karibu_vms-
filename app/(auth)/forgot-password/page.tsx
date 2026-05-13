@@ -1,42 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Loader2, Mail, ArrowRight, ShieldCheck, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
+import { useForgotPasswordPage } from "@/hooks/useAuthPages";
 
 export default function ForgotPasswordPage() {
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [email, setEmail] = useState("");
+  const forgotPassword = useForgotPasswordPage();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      // Send the recovery email and redirect them to the reset-password page
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        alert(`Error: ${error.message}`);
-      } else {
-        setSuccess(true);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("A network error occurred. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (success) {
+  if (forgotPassword.success) {
     return (
       <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-zinc-100 p-8 text-center space-y-6 animate-in zoom-in-95 duration-500">
@@ -45,10 +19,10 @@ export default function ForgotPasswordPage() {
           </div>
           <h2 className="text-3xl font-extrabold text-zinc-900 tracking-tight">Check your email</h2>
           <p className="text-zinc-500 leading-relaxed text-sm">
-            We've sent a password recovery link to <strong>{email}</strong>. 
+            We&apos;ve sent a password recovery link to <strong>{forgotPassword.email}</strong>. 
           </p>
           <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm font-medium border border-blue-100">
-            Please check your spam or junk folder if you don't see it within a few minutes.
+            Please check your spam or junk folder if you don&apos;t see it within a few minutes.
           </div>
           <Button className="w-full h-12 text-base font-bold" asChild>
             <Link href="/login">Return to Login</Link>
@@ -69,7 +43,7 @@ export default function ForgotPasswordPage() {
           <p className="text-zinc-500 mt-2 text-sm">Enter your admin email to receive a recovery link.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 mt-8">
+        <form onSubmit={forgotPassword.handleSubmit} className="space-y-5 mt-8">
           <div className="space-y-1.5">
             <Label className="text-zinc-700 font-semibold">Work Email</Label>
             <div className="relative">
@@ -79,14 +53,14 @@ export default function ForgotPasswordPage() {
                 type="email" 
                 placeholder="admin@building.com" 
                 className="pl-10 h-11 bg-zinc-50 border-zinc-200 focus:bg-white focus:ring-2 focus:ring-zinc-900"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={forgotPassword.email}
+                onChange={(e) => forgotPassword.setEmail(e.target.value)}
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 mt-6 text-base font-bold bg-zinc-900 hover:bg-zinc-800 shadow-lg" disabled={loading}>
-            {loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin"/> Sending...</> : <>Send Recovery Link <ArrowRight className="w-5 h-5 ml-2"/></>}
+          <Button type="submit" className="w-full h-12 mt-6 text-base font-bold bg-zinc-900 hover:bg-zinc-800 shadow-lg" disabled={forgotPassword.loading}>
+            {forgotPassword.loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin"/> Sending...</> : <>Send Recovery Link <ArrowRight className="w-5 h-5 ml-2"/></>}
           </Button>
         </form>
 

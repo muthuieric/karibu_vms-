@@ -146,7 +146,7 @@ export async function POST(req: Request) {
 
           if (company && company.subscription_ends_at) {
             // Subtract the months
-            let adjustedExpiry = new Date(company.subscription_ends_at);
+            const adjustedExpiry = new Date(company.subscription_ends_at);
             adjustedExpiry.setMonth(adjustedExpiry.getMonth() - monthsToRevoke);
 
             // If the new expiry date is in the past, lock the account

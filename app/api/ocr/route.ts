@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const rateLimitResponse = checkRateLimit(req, { keyPrefix: "ocr" });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
@@ -29,7 +33,7 @@ export async function POST(req: Request) {
         // free key instantly at https://ocr.space/ocrapi if this one gets rate-limited
         "apikey": "helloworld", 
       },
-      body: ocrFormData as any,
+      body: ocrFormData,
     });
 
     const result = await response.json();
@@ -78,8 +82,9 @@ export async function POST(req: Request) {
       rawText: fullText 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to process ID image";
     console.error("[OCR] Process Error:", error);
-    return NextResponse.json({ error: error.message || "Failed to process ID image" }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

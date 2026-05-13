@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, QrCode, Shield, LogOut, AlertOctagon, 
-  CreditCard, Loader2, Settings, Menu, X, ListPlus, Building2, LifeBuoy
+  Settings, Menu, X, ListPlus, Building2
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,6 @@ export default function CompanyAdminLayout({ children }: { children: React.React
   
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
-  const [companyId, setCompanyId] = useState<string | null>(null);
-  
-  // Payment & Billing States
-  const [isPaying, setIsPaying] = useState(false);
   const [visitorCount, setVisitorCount] = useState(0);
   const [amountDue, setAmountDue] = useState(0); 
 
@@ -45,8 +41,6 @@ export default function CompanyAdminLayout({ children }: { children: React.React
           }
 
           if (profile?.company_id) {
-            setCompanyId(profile.company_id);
-
             // 1. Fetch Company Lock Status
             const { data: company } = await supabase
               .from("companies")
@@ -103,31 +97,6 @@ export default function CompanyAdminLayout({ children }: { children: React.React
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/login";
-  };
-
-  const handlePayment = async () => {
-    if (!companyId) return;
-    setIsPaying(true);
-
-    try {
-      const response = await fetch("/api/payments/pesapal/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyId, amount: amountDue }),
-      });
-
-      const data = await response.json();
-      if (data.redirect_url) {
-        window.location.href = data.redirect_url;
-      } else {
-        alert("Payment initialization failed.");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("An error occurred starting the payment.");
-    } finally {
-      setIsPaying(false);
-    }
   };
 
   if (loading) {

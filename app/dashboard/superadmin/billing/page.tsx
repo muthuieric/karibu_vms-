@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Lock, Loader2, CreditCard, Building2, CalendarDays, Search, Filter } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -25,8 +25,35 @@ export default function SuperadminBillingPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const fetchCompanies = useCallback(async () => {
+    if (companies.length === 0) setLoading(true);
+    
+    const { data, error } = await supabase
+      .from("companies")
+      .select("id, name, subscription_status, amount_paid, is_locked, created_at, subscription_ends_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching companies:", error);
+      setLoading(false);
+      return;
+    }
+
+    const formattedCompanies = ((data || []) as Company[]).map((c) => ({
+      ...c,
+      subscription_status: (c.subscription_status?.toLowerCase() || "trial") as Company["subscription_status"],
+      amount_paid: c.amount_paid || 0,
+      is_locked: c.is_locked || false,
+    }));
+
+    setCompanies(formattedCompanies);
+    setLoading(false);
+  }, [companies.length]);
+
   useEffect(() => {
-    fetchCompanies();
+    queueMicrotask(() => {
+      void fetchCompanies();
+    });
 
     const channel = supabase
       .channel("companies_billing_changes")
@@ -46,32 +73,7 @@ export default function SuperadminBillingPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
-
-  const fetchCompanies = async () => {
-    if (companies.length === 0) setLoading(true);
-    
-    const { data, error } = await supabase
-      .from("companies")
-      .select("id, name, subscription_status, amount_paid, is_locked, created_at, subscription_ends_at")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching companies:", error);
-      setLoading(false);
-      return;
-    }
-
-    const formattedCompanies = (data || []).map((c: any) => ({
-      ...c,
-      subscription_status: (c.subscription_status?.toLowerCase() || "trial") as Company["subscription_status"],
-      amount_paid: c.amount_paid || 0,
-      is_locked: c.is_locked || false,
-    }));
-
-    setCompanies(formattedCompanies);
-    setLoading(false);
-  };
+  }, [fetchCompanies]);
 
   // --- FILTER LOGIC ---
   const filteredCompanies = companies.filter((company) => {
@@ -166,7 +168,7 @@ export default function SuperadminBillingPage() {
           ) : filteredCompanies.length === 0 ? (
             <div className="text-center py-12 text-zinc-500 px-4">
               <p className="font-bold text-zinc-900">No matching companies</p>
-              <p className="text-sm mt-1">Try adjusting your search or filters to find what you're looking for.</p>
+              <p className="text-sm mt-1">Try adjusting your search or filters to find what you&apos;re looking for.</p>
             </div>
           ) : (
             <>

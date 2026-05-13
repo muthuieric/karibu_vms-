@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle, RefreshCcw, ArrowRight } from "lucide-react";
@@ -11,7 +11,7 @@ function VerifyContent() {
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
   const [message, setMessage] = useState("Connecting to PesaPal to verify your transaction...");
 
-  const verifyPayment = async () => {
+  const verifyPayment = useCallback(async () => {
     setStatus("loading");
     setMessage("Connecting to PesaPal to verify your transaction...");
 
@@ -42,15 +42,17 @@ function VerifyContent() {
         // Display the exact error from the backend if available
         setMessage(`Verification failed: ${data.status || data.error || "Please contact support."}`);
       }
-    } catch (error) {
+    } catch {
       setStatus("failed");
       setMessage("A network error occurred while verifying the payment.");
     }
-  };
+  }, [searchParams]);
 
   useEffect(() => {
-    verifyPayment();
-  }, [searchParams]);
+    queueMicrotask(() => {
+      void verifyPayment();
+    });
+  }, [verifyPayment]);
 
   return (
     <Card className="max-w-md w-full bg-zinc-900 border-zinc-800 shadow-2xl text-center">
