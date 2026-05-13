@@ -229,7 +229,11 @@ export default function MasterVisitorLog({
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {visitor.status === "pending" && <span className="text-amber-600 text-xs font-bold uppercase">Pending</span>}
-                        {visitor.status === "checked_in" && <span className="text-green-600 text-xs font-bold uppercase">Inside</span>}
+                        {visitor.status === "checked_in" && (
+                          visitor.custom_data?.manual_override === "true" 
+                            ? <span className="inline-flex items-center rounded-full bg-purple-100/80 px-2.5 py-0.5 text-xs font-semibold text-purple-800 whitespace-nowrap border border-purple-200/50 uppercase">Inside (Manual Override)</span>
+                            : <span className="text-green-600 text-xs font-bold uppercase">Inside</span>
+                        )}
                         {visitor.status === "checked_out" && <span className="text-zinc-500 text-xs font-bold uppercase">Departed</span>}
                         {visitor.status === "auto_checked_out" && <span className="text-purple-600 text-xs font-bold uppercase">Auto-Departed</span>}
                       </TableCell>

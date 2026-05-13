@@ -10,21 +10,23 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: Request) {
   try {
-    const { companyName, address, fullName, email, phone, password } = await request.json();
+    // NEW: Capture the planTier from the request
+    const { companyName, address, fullName, email, phone, password, planTier } = await request.json();
 
     if (!companyName || !fullName || !email || !password) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // 1. Create the Company (Locked & Pending, saving all contact info)
+    // 1. Create the Company (Locked & Pending, saving all contact info and Plan Tier)
     const { data: company, error: companyError } = await supabaseAdmin
       .from("companies")
       .insert([{
         name: companyName,
-        address: address,         // Saved physical address
-        contact_name: fullName,   // Saved admin name
-        contact_email: email,     // Saved email
-        contact_phone: phone,     // Saved phone number
+        address: address,         
+        contact_name: fullName,   
+        contact_email: email,     
+        contact_phone: phone,     
+        plan_tier: planTier || "basic", // NEW: Saving the selected plan (defaults to basic)
         is_locked: true, 
         subscription_status: "pending_approval", 
         amount_paid: 0

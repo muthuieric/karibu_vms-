@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Loader2, Building2, User, Mail, Lock, ArrowRight, ShieldCheck, Phone, MapPin } from "lucide-react";
+import { Loader2, Building2, User, Mail, Lock, ArrowRight, ShieldCheck, Phone, MapPin, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ export default function RegisterPage() {
     phone: "",
     password: "",
     confirmPassword: "",
+    planTier: "basic", // NEW: Added plan tracking state
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,7 +71,7 @@ export default function RegisterPage() {
           </div>
           <h2 className="text-3xl font-extrabold text-zinc-900 tracking-tight">Application Received</h2>
           <p className="text-zinc-500 leading-relaxed text-sm">
-            Thank you for registering <strong>{formData.companyName}</strong>. Your account is currently under review by our administration team. 
+            Thank you for registering <strong>{formData.companyName}</strong> for the <strong>{formData.planTier.toUpperCase()}</strong> plan. Your account is currently under review by our administration team. 
           </p>
           <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm font-medium border border-blue-100">
             Once approved, you will receive an email and your <strong>1-Month Free Trial</strong> will begin instantly.
@@ -123,6 +124,28 @@ export default function RegisterPage() {
                   value={formData.address}
                   onChange={(e) => setFormData({...formData, address: e.target.value})}
                 />
+              </div>
+            </div>
+
+            {/* NEW: Plan Selection Dropdown */}
+            <div className="space-y-1.5 pt-2">
+              <Label className="text-zinc-700 font-semibold">Select Subscription Plan</Label>
+              <div className="relative">
+                <Layers className="absolute left-3 top-3 h-5 w-5 text-zinc-400 pointer-events-none" />
+                <select
+                  required
+                  className="w-full h-11 pl-10 pr-4 bg-zinc-50 border border-zinc-200 rounded-md focus:bg-white focus:ring-2 focus:ring-zinc-900 appearance-none text-sm font-medium text-zinc-900 outline-none transition-colors cursor-pointer"
+                  value={formData.planTier}
+                  onChange={(e) => setFormData({...formData, planTier: e.target.value})}
+                >
+                  <option value="basic">Basic Plan (Core Features, No SMS/OCR)</option>
+                  <option value="premium">Premium Plan (Full Security, OTP & OCR)</option>
+                  <option value="custom">Enterprise Custom (Contact Us)</option>
+                </select>
+                {/* Custom dropdown arrow */}
+                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                  <svg className="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
               </div>
             </div>
 

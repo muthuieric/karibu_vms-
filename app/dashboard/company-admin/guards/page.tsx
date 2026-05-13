@@ -23,6 +23,7 @@ type Gate = {
 
 export default function ManageGuards() {
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [planTier, setPlanTier] = useState<string>("basic");
   const [guards, setGuards] = useState<GuardProfile[]>([]);
   const [gates, setGates] = useState<Gate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -321,10 +322,18 @@ export default function ManageGuards() {
     return <GuardsProfileError />;
   }
 
+  let isAddGuardDisabled = planTier === "basic" && guards.length >= 1;
+  if (planTier === "premium" || planTier === "custom") {
+    isAddGuardDisabled = false;
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50 p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
-        <GuardsPageHeader onAddGuard={() => setShowModal(true)} />
+        <GuardsPageHeader 
+          onAddGuard={() => setShowModal(true)} 
+          isAddGuardDisabled={isAddGuardDisabled} 
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <GatesManagementCard

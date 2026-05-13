@@ -98,32 +98,9 @@ export default function VisitorCheckInForm({
       </CardHeader>
 
       <CardContent>
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          ref={fileInputRef}
-          onChange={onImageCapture}
-        />
-
-        <Button
-          variant="outline"
-          type="button"
-          className="w-full mb-6 border-dashed border-2 py-8 text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 shadow-sm"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isScanning}
-        >
-          {isScanning ? (
-            <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing ID Card...</>
-          ) : (
-            <><ScanLine className="mr-2 h-5 w-5" /> Auto-Fill using ID Card</>
-          )}
-        </Button>
-
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-200" /></div>
-          <div className="relative flex justify-center text-xs uppercase font-bold tracking-wider"><span className="bg-white px-2 text-zinc-400">Or enter manually</span></div>
+          <div className="relative flex justify-center text-xs uppercase font-bold tracking-wider"><span className="bg-white px-2 text-zinc-400">Enter Details</span></div>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">

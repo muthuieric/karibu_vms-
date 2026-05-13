@@ -71,6 +71,9 @@ export default function AddVisitorModal({
   // NEW: Terms and Conditions State
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  const [companyName, setCompanyName] = useState("");
+  const [planTier, setPlanTier] = useState("basic");
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -86,13 +89,17 @@ export default function AddVisitorModal({
       if (!companyId || !isOpen) return;
       const { data } = await supabase
         .from("companies")
-        .select("custom_fields")
+        .select("name, plan_tier, custom_fields")
         .eq("id", companyId)
         .single();
 
-      if (data?.custom_fields) {
-        const activeFields = (data.custom_fields as CustomField[]).filter(f => f.active);
-        setCustomFields(activeFields);
+      if (data) {
+        setCompanyName(data.name || "");
+        setPlanTier(data.plan_tier || "basic");
+        if (data.custom_fields) {
+          const activeFields = (data.custom_fields as CustomField[]).filter(f => f.active);
+          setCustomFields(activeFields);
+        }
       }
     };
 
@@ -267,7 +274,7 @@ export default function AddVisitorModal({
           vehicle_reg: askVehicle ? newVisitor.vehicle_reg : null,
           status: "pending",
           photo_url: uploadedPhotoUrl,
-          custom_data: customAnswers,
+          custom_data: { ...customAnswers, source: "guard_desk" },
           gate_id: finalGateId
         }
       ]);

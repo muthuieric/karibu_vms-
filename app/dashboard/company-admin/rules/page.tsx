@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Loader2, Camera, CheckCircle2, AlertCircle, Users, Briefcase, Car, Plus, Trash2, ListPlus } from "lucide-react";
+import { ShieldCheck, Loader2, Camera, CheckCircle2, AlertCircle, Users, Briefcase, Car, Plus, Trash2, ListPlus, Lock } from "lucide-react";
 
 type CustomField = {
   id: string;
@@ -16,6 +16,7 @@ type CustomField = {
 
 export default function BuildingRulesPage() {
   const [companyId, setCompanyId] = useState("");
+  const [planTier, setPlanTier] = useState("basic");
   
   // Standard Rule States
   const [requirePhoto, setRequirePhoto] = useState(false);
@@ -45,11 +46,12 @@ export default function BuildingRulesPage() {
 
           const { data: company } = await supabase
             .from("companies")
-            .select("require_photo, ask_host, ask_purpose, ask_vehicle, custom_fields")
+            .select("require_photo, ask_host, ask_purpose, ask_vehicle, custom_fields, plan_tier")
             .eq("id", profile.company_id)
             .single();
-            
+
           if (company) {
+            setPlanTier(company.plan_tier || "basic");
             setRequirePhoto(company.require_photo || false);
             setAskHost(company.ask_host || false);
             setAskPurpose(company.ask_purpose || false);
@@ -204,15 +206,19 @@ export default function BuildingRulesPage() {
                 </label>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-xl border border-zinc-200 transition-colors shadow-sm hover:shadow-md">
+              <div className={`flex items-center justify-between p-4 rounded-xl border transition-colors shadow-sm hover:shadow-md ${planTier === "basic" ? "bg-zinc-100 border-zinc-200 opacity-80" : "bg-zinc-50 border-zinc-200"}`}>
                 <div className="space-y-1 pr-4">
                   <Label className="text-base font-bold flex items-center gap-2 cursor-pointer text-zinc-900" htmlFor="photo-toggle">
                     <Camera className="w-4 h-4 text-zinc-500"/> Require Photo
+                    {planTier === "basic" && <Lock className="w-4 h-4 text-amber-600 ml-1" />}
                   </Label>
                   <p className="text-sm text-zinc-500 leading-snug">Guards must capture a selfie before entry.</p>
+                  {planTier === "basic" && (
+                    <p className="text-xs font-semibold text-amber-600 mt-1">Selfie verification is locked on the Basic plan. Upgrade to Premium to enable.</p>
+                  )}
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input id="photo-toggle" type="checkbox" className="sr-only peer" checked={requirePhoto} onChange={(e) => handleToggleRule("require_photo", e.target.checked, setRequirePhoto)} disabled={updatingRules} />
+                  <input id="photo-toggle" type="checkbox" className="sr-only peer" checked={planTier === "basic" ? false : requirePhoto} onChange={(e) => handleToggleRule("require_photo", e.target.checked, setRequirePhoto)} disabled={updatingRules || planTier === "basic"} />
                   <div className="w-11 h-6 bg-zinc-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-200 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>

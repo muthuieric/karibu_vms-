@@ -31,7 +31,7 @@ type RedFlag = {
 
 // Haversine formula to calculate exact distance between two GPS coordinates in meters
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371e3; // Earth's radius in metres
+  const R = 6371e3; 
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
@@ -54,10 +54,11 @@ function CheckInFormContent() {
 
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState("");
+  const [planTier, setPlanTier] = useState("basic"); // NEW: Track the company's plan
   const [accessDenied, setAccessDenied] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // --- SECURITY & LIMIT STATES ---
+  // --- SECURITY STATES ---
   const [isQrExpired, setIsQrExpired] = useState(false);
   const [geofenceError, setGeofenceError] = useState<string | null>(null);
 
@@ -89,9 +90,8 @@ function CheckInFormContent() {
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
   
-  const [isScanning, setIsScanning] = useState(false);
+  // NOTE: OCR Scanning state completely removed to save costs on self-registration
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
@@ -105,7 +105,7 @@ function CheckInFormContent() {
   }, []);
 
   useEffect(() => {
-    const initializeGate = async () => {
+    const fetchCompanyData = async () => {
       if (!companyId) return;
 
       // 1. SECURITY CHECK: Dynamic QR Expiration (5 mins)
@@ -119,10 +119,10 @@ function CheckInFormContent() {
         }
       }
 
-      // 2. Fetch Company Data (Now includes Geofence coords)
+      // 2. Fetch Company Data (Including Plan Tier)
       const { data: company, error } = await supabase
         .from("companies")
-        .select("name, is_locked, subscription_ends_at, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, enable_geofence, lat, lng, geofence_radius")
+        .select("name, is_locked, subscription_ends_at, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, enable_geofence, lat, lng, geofence_radius, plan_tier")
         .eq("id", companyId)
         .single();
 
@@ -133,8 +133,10 @@ function CheckInFormContent() {
       }
 
       setCompanyName(company.name);
+      setPlanTier(company.plan_tier || "basic");
+      
       setRules({
-        requirePhoto: company.require_photo || false,
+        requirePhoto: company.plan_tier === "basic" ? false : (company.require_photo || false),
         askPhone: company.ask_phone !== false,
         askId: company.ask_id !== false,
         askHost: company.ask_host || false,
@@ -163,9 +165,8 @@ function CheckInFormContent() {
         console.error("Error fetching hosts/departments", err);
       }
 
-      // 4. SECURITY CHECK: Geofencing Location Check
-      // Only runs if the company explicitly enabled it in their settings and provided coordinates
-      if (company.enable_geofence && company.lat && company.lng) {
+      // 3. SECURITY CHECK: Geofencing Location Check
+      if (company.enable_geofence && company.plan_tier !== "basic" && company.lat && company.lng) {
         if (!navigator.geolocation) {
            setGeofenceError("Geolocation is not supported by your browser. Please register manually with the guard.");
            setLoading(false);
@@ -180,7 +181,7 @@ function CheckInFormContent() {
             if (dist > maxRadius) {
               setGeofenceError(`You are too far from the building to register. Please move closer to the gate. (Currently ~${Math.round(dist)}m away, limit is ${maxRadius}m)`);
             }
-            setLoading(false); // Stop loading after location is verified
+            setLoading(false); 
           },
           (err) => {
             console.error("Geolocation error:", err);
@@ -190,11 +191,11 @@ function CheckInFormContent() {
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
       } else {
-        setLoading(false); // End loading immediately if no geofence is required
+        setLoading(false); 
       }
     };
 
-    initializeGate();
+    fetchCompanyData();
   }, [companyId, searchParams]);
 
   const filteredDepartments = departments.map(dept => {
@@ -205,44 +206,7 @@ function CheckInFormContent() {
     return { ...dept, hosts: deptHosts };
   }).filter(dept => dept.hosts.length > 0);
 
-  const handleImageCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsScanning(true);
-
-    try {
-      const compressedFile = await compressImage(file);
-      const reader = new FileReader();
-      reader.readAsDataURL(compressedFile);
-      
-      reader.onloadend = async () => {
-        const base64data = reader.result;
-        const response = await fetch("/api/ocr", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageBase64: base64data }),
-        });
-
-        const result = await response.json();
-
-        if (result.success && result.data) {
-          setNewVisitor((prev) => ({
-            ...prev,
-            name: result.data.FullName || prev.name,
-            id_number: result.data.IDNumber || prev.id_number,
-          }));
-        } else {
-          alert("Could not read the ID clearly. Please type it manually.");
-        }
-        setIsScanning(false);
-      };
-    } catch (error) {
-      console.error(error);
-      setIsScanning(false);
-      alert("Error scanning ID. Please try manually.");
-    }
-  };
+  // NOTE: handleImageCapture (OCR) has been removed from self-registration to save API costs
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,8 +309,8 @@ function CheckInFormContent() {
 
       if (error) throw error;
 
-      // 4. Notify the host if a host was selected
-      if (rules.askHost && newVisitor.host_id) {
+      // 4. Notify the host (ONLY IF PLAN IS PREMIUM/CUSTOM)
+      if (rules.askHost && newVisitor.host_id && planTier !== "basic") {
         const selectedHost = hosts.find((h) => h.id === newVisitor.host_id);
         
         if (selectedHost && selectedHost.email) {
@@ -367,7 +331,6 @@ function CheckInFormContent() {
             });
           } catch (notifyError) {
             console.error("Failed to trigger host notification:", notifyError);
-            // Non-blocking error, user still sees success screen
           }
         }
       }
@@ -383,13 +346,11 @@ function CheckInFormContent() {
     }
   };
 
-  // --- UI RENDER STATES ---
-
   if (loading) {
     return <GateLoadingState />;
   }
 
-  // 1. QR EXPIRED STATE
+  // --- SECURITY RENDERS ---
   if (isQrExpired) {
     return (
       <div className="w-full max-w-md mx-auto relative z-10 px-4">
@@ -404,7 +365,6 @@ function CheckInFormContent() {
     );
   }
 
-  // 2. GEOFENCE BLOCKED STATE
   if (geofenceError) {
     return (
       <div className="w-full max-w-md mx-auto relative z-10 px-4">
@@ -441,13 +401,13 @@ function CheckInFormContent() {
       isHostDropdownOpen={isHostDropdownOpen}
       filteredDepartments={filteredDepartments}
       selfiePreview={selfiePreview}
-      isScanning={isScanning}
+      isScanning={false} // OCR Disabled
       isSubmitting={isSubmitting}
       agreedToTerms={agreedToTerms}
       fileInputRef={fileInputRef}
       selfieInputRef={selfieInputRef}
       dropdownRef={dropdownRef}
-      onImageCapture={handleImageCapture}
+      onImageCapture={() => {}} // Empty function, OCR removed
       onSubmit={handleSubmit}
       onNewVisitorChange={setNewVisitor}
       onHostSearchQueryChange={setHostSearchQuery}

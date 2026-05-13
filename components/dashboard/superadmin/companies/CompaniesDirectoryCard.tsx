@@ -14,6 +14,7 @@ import {
   Unlock,
   User,
   UserPlus,
+  Layers, // NEW: Icon for plans
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,7 @@ type Company = {
   created_at: string;
   subscription_status: string;
   is_locked: boolean;
+  plan_tier?: string; // NEW: Added plan tier tracking
 };
 
 type CompaniesDirectoryCardProps = {
@@ -42,6 +44,7 @@ type CompaniesDirectoryCardProps = {
   onViewCompanyVisitors: (companyId: string, companyName: string) => void;
   onToggleCompanyLock: (companyId: string, currentLockStatus: boolean) => void;
   onApproveCompany: (companyId: string) => void;
+  onChangePlanTier: (companyId: string, newTier: string) => void; // NEW: Callback to change plan
 };
 
 function CompanyStatusBadge({ company }: { company: Company }) {
@@ -80,6 +83,7 @@ export default function CompaniesDirectoryCard({
   onViewCompanyVisitors,
   onToggleCompanyLock,
   onApproveCompany,
+  onChangePlanTier, // NEW
 }: CompaniesDirectoryCardProps) {
   return (
     <Card className="shadow-sm border-zinc-200 bg-white/90 backdrop-blur-sm overflow-hidden">
@@ -126,6 +130,7 @@ export default function CompaniesDirectoryCard({
                   <TableRow>
                     <TableHead className="pl-6 py-4 text-zinc-600 whitespace-nowrap">Company Info</TableHead>
                     <TableHead className="py-4 text-zinc-600 whitespace-nowrap">Contact Details</TableHead>
+                    <TableHead className="text-zinc-600 whitespace-nowrap">Plan Tier</TableHead> {/* NEW COLUMN */}
                     <TableHead className="text-zinc-600 whitespace-nowrap">Status</TableHead>
                     <TableHead className="text-zinc-600 whitespace-nowrap">Date Added</TableHead>
                     <TableHead className="pr-6 text-right text-zinc-600 whitespace-nowrap">Actions</TableHead>
@@ -168,6 +173,23 @@ export default function CompaniesDirectoryCard({
                             {company.contact_phone || "N/A"}
                           </div>
                         </div>
+                      </TableCell>
+
+                      {/* NEW: PLAN TIER DROPDOWN */}
+                      <TableCell className="whitespace-nowrap">
+                        <select
+                          value={company.plan_tier || "basic"}
+                          onChange={(e) => onChangePlanTier(company.id, e.target.value)}
+                          className={`h-7 rounded border bg-white px-2 text-xs font-bold shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer uppercase tracking-wider
+                            ${(company.plan_tier || "basic") === "basic" ? "text-zinc-600 border-zinc-200" : ""}
+                            ${company.plan_tier === "premium" ? "text-blue-600 border-blue-200 bg-blue-50/50" : ""}
+                            ${company.plan_tier === "custom" ? "text-purple-600 border-purple-200 bg-purple-50/50" : ""}
+                          `}
+                        >
+                          <option value="basic">Basic</option>
+                          <option value="premium">Premium</option>
+                          <option value="custom">Custom</option>
+                        </select>
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">
@@ -246,9 +268,28 @@ export default function CompaniesDirectoryCard({
                     </div>
                   </div>
 
-                  <div className="flex items-center text-xs text-zinc-500 gap-1.5">
-                    <CalendarDays className="w-3.5 h-3.5 shrink-0" />
-                    Applied: {new Date(company.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  {/* NEW: PLAN & DATE ON MOBILE */}
+                  <div className="flex items-center justify-between text-xs text-zinc-500 mt-2">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                      Applied: {new Date(company.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 shrink-0" />
+                      <select
+                        value={company.plan_tier || "basic"}
+                        onChange={(e) => onChangePlanTier(company.id, e.target.value)}
+                        className={`h-6 rounded border bg-white px-1.5 text-[10px] font-bold shadow-sm focus:outline-none cursor-pointer uppercase
+                          ${(company.plan_tier || "basic") === "basic" ? "text-zinc-600 border-zinc-200" : ""}
+                          ${company.plan_tier === "premium" ? "text-blue-600 border-blue-200 bg-blue-50/50" : ""}
+                          ${company.plan_tier === "custom" ? "text-purple-600 border-purple-200 bg-purple-50/50" : ""}
+                        `}
+                      >
+                        <option value="basic">Basic</option>
+                        <option value="premium">Premium</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-100">

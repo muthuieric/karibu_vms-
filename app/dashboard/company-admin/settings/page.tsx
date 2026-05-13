@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, ShieldCheck, MapPin, Crosshair } from "lucide-react";
+import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, ShieldCheck, MapPin, Crosshair, Lock } from "lucide-react";
 
 export default function SettingsPage() {
   const [userEmail, setUserEmail] = useState("");
@@ -26,6 +26,7 @@ export default function SettingsPage() {
   const [radius, setRadius] = useState<string>("200");
   const [loadingGeo, setLoadingGeo] = useState(false);
   const [geoMessage, setGeoMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
+  const [planTier, setPlanTier] = useState("basic");
 
   useEffect(() => {
     const fetchProfileAndCompany = async () => {
@@ -47,11 +48,12 @@ export default function SettingsPage() {
             // Fetch company geofence settings
             const { data: comp } = await supabase
               .from("companies")
-              .select("enable_geofence, lat, lng, geofence_radius")
+              .select("enable_geofence, lat, lng, geofence_radius, plan_tier")
               .eq("id", profile.company_id)
               .single();
               
             if (comp) {
+              setPlanTier(comp.plan_tier || "basic");
               setEnableGeofence(comp.enable_geofence || false);
               setLatitude(comp.lat ? comp.lat.toString() : "");
               setLongitude(comp.lng ? comp.lng.toString() : "");
@@ -277,14 +279,21 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mb-6 p-4 rounded-xl border border-zinc-200 bg-zinc-50">
+                <div className={`flex items-center justify-between mb-6 p-4 rounded-xl border border-zinc-200 ${planTier === "basic" ? "bg-zinc-100 opacity-80" : "bg-zinc-50"}`}>
                   <div>
-                    <p className="font-bold text-zinc-900">Enable GPS Geofencing</p>
+                    <p className="font-bold text-zinc-900 flex items-center gap-2">
+                      Enable GPS Geofencing 
+                      {planTier === "basic" && <Lock className="w-4 h-4 text-amber-600" />}
+                    </p>
                     <p className="text-sm text-zinc-500 max-w-[280px] sm:max-w-none">Visitors must be physically present at the building to register.</p>
+                    {planTier === "basic" && (
+                      <p className="text-xs font-semibold text-amber-600 mt-1">Geofencing is locked on the Basic plan. Upgrade to Premium.</p>
+                    )}
                   </div>
                   <Switch 
-                    checked={enableGeofence} 
+                    checked={planTier === "basic" ? false : enableGeofence} 
                     onCheckedChange={setEnableGeofence} 
+                    disabled={planTier === "basic"}
                   />
                 </div>
 

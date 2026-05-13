@@ -18,6 +18,7 @@ type Company = {
   created_at: string;
   subscription_status: string;
   is_locked: boolean;
+  plan_tier?: string; // Added for the plan tier update
 };
 
 type PlanType = "none" | "trial_1" | "trial_2";
@@ -205,6 +206,28 @@ export default function ManageCompaniesPage() {
     }
   };
 
+  // ADDED: Handler for changing plan tiers from the dashboard
+  const handleChangePlanTier = async (companyId: string, newTier: string) => {
+    try {
+      const res = await fetch("/api/companies/update-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, planTier: newTier }),
+      });
+      if (res.ok) {
+        setCompanies((prev) =>
+          prev.map((c) => (c.id === companyId ? { ...c, plan_tier: newTier } : c))
+        );
+        alert(`Success! The company plan has been updated to ${newTier.toUpperCase()}.`);
+      } else {
+        alert("Failed to update plan");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update plan due to a network error.");
+    }
+  };
+
   const filteredCompanies = companies.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (c.contact_email && c.contact_email.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -224,6 +247,7 @@ export default function ManageCompaniesPage() {
         onViewCompanyVisitors={viewCompanyVisitors}
         onToggleCompanyLock={toggleCompanyLock}
         onApproveCompany={approveCompany}
+        onChangePlanTier={handleChangePlanTier} // Integrated callback
       />
 
       {showAddModal && (

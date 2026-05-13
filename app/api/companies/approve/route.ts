@@ -4,9 +4,6 @@ import { Resend } from "resend";
 
 export async function POST(request: Request) {
   try {
-    // 🚨 THE FIX: Initialize these INSIDE the POST function.
-    // This forces Next.js to read your .env.local file at the exact moment the API is called, 
-    // rather than at server boot time when the keys might be temporarily undefined.
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -15,10 +12,10 @@ export async function POST(request: Request) {
 
     const { companyId } = await request.json();
 
-    // 1. Get the company details so we know who to email
+    // 1. Get the company details so we know who to email (Now querying plan_tier too)
     const { data: company, error: fetchError } = await supabaseAdmin
       .from("companies")
-      .select("name, contact_email, contact_name")
+      .select("name, contact_email, contact_name, plan_tier")
       .eq("id", companyId)
       .single();
 
@@ -49,7 +46,7 @@ export async function POST(request: Request) {
         html: `
           <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
             <h2 style="color: #111827;">Welcome to VMS Portal, ${company.contact_name || 'Admin'}!</h2>
-            <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Great news! Your workspace for <strong>${company.name}</strong> has been fully approved by our administration team.</p>
+            <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">Great news! Your workspace for <strong>${company.name}</strong> has been fully approved by our administration team. You are enrolled in the <strong>${(company.plan_tier || 'basic').toUpperCase()} Plan</strong>.</p>
             
             <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px; margin: 24px 0;">
                 <p style="margin: 0; color: #166534; font-weight: bold;">Your 1-Month Free Trial begins immediately and is active until ${expiryDate.toLocaleDateString()}.</p>
