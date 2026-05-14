@@ -1,11 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { CheckCircle2, Info, ShieldCheck, Timer, UserCircle } from "lucide-react";
-import { DataTableShell } from "@/components/dashboard/shared/DataTableShell";
+import { Info, ShieldCheck, Timer, UserCircle } from "lucide-react";
 import { SearchInput } from "@/components/dashboard/shared/Fields";
 import { EmptyState, LoadingSkeleton } from "@/components/dashboard/shared/StateBlocks";
-import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -59,6 +57,43 @@ type GuardVisitorsTableProps = {
   onManualOverride: (visitor: Visitor) => void;
 };
 
+const CustomStatusBadge = ({ status, isOverride }: { status: string, isOverride?: boolean }) => {
+  if (isOverride) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800 border border-orange-200">
+        Override
+      </span>
+    );
+  }
+  switch (status) {
+    case "pending":
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800 border border-orange-200">
+          Pending
+        </span>
+      );
+    case "checked_in":
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
+          <ShieldCheck className="h-3.5 w-3.5" /> Checked in
+        </span>
+      );
+    case "checked_out":
+    case "auto_checked_out":
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700 border border-slate-200">
+          Checked out
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-800 border border-red-200">
+          Restricted
+        </span>
+      );
+  }
+};
+
 export default function GuardVisitorsTable({
   loading,
   visitors,
@@ -80,182 +115,278 @@ export default function GuardVisitorsTable({
   onDirectApprove,
   onManualOverride,
 }: GuardVisitorsTableProps) {
+  
+  const renderActions = (visitor: Visitor) => {
+    if (visitor.status === "pending") {
+      if (planTier === "basic") {
+        return (
+          <Button
+            size="sm"
+            onClick={() => onDirectApprove(visitor)}
+            className="w-full sm:w-auto whitespace-nowrap bg-blue-600 font-bold text-white hover:bg-blue-700 shadow-sm"
+          >
+            Approve
+          </Button>
+        );
+      }
+      
+      if (visitor.custom_data?.source === "guard_desk") {
+        return (
+          <Button
+            size="sm"
+            onClick={() => onManualOverride(visitor)}
+            className="w-full sm:w-auto whitespace-nowrap bg-orange-500 font-bold text-white hover:bg-orange-600 shadow-sm"
+          >
+            Override
+          </Button>
+        );
+      }
+      
+      if (verifyingId === visitor.id) {
+        return (
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto sm:justify-end">
+            <input
+              type="text"
+              maxLength={4}
+              placeholder="OTP"
+              className="w-full sm:w-20 rounded-xl border border-slate-300 bg-white px-2 py-2 text-center text-sm font-bold shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              value={otpInput}
+              onChange={(e) => onOtpInputChange(e.target.value)}
+            />
+            <div className="flex w-full sm:w-auto gap-2">
+              <Button size="sm" onClick={() => onConfirmOTP(visitor)} className="flex-1 sm:flex-none font-bold bg-blue-600 text-white hover:bg-blue-700">Confirm</Button>
+              <Button size="sm" variant="outline" onClick={onCancelOTP} className="flex-1 sm:flex-none font-bold border-slate-200">Cancel</Button>
+            </div>
+          </div>
+        );
+      }
+      
+      return (
+        <Button
+          size="sm"
+          onClick={() => onSendOTP(visitor.id, visitor.phone)}
+          disabled={sendingOtpId === visitor.id}
+          className="w-full sm:w-auto whitespace-nowrap font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+          variant="outline"
+        >
+          {sendingOtpId === visitor.id ? "Sending..." : "Send OTP"}
+        </Button>
+      );
+    }
+    
+    return (
+      <Button 
+        size="sm" 
+        variant="outline" 
+        onClick={() => onCheckOut(visitor.id)} 
+        className="w-full sm:w-auto whitespace-nowrap font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
+      >
+        Check Out
+      </Button>
+    );
+  };
+
   return (
-    <DataTableShell
-      title="Visitor Queue"
-      description="Search arrivals, verify pending requests, and check people out from the active gate list."
-      filters={
-        <div className="flex flex-col gap-3 xl:min-w-[42rem] xl:flex-row xl:items-center">
+    <div className="grid gap-6">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between rounded-[1.4rem] border border-blue-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-bold text-slate-900">Visitor Queue</h2>
+          <p className="text-sm text-slate-500">Search and manage active requests.</p>
+        </div>
+        
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <SearchInput
               placeholder="Search visitor, phone, or ID..."
               value={searchTerm}
               onChange={(e) => onSearchTermChange(e.target.value)}
-              inputClassName="h-11"
+              inputClassName="h-11 bg-slate-50 border-slate-200 w-full sm:w-72"
             />
-            <div className="flex w-full sm:w-auto bg-surface-muted p-1 rounded-xl border border-border overflow-x-auto">
+            <div className="flex w-full sm:w-auto bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto">
               <button
                 onClick={() => onStatusFilterChange("all")}
-                className={`flex-1 sm:flex-none px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${statusFilter === "all" ? "bg-surface shadow-sm text-text-main" : "text-text-muted hover:text-text-main"}`}
+                className={`flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${statusFilter === "all" ? "bg-white shadow-sm text-blue-700" : "text-slate-500 hover:text-slate-900"}`}
               >
                 All
               </button>
               <button
                 onClick={() => onStatusFilterChange("pending")}
-                className={`flex-1 sm:flex-none px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${statusFilter === "pending" ? "bg-surface shadow-sm text-warning-foreground" : "text-text-muted hover:text-text-main"}`}
+                className={`flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${statusFilter === "pending" ? "bg-white shadow-sm text-orange-700" : "text-slate-500 hover:text-slate-900"}`}
               >
                 Pending
               </button>
               <button
                 onClick={() => onStatusFilterChange("checked_in")}
-                className={`flex-1 sm:flex-none px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${statusFilter === "checked_in" ? "bg-surface shadow-sm text-emerald-700" : "text-text-muted hover:text-text-main"}`}
+                className={`flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap ${statusFilter === "checked_in" ? "bg-white shadow-sm text-emerald-700" : "text-slate-500 hover:text-slate-900"}`}
               >
                 Checked In
               </button>
             </div>
         </div>
-      }
-    >
-      <div className="p-0 sm:p-5">
+      </div>
+
+      <div className="p-0">
         {loading ? (
-          <LoadingSkeleton rows={5} />
+          <div className="rounded-[1.4rem] border border-blue-100 bg-white p-5 shadow-sm"><LoadingSkeleton rows={5} /></div>
         ) : visitors.length === 0 ? (
           <EmptyState title="No active visitors found" description="Try another search or filter, or add a new visitor at the desk." />
         ) : (
-          <div className="overflow-hidden rounded-none border-0 bg-white sm:rounded-[1.25rem] sm:border sm:border-slate-200">
-            <Table>
-              <TableHeader className="bg-slate-50 border-b border-slate-200">
-                <TableRow>
-                  <TableHead className="text-slate-600 font-semibold">Arrived</TableHead>
-                  <TableHead className="text-slate-600 font-semibold">Visitor</TableHead>
-                  <TableHead className="text-slate-600 font-semibold">Credentials</TableHead>
-                  <TableHead className="text-slate-600 font-semibold">State</TableHead>
-                  <TableHead className="text-right text-slate-600 font-semibold">Desk Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visitors.map((visitor) => {
-                  const hasCustomData = visitor.custom_data && Object.values(visitor.custom_data).some(val => val.trim() !== "");
-                  const hasExtraInfo = visitor.host_name || visitor.purpose || visitor.vehicle_reg || hasCustomData;
+          <>
+            {/* Mobile Stacked Cards */}
+            <div className="grid gap-4 sm:hidden">
+              {visitors.map((visitor) => {
+                const hasCustomData = visitor.custom_data && Object.values(visitor.custom_data).some(val => val.trim() !== "");
+                const hasExtraInfo = visitor.host_name || visitor.purpose || visitor.vehicle_reg || hasCustomData;
+                const isOverride = visitor.custom_data?.manual_override === "true";
 
-                  return (
-                    <TableRow key={visitor.id}>
-                      <TableCell className="font-medium text-text-muted whitespace-nowrap">
-                        <span className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-600">
-                          <Timer className="h-3.5 w-3.5" />
-                          {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </TableCell>
+                return (
+                  <div key={visitor.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex justify-between items-start mb-3">
+                      <CustomStatusBadge status={visitor.status} isOverride={isOverride} />
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                        <Timer className="h-3.5 w-3.5" />
+                        {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
 
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          {visitor.photo_url ? (
-                            <Image
-                              src={visitor.photo_url}
-                              alt={`${visitor.name}'s photo`}
-                              width={40}
-                              height={40}
-                            className="w-11 h-11 rounded-2xl object-cover border border-slate-200 cursor-pointer hover:opacity-80 transition-opacity bg-surface shrink-0 shadow-sm"
-                              onClick={() => onPhotoClick(visitor.photo_url!)}
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 text-primary shrink-0">
-                              <UserCircle className="w-6 h-6" />
-                            </div>
-                          )}
-
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold whitespace-nowrap text-slate-950">{visitor.name}</span>
-
-                              {hasExtraInfo && (
-                                <button
-                                  onClick={() => onInfoClick(visitor)}
-                                  className="text-primary bg-primary/10 hover:bg-primary/15 p-1.5 rounded-full transition-colors shrink-0 shadow-sm border border-primary/15"
-                                  title="View Visit Info"
-                                >
-                                  <Info className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                            <p className="mt-1 text-xs font-medium text-slate-500">{visitor.host_name ? `Host: ${visitor.host_name}` : "Walk-in entry"}</p>
-                          </div>
+                    <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
+                      {visitor.photo_url ? (
+                        <Image
+                          src={visitor.photo_url}
+                          alt={`${visitor.name}'s photo`}
+                          width={48}
+                          height={48}
+                          className="w-12 h-12 rounded-2xl object-cover border border-slate-200 cursor-pointer shadow-sm"
+                          onClick={() => onPhotoClick(visitor.photo_url!)}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-600 shrink-0">
+                          <UserCircle className="w-6 h-6" />
                         </div>
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="text-sm whitespace-nowrap">{visitor.phone || "—"}</div>
-                        <div className="text-xs text-text-muted whitespace-nowrap">{visitor.id_number || "No ID"}</div>
-                      </TableCell>
-
-                      <TableCell>
-                        {visitor.status === "pending" ? (
-                          <StatusBadge status="pending" />
-                        ) : visitor.custom_data?.manual_override === "true" ? (
-                          <StatusBadge status="manual_override" />
-                        ) : (
-                          <StatusBadge status="checked_in">
-                            <ShieldCheck className="h-3 w-3" /> Checked in
-                          </StatusBadge>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        {visitor.status === "pending" ? (
-                          planTier === "basic" ? (
-                            <Button
-                              size="sm"
-                              onClick={() => onDirectApprove(visitor)}
-                              className="whitespace-nowrap"
+                      )}
+                      
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 truncate">{visitor.name}</span>
+                          {hasExtraInfo && (
+                            <button
+                              onClick={() => onInfoClick(visitor)}
+                              className="text-blue-600 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-full transition-colors shrink-0"
                             >
-                              <CheckCircle2 className="w-4 h-4 mr-1.5" /> Approve Entry
-                            </Button>
-                          ) : (
-                            visitor.custom_data?.source === "guard_desk" ? (
-                              <Button
-                                size="sm"
-                                onClick={() => onManualOverride(visitor)}
-                                className="whitespace-nowrap bg-warning text-white hover:bg-warning/90"
-                              >
-                                <CheckCircle2 className="w-4 h-4 mr-1.5" /> Override
-                              </Button>
-                            ) : verifyingId === visitor.id ? (
-                              <div className="flex items-center justify-end gap-2">
-                                <input
-                                  type="text"
-                                  maxLength={4}
-                                  placeholder="OTP"
-                                  className="w-20 rounded-xl border border-input bg-surface px-2 py-2 text-center text-sm font-bold"
-                                  value={otpInput}
-                                  onChange={(e) => onOtpInputChange(e.target.value)}
-                                />
-                                <Button size="sm" onClick={() => onConfirmOTP(visitor)}>Confirm</Button>
-                                <Button size="sm" variant="ghost" onClick={onCancelOTP}>Cancel</Button>
-                              </div>
+                              <Info className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-xs font-medium text-slate-500 mt-0.5 truncate">
+                          {visitor.host_name ? `Host: ${visitor.host_name}` : "Walk-in entry"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
+                      <div>
+                        <span className="block text-xs font-semibold text-slate-400">Phone</span>
+                        <span className="font-medium text-slate-700">{visitor.phone || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-semibold text-slate-400">ID Number</span>
+                        <span className="font-medium text-slate-700">{visitor.id_number || "—"}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      {renderActions(visitor)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-hidden rounded-[1.4rem] border border-blue-100 bg-white shadow-sm">
+              <Table>
+                <TableHeader className="bg-slate-50/80 border-b border-slate-200">
+                  <TableRow>
+                    <TableHead className="text-slate-600 font-bold uppercase tracking-wider text-xs">Arrived</TableHead>
+                    <TableHead className="text-slate-600 font-bold uppercase tracking-wider text-xs">Visitor</TableHead>
+                    <TableHead className="text-slate-600 font-bold uppercase tracking-wider text-xs">Credentials</TableHead>
+                    <TableHead className="text-slate-600 font-bold uppercase tracking-wider text-xs">State</TableHead>
+                    <TableHead className="text-right text-slate-600 font-bold uppercase tracking-wider text-xs">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visitors.map((visitor) => {
+                    const hasCustomData = visitor.custom_data && Object.values(visitor.custom_data).some(val => val.trim() !== "");
+                    const hasExtraInfo = visitor.host_name || visitor.purpose || visitor.vehicle_reg || hasCustomData;
+                    const isOverride = visitor.custom_data?.manual_override === "true";
+
+                    return (
+                      <TableRow key={visitor.id} className="hover:bg-slate-50/50">
+                        <TableCell className="font-medium text-slate-500 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                            <Timer className="h-3.5 w-3.5" />
+                            {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </TableCell>
+
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {visitor.photo_url ? (
+                              <Image
+                                src={visitor.photo_url}
+                                alt={`${visitor.name}'s photo`}
+                                width={44}
+                                height={44}
+                              className="w-11 h-11 rounded-2xl object-cover border border-slate-200 cursor-pointer hover:opacity-80 transition-opacity bg-slate-50 shrink-0 shadow-sm"
+                                onClick={() => onPhotoClick(visitor.photo_url!)}
+                                unoptimized
+                              />
                             ) : (
-                              <Button
-                                size="sm"
-                                onClick={() => onSendOTP(visitor.id, visitor.phone)}
-                                disabled={sendingOtpId === visitor.id}
-                                className="whitespace-nowrap"
-                                variant="outline"
-                              >
-                                {sendingOtpId === visitor.id ? "Sending..." : "Verify & Send OTP"}
-                              </Button>
-                            )
-                          )
-                        ) : (
-                          <Button size="sm" variant="secondary" onClick={() => onCheckOut(visitor.id)} className="whitespace-nowrap">Check Out</Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                              <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-600 shrink-0">
+                                <UserCircle className="w-6 h-6" />
+                              </div>
+                            )}
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold whitespace-nowrap text-slate-900">{visitor.name}</span>
+
+                                {hasExtraInfo && (
+                                  <button
+                                    onClick={() => onInfoClick(visitor)}
+                                    className="text-blue-600 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-full transition-colors shrink-0 shadow-sm border border-blue-100"
+                                    title="View Visit Info"
+                                  >
+                                    <Info className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                              <p className="mt-1 text-xs font-medium text-slate-500">{visitor.host_name ? `Host: ${visitor.host_name}` : "Walk-in entry"}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        <TableCell>
+                          <div className="text-sm font-medium text-slate-700 whitespace-nowrap">{visitor.phone || "—"}</div>
+                          <div className="text-xs text-slate-500 whitespace-nowrap mt-0.5">{visitor.id_number || "No ID"}</div>
+                        </TableCell>
+
+                        <TableCell>
+                          <CustomStatusBadge status={visitor.status} isOverride={isOverride} />
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          {renderActions(visitor)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </div>
-    </DataTableShell>
+    </div>
   );
 }

@@ -1,8 +1,6 @@
 "use client";
 
-import { LogOut, Radar, ScanLine, UserRoundPlus } from "lucide-react";
-import { PageHeader } from "@/components/dashboard/shared/PageHeader";
-import { QuickActionButton } from "@/components/dashboard/shared/QuickActionButton";
+import { DoorOpen, LogOutIcon, ScanQrCode, UserPlus2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type GuardDashboardHeaderProps = {
@@ -19,29 +17,42 @@ export default function GuardDashboardHeader({
   onShowAddVisitor,
 }: GuardDashboardHeaderProps) {
   return (
-    <PageHeader
-      title="Gate Dashboard"
-      eyebrow="Security operations"
-      description={`Live visitor monitoring for ${guardGateName}.`}
-      icon={Radar}
-    >
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+          <DoorOpen className="h-6 w-6" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Guard Workspace</p>
+          <h1 className="text-xl font-bold text-slate-900">{guardGateName}</h1>
+        </div>
+      </div>
+      
+      <div className="flex flex-wrap items-center gap-3">
         <Button
           variant="outline"
-          onClick={onLogout}
-          className="flex-1 text-text-muted hover:text-destructive sm:flex-initial"
-        >
-          <LogOut className="w-4 h-4" /> Sign Out
-        </Button>
-        <QuickActionButton
-          icon={ScanLine}
-          variant="outline"
           onClick={onShowQr}
+          className="h-11 border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
         >
+          <ScanQrCode className="mr-2 h-4 w-4" />
           Show QR
-        </QuickActionButton>
-        <QuickActionButton icon={UserRoundPlus} onClick={onShowAddVisitor}>
+        </Button>
+        <Button
+          onClick={onShowAddVisitor}
+          className="h-11 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+        >
+          <UserPlus2 className="mr-2 h-4 w-4" />
           New Visitor
-        </QuickActionButton>
-    </PageHeader>
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={onLogout}
+          className="h-11 text-slate-500 hover:bg-slate-100 hover:text-red-600"
+        >
+          <LogOutIcon className="mr-2 h-4 w-4" />
+          Sign Out
+        </Button>
+      </div>
+    </div>
   );
 }

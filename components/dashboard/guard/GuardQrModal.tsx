@@ -1,8 +1,7 @@
 "use client";
 
-import { Copy, Printer, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
+import { Link2, FileDown } from "lucide-react";
 import { ModalShell } from "@/components/dashboard/shared/ModalShell";
-import { QRDisplayCard } from "@/components/dashboard/shared/QRDisplayCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -26,64 +25,65 @@ export default function GuardQrModal({
 
   return (
     <ModalShell
-      title="Gate QR display"
-      description={`Let visitors register themselves for ${guardGateName}. This dynamic code refreshes for security.`}
+      title="Gate check-in code"
+      description="Visitors can scan this code to open the check-in form for this gate."
       onClose={onClose}
-      className="max-w-xl"
+      className="max-w-md"
     >
-      <div className="grid gap-5">
-        <QRDisplayCard
-          title="Scan to Register"
-          description={`${guardGateName} visitor self check-in`}
-          qrUrl={qrImageUrl}
-          icon={ScanLine}
-          footer={
-            <div className="w-full space-y-4">
-              <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 font-black text-blue-700">1</span>
-                  Ask the visitor to scan with their phone camera.
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 font-black text-blue-700">2</span>
-                  They complete the public check-in form.
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 font-black text-blue-700">3</span>
-                  Approve or verify them from the visitor queue.
-                </div>
-              </div>
-              <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <RefreshCw className="h-3.5 w-3.5" />
-                Code auto-rotates
-              </p>
+      <div className="grid gap-6">
+        <div className="flex flex-col items-center justify-center rounded-[1.4rem] border border-blue-100 bg-blue-50/40 p-6 text-center shadow-sm mt-2">
+          <div className="mb-5 inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-800">
+            {guardGateName}
+          </div>
+          
+          <div className="rounded-[1.4rem] border border-slate-200 bg-white p-4 shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={qrImageUrl} alt="QR Code" className="h-48 w-48 object-contain" />
+          </div>
+          
+          <h3 className="mt-5 text-xl font-bold text-slate-900">Visitor self check-in</h3>
+          
+          <div className="mt-5 w-full space-y-3 rounded-2xl border border-slate-100 bg-white p-4 text-sm font-medium text-slate-600 shadow-sm text-left">
+            <div className="flex items-center gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">1</div>
+              Scan the code
             </div>
-          }
-        />
-
-        <div className="rounded-[1.25rem] border border-slate-200 bg-white p-3">
-          <div className="flex gap-2">
-            <Input readOnly value={qrUrl} className="h-11 text-xs font-medium text-slate-500" />
-            <Button
-              variant="outline"
-              className="h-11 shrink-0"
-              onClick={(e) => {
-                navigator.clipboard.writeText(qrUrl);
-                const btn = e.currentTarget;
-                const oldText = btn.innerText;
-                btn.innerText = "Copied";
-                setTimeout(() => { btn.innerText = oldText; }, 2000);
-              }}
-            >
-              <Copy className="h-4 w-4" />
-              Copy
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">2</div>
+              Complete visitor details
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">3</div>
+              Wait for guard review
+            </div>
+          </div>
+          
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-800">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Auto-rotating
           </div>
         </div>
 
-        <Button className="h-12 w-full bg-blue-600 text-white hover:bg-blue-700" onClick={handlePrintQr}>
-          <Printer className="h-4 w-4 mr-2" /> Print Static Poster
+        <div className="flex gap-2">
+          <Input readOnly value={qrUrl} className="h-11 bg-slate-50 text-xs font-medium text-slate-500 border-slate-200 truncate" />
+          <Button
+            variant="outline"
+            className="h-11 shrink-0 border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+            onClick={(e) => {
+              navigator.clipboard.writeText(qrUrl);
+              const btn = e.currentTarget;
+              const oldText = btn.innerText;
+              btn.innerText = "Copied";
+              setTimeout(() => { btn.innerText = oldText; }, 2000);
+            }}
+          >
+            <Link2 className="h-4 w-4 mr-2" />
+            Copy Link
+          </Button>
+        </div>
+
+        <Button className="h-12 w-full bg-blue-600 text-white hover:bg-blue-700 shadow-sm font-bold text-base" onClick={handlePrintQr}>
+          <FileDown className="h-5 w-5 mr-2" /> Download Poster
         </Button>
       </div>
     </ModalShell>
