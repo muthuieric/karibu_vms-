@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 
 // Use the Service Role Key to bypass RLS and create accounts securely
 const supabaseAdmin = createClient(
@@ -13,6 +14,10 @@ export async function POST(request: Request) {
 
     if (!email || !password || !fullName || !companyId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (!isStrongPassword(password)) {
+      return NextResponse.json({ error: PASSWORD_REQUIREMENTS_MESSAGE }, { status: 400 });
     }
 
     // 1. Create the user in Auth

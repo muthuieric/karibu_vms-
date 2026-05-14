@@ -66,8 +66,8 @@ export default function CreateCompanyAdminModal({
               <Input
                 required
                 type="password"
-                placeholder="Min 6 characters"
-                minLength={6}
+                placeholder="Min 8 chars, 1 uppercase, 1 symbol"
+                minLength={8}
                 value={adminForm.password}
                 onChange={(e) => onAdminFormChange({ ...adminForm, password: e.target.value })}
                 className="mt-1.5 h-11 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600"

@@ -55,17 +55,17 @@ function VerifyContent() {
   }, [verifyPayment]);
 
   return (
-    <Card className="max-w-md w-full bg-zinc-900 border-zinc-800 shadow-2xl text-center">
+    <Card className="max-w-md w-full text-center">
       <CardHeader>
-        <div className="mx-auto mb-4 flex justify-center">
-          {status === "loading" && <Loader2 className="w-16 h-16 text-amber-500 animate-spin" />}
-          {status === "success" && <CheckCircle2 className="w-16 h-16 text-green-500" />}
-          {status === "failed" && <XCircle className="w-16 h-16 text-red-500" />}
+        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl border">
+          {status === "loading" && <Loader2 className="w-10 h-10 text-warning-foreground animate-spin" />}
+          {status === "success" && <CheckCircle2 className="w-10 h-10 text-success" />}
+          {status === "failed" && <XCircle className="w-10 h-10 text-destructive" />}
         </div>
-        <CardTitle className="text-2xl font-bold text-white">
+        <CardTitle className="text-2xl font-bold">
           {status === "loading" ? "Verifying Payment..." : status === "success" ? "Payment Successful" : "Verification Failed"}
         </CardTitle>
-        <CardDescription className="text-zinc-400 mt-2 text-base">
+        <CardDescription className="mt-2 text-base">
           {message}
         </CardDescription>
       </CardHeader>
@@ -74,7 +74,7 @@ function VerifyContent() {
           <div className="mt-6">
             <Button 
               onClick={() => window.location.href = "/dashboard/company-admin"} 
-              className="bg-green-600 hover:bg-green-700 text-white w-full flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2 bg-success hover:bg-success/90 text-white"
             >
               Continue to Dashboard <ArrowRight className="w-4 h-4" />
             </Button>
@@ -84,14 +84,14 @@ function VerifyContent() {
           <div className="space-y-3 mt-6">
             <Button 
               onClick={verifyPayment} 
-              className="bg-amber-600 hover:bg-amber-700 text-white w-full flex items-center justify-center gap-2"
+              className="bg-warning hover:bg-warning/90 text-white w-full flex items-center justify-center gap-2"
             >
               <RefreshCcw className="w-4 h-4" /> Try Verifying Again
             </Button>
             <Button 
               variant="outline"
               onClick={() => window.location.href = "/dashboard/company-admin"} 
-              className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800 w-full"
+              className="w-full"
             >
               Return to Dashboard
             </Button>
@@ -104,10 +104,10 @@ function VerifyContent() {
 
 export default function PaymentSuccessPage() {
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Suspense fallback={
-        <Card className="max-w-md w-full bg-zinc-900 border-zinc-800 shadow-2xl p-8 text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-amber-500 mx-auto" />
+        <Card className="max-w-md w-full p-8 text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
         </Card>
       }>
         <VerifyContent />

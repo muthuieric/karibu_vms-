@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { Download, ScanLine, UserPlus } from "lucide-react";
+import Link from "next/link";
 import AdminDashboardHeader from "@/components/dashboard/company-admin/AdminDashboardHeader";
 import AdminPhotoLightbox from "@/components/dashboard/company-admin/AdminPhotoLightbox";
 import AdminStatsGrid from "@/components/dashboard/company-admin/AdminStatsGrid";
 import AdminVisitInfoModal from "@/components/dashboard/company-admin/AdminVisitInfoModal";
 import MasterVisitorLog from "@/components/dashboard/company-admin/MasterVisitorLog";
+import { ActionCard } from "@/components/dashboard/shared/ActionCard";
+import { PageContainer } from "@/components/dashboard/shared/AppShell";
+import { Button } from "@/components/ui/button";
 import { AdminVisitor, useCompanyAdminDashboard } from "@/hooks/useCompanyAdminDashboard";
 
 export default function AdminDashboard() {
@@ -23,12 +28,34 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+    <PageContainer>
         <AdminDashboardHeader
           hasActiveFilters={dashboard.hasActiveFilters}
           onDownloadCSV={dashboard.downloadCSV}
         />
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <ActionCard
+            title="Open gate QR center"
+            description="Print visitor check-in and checkout posters for reception points."
+            icon={ScanLine}
+            action={<Button asChild variant="secondary" className="bg-white/95 text-primary hover:bg-white"><Link href="/dashboard/company-admin/qr">Manage QR codes</Link></Button>}
+          />
+          <ActionCard
+            title="Review pending entries"
+            description={`${dashboard.pendingCount} visitor${dashboard.pendingCount === 1 ? "" : "s"} awaiting guard approval right now.`}
+            icon={UserPlus}
+            tone="warning"
+            action={<Button onClick={() => dashboard.setStatusFilter("pending")} variant="secondary" className="bg-white/95 text-orange-700 hover:bg-white">Filter pending</Button>}
+          />
+          <ActionCard
+            title="Export audit trail"
+            description="Download a CSV report for audits, reconciliation, or management review."
+            icon={Download}
+            tone="dark"
+            action={<Button onClick={dashboard.downloadCSV} variant="secondary" className="bg-white text-slate-950 hover:bg-white/90">Download report</Button>}
+          />
+        </div>
         
         <AdminStatsGrid
           totalToday={dashboard.totalToday}
@@ -56,7 +83,6 @@ export default function AdminDashboard() {
           onPhotoClick={setEnlargedPhoto}
           onInfoClick={setInfoModalVisitor}
         />
-      </div>
 
       {displayedInfoModalVisitor && (
         <AdminVisitInfoModal
@@ -72,6 +98,6 @@ export default function AdminDashboard() {
           onClose={() => setEnlargedPhoto(null)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

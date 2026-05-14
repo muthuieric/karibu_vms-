@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { compressImage } from "@/lib/image-compression";
 import { getDistanceInMeters } from "@/lib/geo";
 
@@ -33,6 +32,8 @@ export function usePublicGateCheckIn() {
     askVehicle: false,
   });
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [verifiedGateId, setVerifiedGateId] = useState<string | null>(null);
+  const [gateName, setGateName] = useState<string | null>(null);
   const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newVisitor, setNewVisitor] = useState({
@@ -104,6 +105,24 @@ export function usePublicGateCheckIn() {
       }
 
       try {
+        if (urlGateId) {
+          const gatesRes = await fetch(`/api/gates?company_id=${companyId}`);
+          if (gatesRes.ok) {
+            const gatesJson = await gatesRes.json();
+            const gate = (gatesJson.data || []).find((item: { id: string; name: string }) => item.id === urlGateId);
+            if (gate) {
+              setVerifiedGateId(gate.id);
+              setGateName(gate.name);
+            } else {
+              setVerifiedGateId(null);
+              setGateName(null);
+            }
+          }
+        } else {
+          setVerifiedGateId(null);
+          setGateName(null);
+        }
+
         const deptsRes = await fetch(`/api/departments?company_id=${companyId}`);
         if (deptsRes.ok) {
           const deptsJson = await deptsRes.json();
@@ -149,7 +168,7 @@ export function usePublicGateCheckIn() {
     };
 
     fetchCompanyData();
-  }, [companyId, searchParams]);
+  }, [companyId, searchParams, urlGateId]);
 
   const filteredDepartments = useMemo(() => {
     return departments
@@ -218,25 +237,29 @@ export function usePublicGateCheckIn() {
         }
       }
 
-      const { error } = await supabase.from("visitors").insert([
-        {
+      const registerRes = await fetch("/api/visitors/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           company_id: companyId,
           name: newVisitor.name,
-          phone: finalPhone,
+          phone: finalPhone || "",
           document_type: rules.askId ? newVisitor.doc_type : null,
           id_number: rules.askId ? newVisitor.id_number : null,
           host_id: rules.askHost && newVisitor.host_id ? newVisitor.host_id : null,
           host_name: rules.askHost && newVisitor.host_id ? hostSearchQuery : null,
           purpose: rules.askPurpose ? newVisitor.purpose : null,
           vehicle_reg: rules.askVehicle ? newVisitor.vehicle_reg : null,
-          status: "pending",
           photo_url: uploadedPhotoUrl,
           custom_data: customAnswers,
-          gate_id: urlGateId || null,
-        },
-      ]);
+          gate_id: verifiedGateId,
+        }),
+      });
 
-      if (error) throw error;
+      const registerData = await registerRes.json();
+      if (!registerRes.ok) {
+        throw new Error(registerData.error || "Failed to submit registration.");
+      }
 
       if (rules.askHost && newVisitor.host_id && planTier !== "basic") {
         const selectedHost = hosts.find((host) => host.id === newVisitor.host_id);
@@ -275,6 +298,7 @@ export function usePublicGateCheckIn() {
   return {
     loading,
     companyName,
+    gateName,
     accessDenied,
     submitted,
     isQrExpired,

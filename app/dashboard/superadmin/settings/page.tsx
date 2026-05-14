@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { PageContainer } from "@/components/dashboard/shared/AppShell";
+import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, Settings } from "lucide-react";
 
 export default function SuperadminSettingsPage() {
@@ -39,8 +42,8 @@ export default function SuperadminSettingsPage() {
     e.preventDefault();
     setMessage(null);
 
-    if (newPassword.length < 6) {
-      setMessage({ type: "error", text: "Password must be at least 6 characters long." });
+    if (!isStrongPassword(newPassword)) {
+      setMessage({ type: "error", text: PASSWORD_REQUIREMENTS_MESSAGE });
       return;
     }
 
@@ -67,18 +70,16 @@ export default function SuperadminSettingsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-10 max-w-5xl mx-auto space-y-6 md:space-y-8">
+    <PageContainer className="max-w-5xl">
       
       {/* Header Section */}
-      <div className="border-b border-zinc-200 pb-4 flex items-center gap-3">
-        <div className="p-3 bg-amber-100 text-amber-700 rounded-lg shrink-0">
-          <Settings className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Account Settings</h1>
-          <p className="text-zinc-500 mt-1 text-sm md:text-base">Manage your Superadmin profile and security credentials.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Account Settings"
+        eyebrow="Superadmin security"
+        description="Manage your platform operator profile and security credentials."
+        icon={Settings}
+        tone="dark"
+      />
 
       {/* Global Message Banner */}
       {message && (
@@ -132,7 +133,7 @@ export default function SuperadminSettingsPage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="h-12 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-amber-500 transition-colors"
-                  placeholder="Enter at least 6 characters"
+                  placeholder="Min 8 chars, 1 uppercase, 1 symbol"
                 />
               </div>
 
@@ -167,6 +168,6 @@ export default function SuperadminSettingsPage() {
         </Card>
 
       </div>
-    </div>
+    </PageContainer>
   );
 }

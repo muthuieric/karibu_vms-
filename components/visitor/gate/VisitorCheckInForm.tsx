@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Camera, Loader2, UserCircle } from "lucide-react";
+import { Building2, Camera, CheckCircle2, ClipboardList, Loader2, Search, ShieldCheck, UserCircle } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,7 @@ type Rules = {
 
 type VisitorCheckInFormProps = {
   companyName: string;
+  gateName?: string | null;
   rules: Rules;
   customFields: CustomField[];
   customAnswers: Record<string, string>;
@@ -62,6 +63,7 @@ type VisitorCheckInFormProps = {
 
 export default function VisitorCheckInForm({
   companyName,
+  gateName,
   rules,
   customFields,
   customAnswers,
@@ -84,46 +86,75 @@ export default function VisitorCheckInForm({
   onAgreedToTermsChange,
 }: VisitorCheckInFormProps) {
   return (
-    <Card className="w-full max-w-md shadow-2xl relative border-t-4 border-t-blue-600 bg-white/95 backdrop-blur-sm z-10">
-      <CardHeader className="text-center pb-6">
-        <CardDescription className="uppercase tracking-widest font-bold text-xs text-blue-600 mb-1">Welcome To</CardDescription>
-        <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight">{companyName}</CardTitle>
-        <p className="text-sm text-zinc-500 mt-2">Please fill out this form to register your visit.</p>
-      </CardHeader>
+    <Card className="relative z-10 w-full max-w-5xl overflow-hidden border-white/80 bg-white/90 shadow-modal backdrop-blur">
+      <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
+        <CardHeader className="relative overflow-hidden bg-gradient-to-br from-blue-700 via-slate-950 to-emerald-700 p-7 text-white lg:p-10">
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),transparent_34%)]" />
+          <div className="relative">
+            <div className="mb-8 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white">
+              <ShieldCheck className="h-7 w-7" />
+            </div>
+            <CardDescription className="mb-2 text-xs font-bold uppercase tracking-widest text-blue-100">Welcome to</CardDescription>
+            <CardTitle className="text-3xl font-black tracking-tight text-white md:text-4xl">{companyName}</CardTitle>
+            <p className="mt-3 text-sm leading-6 text-blue-50/85">
+              Register your visit{gateName ? ` at ${gateName}` : ""}. Security will review your request once submitted.
+            </p>
+            <div className="mt-8 grid gap-3 text-sm font-semibold text-white/90">
+              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-blue-700">1</span>
+                Enter visitor details
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-blue-700">2</span>
+                Complete security requirements
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 p-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-blue-700">3</span>
+                Wait for guard approval
+              </div>
+            </div>
+          </div>
+        </CardHeader>
 
-      <CardContent>
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-200" /></div>
-          <div className="relative flex justify-center text-xs uppercase font-bold tracking-wider"><span className="bg-white px-2 text-zinc-400">Enter Details</span></div>
+      <CardContent className="p-5 md:p-7">
+        <div className="mb-6 flex items-center gap-3 rounded-[1.25rem] border border-blue-100 bg-blue-50/80 p-4">
+          <div className="rounded-2xl bg-primary p-2.5 text-white">
+            <ClipboardList className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-bold text-slate-950">Visitor registration</p>
+            <p className="text-sm text-slate-500">Use your legal name and reachable phone number where required.</p>
+          </div>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <Label className="mb-1 block font-semibold text-zinc-700">Full Name <span className="text-red-500">*</span></Label>
-            <Input required value={newVisitor.name} onChange={(e) => onNewVisitorChange({ ...newVisitor, name: e.target.value })} placeholder="e.g. John Doe" className="h-12 bg-zinc-50" autoComplete="name" />
+        <form onSubmit={onSubmit} className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Label className="mb-1 block">Full Name <span className="text-destructive">*</span></Label>
+            <Input required value={newVisitor.name} onChange={(e) => onNewVisitorChange({ ...newVisitor, name: e.target.value })} placeholder="e.g. John Doe" className="h-12" autoComplete="name" />
           </div>
 
           {rules.askPhone && (
             <div>
-              <Label className="mb-1 block font-semibold text-zinc-700">Phone Number <span className="text-red-500">*</span></Label>
+              <Label className="mb-1 block">Phone Number <span className="text-destructive">*</span></Label>
               <PhoneInput
                 inputProps={{ autoComplete: "tel" }}
                 country="ke"
                 value={newVisitor.phone}
                 onChange={phone => onNewVisitorChange({ ...newVisitor, phone })}
-                inputClass="!w-full !h-12 !text-zinc-900 !bg-zinc-50 !rounded-md !border !border-zinc-300 focus:!ring-2 focus:!ring-blue-600 px-3"
+                inputClass="!w-full !h-12 !text-slate-900 !bg-white !rounded-xl !border !border-slate-200 focus:!ring-2 focus:!ring-blue-500/20 px-3"
                 containerClass="w-full"
-                buttonClass="!border-zinc-300 !bg-zinc-50 !rounded-l-md hover:!bg-zinc-100"
+                buttonClass="!border-slate-200 !bg-slate-50 !rounded-l-xl hover:!bg-slate-100"
               />
             </div>
           )}
 
           {rules.askId && (
-            <div className="grid grid-cols-2 gap-4">
+            <>
               <div>
-                <Label className="mb-1 block font-semibold text-zinc-700">Document Type</Label>
+                <Label className="mb-1 block">Document Type</Label>
                 <select
-                  className="flex h-12 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="flex h-12 w-full rounded-xl border border-input bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={newVisitor.doc_type}
                   onChange={(e) => onNewVisitorChange({ ...newVisitor, doc_type: e.target.value })}
                 >
@@ -133,22 +164,24 @@ export default function VisitorCheckInForm({
                 </select>
               </div>
               <div>
-                <Label className="mb-1 block font-semibold text-zinc-700">ID Number <span className="text-red-500">*</span></Label>
+                <Label className="mb-1 block">ID Number <span className="text-destructive">*</span></Label>
                 <Input
                   required
                   value={newVisitor.id_number}
                   onChange={(e) => onNewVisitorChange({ ...newVisitor, id_number: e.target.value })}
                   placeholder="Enter ID Number"
-                  className="h-12 bg-zinc-50"
+                  className="h-12"
                   autoComplete="id number"
                 />
               </div>
-            </div>
+            </>
           )}
 
           {rules.askHost && (
-            <div className="relative" ref={dropdownRef}>
-              <Label className="mb-1 block font-semibold text-zinc-700">Who are you visiting?</Label>
+            <div className="relative md:col-span-2" ref={dropdownRef}>
+              <Label className="mb-1 block">Who are you visiting?</Label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
                 type="text"
                 placeholder="Type to search for a host..."
@@ -159,26 +192,28 @@ export default function VisitorCheckInForm({
                   onNewVisitorChange({ ...newVisitor, host_id: "" });
                 }}
                 onFocus={() => onHostDropdownOpenChange(true)}
-                className="h-12 bg-zinc-50"
+                className="h-12 pl-9"
                 autoComplete="off"
               />
+              </div>
 
               <input type="text" className="hidden" required value={newVisitor.host_id} onChange={() => {}} />
 
               {isHostDropdownOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-zinc-200 rounded-md shadow-xl max-h-60 overflow-y-auto">
+                <div className="absolute z-10 w-full mt-1 bg-surface border border-border rounded-2xl shadow-modal max-h-60 overflow-y-auto">
                   {filteredDepartments.length === 0 ? (
-                    <div className="p-4 text-sm text-zinc-500 text-center">No matching hosts found.</div>
+                    <div className="p-4 text-sm text-text-muted text-center">No matching hosts found.</div>
                   ) : (
                     filteredDepartments.map((dept) => (
                       <div key={dept.id}>
-                        <div className="px-3 py-2 text-xs font-bold bg-zinc-100/80 text-zinc-500 uppercase tracking-wider sticky top-0 backdrop-blur-sm">
+                        <div className="px-3 py-2 text-xs font-bold bg-surface-muted text-text-muted uppercase tracking-wider sticky top-0 backdrop-blur-sm flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5" />
                           {dept.name}
                         </div>
                         {dept.hosts.map((host) => (
                           <div
                             key={host.id}
-                            className="px-4 py-3 text-sm text-zinc-900 hover:bg-blue-50 cursor-pointer border-b border-zinc-50 last:border-0 transition-colors"
+                            className="px-4 py-3 text-sm text-text-main hover:bg-primary/5 cursor-pointer border-b border-border last:border-0 transition-colors"
                             onClick={() => {
                               onNewVisitorChange({ ...newVisitor, host_id: host.id });
                               onHostSearchQueryChange(host.name);
@@ -198,52 +233,53 @@ export default function VisitorCheckInForm({
 
           {rules.askPurpose && (
             <div>
-              <Label className="mb-1 block font-semibold text-zinc-700">Purpose of Visit</Label>
+              <Label className="mb-1 block">Purpose of Visit</Label>
               <Input
                 value={newVisitor.purpose}
                 onChange={(e) => onNewVisitorChange({ ...newVisitor, purpose: e.target.value })}
                 placeholder="e.g. Meeting, Delivery, Interview"
-                className="h-12 bg-zinc-50"
+                className="h-12"
               />
             </div>
           )}
 
           {rules.askVehicle && (
             <div>
-              <Label className="mb-1 block font-semibold text-zinc-700">Vehicle Registration</Label>
+              <Label className="mb-1 block">Vehicle Registration</Label>
               <Input
                 value={newVisitor.vehicle_reg}
                 onChange={(e) => onNewVisitorChange({ ...newVisitor, vehicle_reg: e.target.value })}
                 placeholder="e.g. KCA 123A (Leave blank if walk-in)"
-                className="h-12 bg-zinc-50 uppercase"
+                className="h-12 uppercase"
               />
             </div>
           )}
 
           {customFields.map((field) => (
             <div key={field.id}>
-              <Label className="mb-1 block font-semibold text-zinc-700">{field.label}</Label>
+              <Label className="mb-1 block">{field.label}</Label>
               <Input
                 value={customAnswers[field.id] || ""}
                 onChange={(e) => onCustomAnswersChange({ ...customAnswers, [field.id]: e.target.value })}
                 placeholder={`Enter ${field.label.toLowerCase()}`}
-                className="h-12 bg-zinc-50"
+                className="h-12"
               />
             </div>
           ))}
+          </div>
 
           {rules.requirePhoto && (
-            <div className="space-y-3 pt-2 pb-2">
+            <div className="space-y-3 rounded-[1.25rem] border border-slate-200 bg-slate-50/80 p-4">
               <div>
-                <Label className="flex justify-between items-center font-semibold text-zinc-700">
+                <Label className="flex justify-between items-center">
                   Security Photo
-                  <span className="text-xs text-red-500 font-bold uppercase tracking-wider">* Required</span>
+                  <span className="text-xs text-destructive font-bold uppercase tracking-wider">* Required</span>
                 </Label>
-                <p className="text-[11px] text-zinc-500 mt-1 font-medium">Accepted formats: JPG, PNG, WEBP, HEIC</p>
+                <p className="text-[11px] text-text-muted mt-1 font-medium">Accepted formats: JPG, PNG, WEBP, HEIC</p>
               </div>
 
-              <div className="flex items-center gap-4 bg-zinc-50 p-3 rounded-xl border border-zinc-200">
-                <div className="w-16 h-16 rounded-full bg-white border-2 border-dashed border-zinc-300 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+              <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-border">
+                <div className="w-20 h-20 rounded-2xl bg-surface border-2 border-dashed border-border flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
                   {selfiePreview ? (
                     <Image
                       src={selfiePreview}
@@ -254,7 +290,7 @@ export default function VisitorCheckInForm({
                       unoptimized
                     />
                   ) : (
-                    <UserCircle className="w-8 h-8 text-zinc-300" />
+                    <UserCircle className="w-9 h-9 text-text-muted" />
                   )}
                 </div>
 
@@ -276,19 +312,19 @@ export default function VisitorCheckInForm({
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full text-sm h-12 bg-white hover:bg-zinc-100 shadow-sm border-zinc-300 text-zinc-700 font-bold"
+                    className="w-full text-sm h-12 font-bold"
                     onClick={() => selfieInputRef.current?.click()}
                   >
-                    <Camera className="w-5 h-5 mr-2" /> Take Selfie
+                    <Camera className="w-5 h-5" /> Take Selfie
                   </Button>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="space-y-3 pt-4 border-t border-zinc-200">
-            <div className="text-xs text-zinc-500 h-24 overflow-y-auto p-3 bg-zinc-50 border border-zinc-200 rounded-md leading-relaxed shadow-inner">
-              <p className="font-bold mb-1 text-zinc-700">Terms and Conditions of Entry</p>
+          <div className="space-y-3 rounded-[1.25rem] border border-slate-200 bg-white p-4">
+            <div className="text-xs text-text-muted h-24 overflow-y-auto p-3 bg-surface-muted border border-border rounded-xl leading-relaxed shadow-inner">
+              <p className="font-bold mb-1 text-text-main">Terms and Conditions of Entry</p>
               <p>By registering, you agree to comply with all building security policies and procedures. You consent to the collection, processing, and temporary storage of your personal data (including identification details and facial capture, if applicable) strictly for building security and safety audit purposes. Management reserves the right to deny entry, conduct searches, or escort individuals off the premises for non-compliance. Your data will be handled in accordance with local data protection laws.</p>
             </div>
             <div className="flex items-start gap-2.5">
@@ -298,19 +334,20 @@ export default function VisitorCheckInForm({
                 required
                 checked={agreedToTerms}
                 onChange={(e) => onAgreedToTermsChange(e.target.checked)}
-                className="mt-0.5 shrink-0 h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                className="mt-0.5 shrink-0 h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
               />
-              <Label htmlFor="terms" className="text-sm text-zinc-700 leading-snug cursor-pointer font-medium">
-                I agree to the Terms and Conditions and consent to the processing of my data. <span className="text-red-500">*</span>
+              <Label htmlFor="terms" className="text-sm text-text-main leading-snug cursor-pointer font-medium">
+                I agree to the Terms and Conditions and consent to the processing of my data. <span className="text-destructive">*</span>
               </Label>
             </div>
           </div>
 
-          <Button type="submit" className="w-full mt-6 h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg transition-transform active:scale-[0.98]" disabled={isSubmitting || !agreedToTerms}>
-            {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</> : "Submit Registration"}
+          <Button type="submit" className="w-full mt-6 h-14 text-lg font-bold" disabled={isSubmitting || !agreedToTerms}>
+            {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</> : <><CheckCircle2 className="h-5 w-5" /> Submit Registration</>}
           </Button>
         </form>
       </CardContent>
+      </div>
     </Card>
   );
 }

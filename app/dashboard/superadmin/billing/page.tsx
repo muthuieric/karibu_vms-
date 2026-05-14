@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Lock, Loader2, CreditCard, Building2, CalendarDays, Search, Filter } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+import { PageContainer } from "@/components/dashboard/shared/AppShell";
+import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -100,18 +102,16 @@ export default function SuperadminBillingPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 lg:p-10 max-w-6xl mx-auto space-y-6 md:space-y-8">
+    <PageContainer className="max-w-6xl">
       
       {/* Header Section */}
-      <div className="border-b border-zinc-200 pb-4 flex items-center gap-3">
-        <div className="p-3 bg-blue-100 text-blue-700 rounded-lg shrink-0">
-          <CreditCard className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Billing & Revenue</h1>
-          <p className="text-zinc-500 mt-1 text-sm md:text-base">Manage subscriptions, view expiry dates, and track platform revenue.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Billing & Revenue"
+        eyebrow="Platform finance"
+        description="Manage subscriptions, expiry dates, lock states, and client revenue health."
+        icon={CreditCard}
+        tone="dark"
+      />
 
       {/* Main Billing Card */}
       <Card className="shadow-sm border-zinc-200 bg-white/90 backdrop-blur-sm overflow-hidden">
@@ -280,6 +280,6 @@ export default function SuperadminBillingPage() {
 
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

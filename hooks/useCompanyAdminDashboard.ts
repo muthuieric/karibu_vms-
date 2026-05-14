@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 
 export type AdminVisitor = {
   id: string;
+  company_id: string;
   name: string;
   phone: string;
   document_type: string;
@@ -40,22 +41,11 @@ export function useCompanyAdminDashboard() {
   const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
+    let activeCompanyId: string | null = null;
+
     const fetchInitialData = async () => {
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
-
-      try {
-        await supabase
-          .from("visitors")
-          .update({
-            status: "auto_checked_out",
-            checked_out_at: new Date().toISOString(),
-          })
-          .in("status", ["pending", "checked_in"])
-          .lt("created_at", startOfToday.toISOString());
-      } catch (err) {
-        console.error("Auto-checkout script failed:", err);
-      }
 
       const { data: authData } = await supabase.auth.getUser();
       if (!authData?.user) {
@@ -72,6 +62,21 @@ export function useCompanyAdminDashboard() {
       if (!profile?.company_id) {
         setLoading(false);
         return;
+      }
+      activeCompanyId = profile.company_id;
+
+      try {
+        await supabase
+          .from("visitors")
+          .update({
+            status: "auto_checked_out",
+            checked_out_at: new Date().toISOString(),
+          })
+          .eq("company_id", profile.company_id)
+          .in("status", ["pending", "checked_in"])
+          .lt("created_at", startOfToday.toISOString());
+      } catch (err) {
+        console.error("Auto-checkout script failed:", err);
       }
 
       const { data: company } = await supabase
@@ -110,6 +115,7 @@ export function useCompanyAdminDashboard() {
       const { data: visitorData, error: visitorError } = await supabase
         .from("visitors")
         .select("*")
+        .eq("company_id", profile.company_id)
         .order("created_at", { ascending: false })
         .limit(2000);
 
@@ -121,7 +127,8 @@ export function useCompanyAdminDashboard() {
 
       const { count: lifetimeCount, error: lifetimeError } = await supabase
         .from("visitors")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .eq("company_id", profile.company_id);
 
       if (!lifetimeError && lifetimeCount !== null) {
         setLifetimeVisitors(lifetimeCount);
@@ -138,9 +145,12 @@ export function useCompanyAdminDashboard() {
         if (isLocked) return;
 
         if (payload.eventType === "INSERT") {
-          setVisitors((prev) => [payload.new as AdminVisitor, ...prev]);
+          const newVisitor = payload.new as AdminVisitor;
+          if (!activeCompanyId || newVisitor.company_id !== activeCompanyId) return;
+          setVisitors((prev) => [newVisitor, ...prev]);
           setLifetimeVisitors((prev) => prev + 1);
         } else if (payload.eventType === "UPDATE") {
+          if (!activeCompanyId || (payload.new as AdminVisitor).company_id !== activeCompanyId) return;
           setVisitors((prev) =>
             prev.map((visitor) => (visitor.id === payload.new.id ? (payload.new as AdminVisitor) : visitor))
           );

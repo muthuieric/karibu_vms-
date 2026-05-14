@@ -6,6 +6,7 @@ import CompaniesDirectoryCard from "@/components/dashboard/superadmin/companies/
 import CompanyVisitorStatsModal from "@/components/dashboard/superadmin/companies/CompanyVisitorStatsModal";
 import CreateCompanyAdminModal from "@/components/dashboard/superadmin/companies/CreateCompanyAdminModal";
 import SuperadminCompaniesHeader from "@/components/dashboard/superadmin/companies/SuperadminCompaniesHeader";
+import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { useSuperadminCompanies } from "@/hooks/useSuperadminCompanies";
 
 export default function ManageCompaniesPage() {
@@ -15,7 +16,7 @@ export default function ManageCompaniesPage() {
   const [showVisitorsModal, setShowVisitorsModal] = useState(false);
 
   return (
-    <div className="p-4 md:p-6 lg:p-10 max-w-7xl mx-auto space-y-6 md:space-y-8">
+    <PageContainer>
       <SuperadminCompaniesHeader onNewCompany={() => setShowAddModal(true)} />
 
       <CompaniesDirectoryCard
@@ -67,6 +68,6 @@ export default function ManageCompaniesPage() {
           onClose={() => setShowVisitorsModal(false)}
         />
       )}
-    </div>
+    </PageContainer>
   );
 }

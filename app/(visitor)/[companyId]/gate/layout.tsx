@@ -38,6 +38,25 @@ export async function generateMetadata(
   return {
     title: `Visitor Check-in | ${facilityName}`,
     description: `Official visitor registration gate for ${companyName || "this facility"}, powered by Karibu VMS. Fast, secure, and touchless check-in.`,
+    openGraph: {
+      title: `Visitor Check-in | ${facilityName}`,
+      description: `Official visitor registration gate for ${companyName || "this facility"}, powered by Karibu VMS. Fast, secure, and touchless check-in.`,
+      siteName: "Karibu VMS",
+      type: "website",
+      images: [
+        {
+          url: "/og-image.png",
+          width: 1200,
+          height: 630,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Visitor Check-in | ${facilityName}`,
+      description: `Official visitor registration gate for ${companyName || "this facility"}, powered by Karibu VMS. Fast, secure, and touchless check-in.`,
+      images: ["/og-image.png"],
+    },
   };
 }
 

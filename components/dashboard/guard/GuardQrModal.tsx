@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import { Printer, RefreshCw, ShieldCheck, X } from "lucide-react";
+import { Copy, Printer, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
+import { ModalShell } from "@/components/dashboard/shared/ModalShell";
+import { QRDisplayCard } from "@/components/dashboard/shared/QRDisplayCard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 type GuardQrModalProps = {
@@ -22,68 +22,70 @@ export default function GuardQrModal({
   handlePrintQr,
 }: GuardQrModalProps) {
   if (!isOpen) return null;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=18&data=${encodeURIComponent(qrUrl)}`;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
-      <Card className="w-full max-w-sm shadow-2xl relative border-0 rounded-xl overflow-hidden bg-white" onClick={(e) => e.stopPropagation()}>
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
-        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-full p-1.5 transition-colors">
-          <X size={18} />
-        </button>
-        <CardHeader className="pt-8 pb-2 text-center">
-          <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight">Scan to Register</CardTitle>
-          <CardDescription className="text-zinc-500 font-medium">
-            Visitor Self-Check-In
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center p-6 space-y-6">
-          <div className="p-4 bg-white border-2 border-zinc-200 rounded-2xl shadow-sm relative group">
-            <div className="absolute -top-3 -right-3 bg-blue-100 text-blue-700 p-1.5 rounded-full shadow-sm animate-pulse">
-              <RefreshCw size={16} />
+    <ModalShell
+      title="Gate QR display"
+      description={`Let visitors register themselves for ${guardGateName}. This dynamic code refreshes for security.`}
+      onClose={onClose}
+      className="max-w-xl"
+    >
+      <div className="grid gap-5">
+        <QRDisplayCard
+          title="Scan to Register"
+          description={`${guardGateName} visitor self check-in`}
+          qrUrl={qrImageUrl}
+          icon={ScanLine}
+          footer={
+            <div className="w-full space-y-4">
+              <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 font-black text-blue-700">1</span>
+                  Ask the visitor to scan with their phone camera.
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 font-black text-blue-700">2</span>
+                  They complete the public check-in form.
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 font-black text-blue-700">3</span>
+                  Approve or verify them from the visitor queue.
+                </div>
+              </div>
+              <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <RefreshCw className="h-3.5 w-3.5" />
+                Code auto-rotates
+              </p>
             </div>
+          }
+        />
 
-            <Image
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrUrl)}`}
-              alt={`${guardGateName} check-in QR code`}
-              width={250}
-              height={250}
-              className="rounded-lg"
-              unoptimized
-            />
-          </div>
-          <div className="text-center">
-            <p className="text-sm text-zinc-500 max-w-[250px] mx-auto font-medium">
-              Have the visitor scan this code with their smartphone camera.
-            </p>
-            <p className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider mt-2 bg-emerald-50 py-1 px-2 rounded inline-block">
-              <ShieldCheck className="w-3 h-3 inline mr-1 mb-0.5" /> Code auto-rotates for security
-            </p>
-          </div>
-
-          <div className="w-full flex gap-2">
-            <Input readOnly value={qrUrl} className="h-10 text-xs bg-zinc-50 text-zinc-500" />
+        <div className="rounded-[1.25rem] border border-slate-200 bg-white p-3">
+          <div className="flex gap-2">
+            <Input readOnly value={qrUrl} className="h-11 text-xs font-medium text-slate-500" />
             <Button
               variant="outline"
-              className="h-10 shrink-0 border-zinc-200"
+              className="h-11 shrink-0"
               onClick={(e) => {
                 navigator.clipboard.writeText(qrUrl);
                 const btn = e.currentTarget;
                 const oldText = btn.innerText;
-                btn.innerText = "Copied!";
+                btn.innerText = "Copied";
                 setTimeout(() => { btn.innerText = oldText; }, 2000);
               }}
             >
+              <Copy className="h-4 w-4" />
               Copy
             </Button>
           </div>
+        </div>
 
-          <div className="flex gap-3 w-full mt-2 pt-4 border-t border-zinc-100">
-            <Button className="w-full bg-zinc-900 hover:bg-zinc-800 text-white" onClick={handlePrintQr}>
-              <Printer className="w-4 h-4 mr-2" /> Print Static Poster
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <Button className="h-12 w-full bg-blue-600 text-white hover:bg-blue-700" onClick={handlePrintQr}>
+          <Printer className="h-4 w-4 mr-2" /> Print Static Poster
+        </Button>
+      </div>
+    </ModalShell>
   );
 }

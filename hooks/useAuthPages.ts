@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 import { supabase } from "@/lib/supabase";
 
 export function useLoginPage() {
@@ -73,9 +74,8 @@ export function useRegisterPage() {
 
     if (formData.password !== formData.confirmPassword) return alert("Passwords do not match. Please try again.");
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(formData.password)) {
-      return alert("Weak Password: It must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.");
+    if (!isStrongPassword(formData.password)) {
+      return alert(`Weak Password: ${PASSWORD_REQUIREMENTS_MESSAGE}`);
     }
 
     setLoading(true);
@@ -144,9 +144,8 @@ export function useResetPasswordPage() {
 
     if (password !== confirmPassword) return alert("Passwords do not match. Please try again.");
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return alert("Weak Password: It must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.");
+    if (!isStrongPassword(password)) {
+      return alert(`Weak Password: ${PASSWORD_REQUIREMENTS_MESSAGE}`);
     }
 
     setLoading(true);

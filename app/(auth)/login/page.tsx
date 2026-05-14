@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { AuthCard, AuthShell } from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLoginPage } from "@/hooks/useAuthPages";
@@ -11,67 +11,62 @@ export default function LoginPage() {
   const login = useLoginPage();
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-zinc-50 p-4 overflow-hidden">
-      
-      {/* --- ENHANCED BACKGROUND --- */}
-      {/* Subtle Grid Pattern */}
-      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-      
-      {/* Soft Ambient Light Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-zinc-400/20 blur-[100px] pointer-events-none" />
-      {/* --------------------------- */}
-
-      <Card className="relative z-10 w-full max-w-sm shadow-2xl border-t-4 border-t-zinc-900 bg-white/95 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">VMS Portal</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your dashboard.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={login.handleLogin} className="space-y-4">
-            {login.error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm font-medium border border-red-200 break-words">
-                {login.error}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="user@building.com"
-                required
-                value={login.email}
-                onChange={(e) => login.setEmail(e.target.value)}
-              />
+    <AuthShell>
+      <AuthCard>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-semibold text-zinc-900 tracking-tight">Welcome back</h1>
+          <p className="mt-2 text-zinc-500 text-sm">
+            Access your workspace to manage visits, teams, and entry records.
+          </p>
+        </div>
+        
+        <form onSubmit={login.handleLogin} className="space-y-5">
+          {login.error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 break-words">
+              {login.error}
             </div>
+          )}
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:underline">
-                  Forgot Password?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                required
-                value={login.password}
-                onChange={(e) => login.setPassword(e.target.value)}
-              />
+          <div className="space-y-2 text-left">
+            <Label htmlFor="email" className="text-zinc-700 font-medium text-sm">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@organization.com"
+              required
+              value={login.email}
+              onChange={(e) => login.setEmail(e.target.value)}
+              className="h-12 rounded-xl border-zinc-200 focus:border-blue-500 focus:ring-blue-500/20 bg-zinc-50 focus:bg-white transition-colors px-4 text-zinc-900"
+            />
+          </div>
+
+          <div className="space-y-2 text-left">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="text-zinc-700 font-medium text-sm">Password</Label>
+              <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                Forgot Password?
+              </Link>
             </div>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              value={login.password}
+              onChange={(e) => login.setPassword(e.target.value)}
+              className="h-12 rounded-xl border-zinc-200 focus:border-blue-500 focus:ring-blue-500/20 bg-zinc-50 focus:bg-white transition-colors px-4 text-zinc-900"
+            />
+          </div>
 
-            <Button type="submit" className="w-full" disabled={login.loading}>
-              {login.loading ? "Signing in & Verifying Role..." : "Sign In"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          <Button type="submit" className="w-full h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium text-base transition-colors mt-2" disabled={login.loading}>
+            {login.loading ? "Signing in..." : "Sign In"}
+          </Button>
+
+          <p className="text-center text-sm text-zinc-500 mt-6">
+            Don't have an account? <Link href="/register" className="text-blue-600 font-semibold hover:text-blue-800">Register</Link>
+          </p>
+        </form>
+      </AuthCard>
+    </AuthShell>
   );
 }

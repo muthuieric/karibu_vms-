@@ -24,7 +24,7 @@ export default function ManageGuards() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-4 md:p-6">
+    <div className="min-h-full bg-background p-4 md:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
         <GuardsPageHeader onAddGuard={() => setShowModal(true)} />
 

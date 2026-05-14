@@ -116,7 +116,7 @@ export function useGuardDashboard() {
         .order("created_at", { ascending: false });
 
       if (currentGateId) {
-        query = query.eq("gate_id", currentGateId);
+        query = query.or(`gate_id.eq.${currentGateId},gate_id.is.null`);
       }
 
       const { data: visitorData, error: visitorError } = await query;
@@ -128,10 +128,17 @@ export function useGuardDashboard() {
         .on("postgres_changes", { event: "*", schema: "public", table: "visitors" }, (payload) => {
           if (payload.eventType === "INSERT") {
             const newVisitor = payload.new as Visitor;
-            if (!currentGateId || newVisitor.gate_id === currentGateId) {
+            if (newVisitor.company_id !== currentCompanyId) return;
+            if (!currentGateId || newVisitor.gate_id === currentGateId || !newVisitor.gate_id) {
               setVisitors((prev) => [newVisitor, ...prev]);
             }
           } else if (payload.eventType === "UPDATE") {
+            const updatedVisitor = payload.new as Visitor;
+            if (updatedVisitor.company_id !== currentCompanyId) return;
+            if (currentGateId && updatedVisitor.gate_id && updatedVisitor.gate_id !== currentGateId) {
+              setVisitors((prev) => prev.filter((visitor) => visitor.id !== updatedVisitor.id));
+              return;
+            }
             if (payload.new.status === "checked_out" || payload.new.status === "auto_checked_out") {
               setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.new.id));
             } else {

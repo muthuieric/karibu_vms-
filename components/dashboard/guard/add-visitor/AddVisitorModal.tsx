@@ -224,7 +224,7 @@ export default function AddVisitorModal({
         {
           company_id: companyId,
           name: newVisitor.name,
-          phone: finalPhone,
+          phone: finalPhone || "",
           document_type: askId ? newVisitor.doc_type : null,
           id_number: askId ? newVisitor.id_number : null,
           host_id: askHost && newVisitor.host_id ? newVisitor.host_id : null,

@@ -2,7 +2,11 @@
 
 import Image from "next/image";
 import { DoorOpen, Filter, Info, UserCircle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState, LoadingSkeleton } from "@/components/dashboard/shared/StateBlocks";
+import { SearchInput, SelectField } from "@/components/dashboard/shared/Fields";
+import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
+import { DataTableShell } from "@/components/dashboard/shared/DataTableShell";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -15,6 +19,7 @@ import {
 
 type Visitor = {
   id: string;
+  company_id: string;
   name: string;
   phone: string;
   document_type: string;
@@ -76,96 +81,78 @@ export default function MasterVisitorLog({
   onInfoClick,
 }: MasterVisitorLogProps) {
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="space-y-6 pb-6">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div>
-            <CardTitle>Master Visitor Log</CardTitle>
-            <CardDescription>Comprehensive record of all building access.</CardDescription>
-          </div>
-          <div className="w-full md:w-80">
-            <label className="text-xs font-semibold text-zinc-500 mb-1.5 block">Search Records</label>
-            <Input
-              placeholder="Search name, host, or vehicle..."
-              value={searchQuery}
-              onChange={(e) => onSearchQueryChange(e.target.value)}
-              className="bg-white h-10 w-full"
-            />
-          </div>
+    <DataTableShell
+      title="Master Visitor Log"
+      description="Search, filter, and audit every building access event."
+      filters={
+        <div className="grid gap-3 lg:min-w-[44rem] lg:grid-cols-[1.2fr_1fr_1fr]">
+          <SearchInput
+            placeholder="Search name, host, vehicle..."
+            value={searchQuery}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
+            inputClassName="h-11"
+          />
+          <SelectField value={gateFilter} onChange={(e) => onGateFilterChange(e.target.value)} className="h-11">
+            <option value="all">All Gates</option>
+            <option value="unassigned">Unassigned</option>
+            {gates.map((gate) => (
+              <option key={gate.id} value={gate.id}>
+                {gate.name}
+              </option>
+            ))}
+          </SelectField>
+          <SelectField value={statusFilter} onChange={(e) => onStatusFilterChange(e.target.value)} className="h-11">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="checked_in">Inside</option>
+            <option value="checked_out">Departed</option>
+            <option value="auto_checked_out">Auto Checked Out</option>
+          </SelectField>
         </div>
-
-        <div className="bg-zinc-50/50 p-4 rounded-xl border border-zinc-100">
-          <div className="flex items-center gap-2 text-sm font-semibold text-zinc-700 mb-4">
-            <Filter className="w-4 h-4 text-zinc-500" /> Filter Options
+      }
+    >
+      <div className="border-b border-slate-200/80 bg-slate-50/80 p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2 text-sm font-semibold text-text-main">
+            <Filter className="w-4 h-4 text-text-muted" /> Date Controls
+            {hasActiveFilters && <Badge variant="info">Active filters</Badge>}
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 w-full">
-              <label className="text-xs font-medium text-zinc-500 block">Entry Gate</label>
-              <select
-                className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 text-zinc-700 font-medium"
-                value={gateFilter}
-                onChange={(e) => onGateFilterChange(e.target.value)}
-              >
-                <option value="all">All Gates</option>
-                <option value="unassigned">Unassigned (Walk-ins)</option>
-                {gates.map((gate) => (
-                  <option key={gate.id} value={gate.id}>
-                    {gate.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1.5 w-full">
-              <label className="text-xs font-medium text-zinc-500 block">Status</label>
-              <select
-                className="h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 text-zinc-700 font-medium"
-                value={statusFilter}
-                onChange={(e) => onStatusFilterChange(e.target.value)}
-              >
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="checked_in">Inside (Checked In)</option>
-                <option value="checked_out">Departed (Checked Out)</option>
-                <option value="auto_checked_out">Auto Checked Out</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5 w-full">
-              <label className="text-xs font-medium text-zinc-500 block">From Date</label>
+              <label className="text-xs font-medium text-text-muted block">From Date</label>
               <Input
                 type="date"
-                className="h-10 w-full bg-white text-zinc-700"
+                className="h-10 w-full"
                 value={startDate}
                 onChange={(e) => onStartDateChange(e.target.value)}
               />
             </div>
 
             <div className="space-y-1.5 w-full">
-              <label className="text-xs font-medium text-zinc-500 block">To Date</label>
+              <label className="text-xs font-medium text-text-muted block">To Date</label>
               <Input
                 type="date"
-                className="h-10 w-full bg-white text-zinc-700"
+                className="h-10 w-full"
                 value={endDate}
                 onChange={(e) => onEndDateChange(e.target.value)}
               />
             </div>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="p-0 sm:p-6 sm:pt-0">
+      <div className="p-0 sm:p-5">
         {loading ? (
-          <p className="text-zinc-500 py-6 text-center">Loading reports...</p>
+          <LoadingSkeleton rows={5} />
         ) : visitors.length === 0 ? (
-          <p className="text-zinc-500 py-6 text-center">
-            {hasActiveFilters ? "No matching visitors found for these filters." : "No records found."}
-          </p>
+          <EmptyState
+            title={hasActiveFilters ? "No matching visitors found" : "No visitor records yet"}
+            description={hasActiveFilters ? "Try adjusting the search, status, gate, or date filters." : "New visitor records will appear here once people check in."}
+          />
         ) : (
-          <div className="rounded-none sm:rounded-md border-y sm:border overflow-x-auto">
+          <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-zinc-50">
+              <TableHeader className="bg-surface-muted">
                 <TableRow>
                   <TableHead className="whitespace-nowrap">Date</TableHead>
                   <TableHead className="whitespace-nowrap">Visitor Details</TableHead>
@@ -182,7 +169,7 @@ export default function MasterVisitorLog({
 
                   return (
                     <TableRow key={visitor.id}>
-                      <TableCell className="font-medium text-zinc-600 whitespace-nowrap">
+                      <TableCell className="font-medium text-text-muted whitespace-nowrap">
                         {new Date(visitor.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
@@ -193,54 +180,54 @@ export default function MasterVisitorLog({
                               alt={`${visitor.name}'s photo`}
                               width={40}
                               height={40}
-                              className="w-10 h-10 rounded-full object-cover border-2 border-zinc-200 cursor-pointer hover:opacity-80 transition-opacity bg-white shrink-0"
+                              className="w-10 h-10 rounded-full object-cover border-2 border-border cursor-pointer hover:opacity-80 transition-opacity bg-surface shrink-0"
                               onClick={() => onPhotoClick(visitor.photo_url!)}
                               unoptimized
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center border-2 border-zinc-200 text-zinc-400 shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center border-2 border-border text-text-muted shrink-0">
                               <UserCircle className="w-6 h-6" />
                             </div>
                           )}
 
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-zinc-900 whitespace-nowrap">{visitor.name}</span>
+                              <span className="font-semibold text-text-main whitespace-nowrap">{visitor.name}</span>
                               {hasExtraInfo && (
                                 <button
                                   onClick={() => onInfoClick(visitor)}
-                                  className="text-blue-600 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-full transition-colors shrink-0 shadow-sm border border-blue-100"
+                                  className="text-primary bg-primary/10 hover:bg-primary/15 p-1.5 rounded-full transition-colors shrink-0 shadow-sm border border-primary/15"
                                   title="View Visit Info"
                                 >
                                   <Info className="w-3.5 h-3.5" />
                                 </button>
                               )}
                             </div>
-                            <div className="text-xs text-zinc-500 whitespace-nowrap">{visitor.phone || "—"}</div>
+                            <div className="text-xs text-text-muted whitespace-nowrap">{visitor.phone || "—"}</div>
                           </div>
                         </div>
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600 ring-1 ring-inset ring-zinc-500/10">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-surface-muted px-2 py-1 text-xs font-medium text-text-muted ring-1 ring-inset ring-border">
                           <DoorOpen className="h-3 w-3" />
                           {getGateName(visitor.gate_id)}
                         </span>
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        {visitor.status === "pending" && <span className="text-amber-600 text-xs font-bold uppercase">Pending</span>}
+                        {visitor.status === "pending" && <StatusBadge status="pending" />}
                         {visitor.status === "checked_in" && (
                           visitor.custom_data?.manual_override === "true" 
-                            ? <span className="inline-flex items-center rounded-full bg-purple-100/80 px-2.5 py-0.5 text-xs font-semibold text-purple-800 whitespace-nowrap border border-purple-200/50 uppercase">Inside (Manual Override)</span>
-                            : <span className="text-green-600 text-xs font-bold uppercase">Inside</span>
+                            ? <StatusBadge status="manual_override" />
+                            : <StatusBadge status="checked_in">Inside</StatusBadge>
                         )}
-                        {visitor.status === "checked_out" && <span className="text-zinc-500 text-xs font-bold uppercase">Departed</span>}
-                        {visitor.status === "auto_checked_out" && <span className="text-purple-600 text-xs font-bold uppercase">Auto-Departed</span>}
+                        {visitor.status === "checked_out" && <StatusBadge status="checked_out">Departed</StatusBadge>}
+                        {visitor.status === "auto_checked_out" && <StatusBadge status="auto_checked_out">Auto-Departed</StatusBadge>}
                       </TableCell>
                       <TableCell className="text-sm whitespace-nowrap">
                         {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </TableCell>
-                      <TableCell className="text-sm text-zinc-500 whitespace-nowrap">
+                      <TableCell className="text-sm text-text-muted whitespace-nowrap">
                         {visitor.checked_out_at
                           ? new Date(visitor.checked_out_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                           : "--"}
@@ -252,7 +239,7 @@ export default function MasterVisitorLog({
             </Table>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </DataTableShell>
   );
 }

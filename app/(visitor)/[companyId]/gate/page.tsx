@@ -36,6 +36,7 @@ function CheckInFormContent() {
   return (
     <VisitorCheckInForm
       companyName={gate.companyName}
+      gateName={gate.gateName}
       rules={gate.rules}
       customFields={gate.customFields}
       customAnswers={gate.customAnswers}

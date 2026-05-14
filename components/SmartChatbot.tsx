@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Send } from "lucide-react";
+import { X, Send, HelpCircle } from "lucide-react";
 
 type ChatMessage = {
   id: number;
@@ -16,7 +16,7 @@ type ChatMessage = {
 export default function SmartChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 1, text: "Hello! 👋 I'm the karibu-vms assistant. Ask me about pricing, how it works, type 'register' to get started, or type 'support' to report an issue.", sender: "bot" }
+    { id: 1, text: "Hi, I can help you understand how karibu-vms works, guide you to registration, or connect you with support.", sender: "bot" }
   ]);
   const [inputValue, setInputValue] = useState("");
   
@@ -89,21 +89,21 @@ export default function SmartChatbot() {
       if (flowState === "awaiting_reg_name") {
         setTempData(prev => ({ ...prev, name: text }));
         setFlowState("awaiting_reg_company");
-        setMessages(prev => [...prev, { id: Date.now(), text: `Nice to meet you, ${text}! What is the name of your Company or Building?`, sender: "bot" }]);
+        setMessages(prev => [...prev, { id: Date.now(), text: `Nice to meet you, ${text}! What is the name of your organization?`, sender: "bot" }]);
         return;
       }
 
       if (flowState === "awaiting_reg_company") {
         setTempData(prev => ({ ...prev, company: text }));
         setFlowState("awaiting_reg_location");
-        setMessages(prev => [...prev, { id: Date.now(), text: "Got it. Where is your company located?", sender: "bot" }]);
+        setMessages(prev => [...prev, { id: Date.now(), text: "Got it. Where is your organization located?", sender: "bot" }]);
         return;
       }
 
       if (flowState === "awaiting_reg_location") {
         setTempData(prev => ({ ...prev, location: text }));
         setFlowState("awaiting_reg_industry");
-        setMessages(prev => [...prev, { id: Date.now(), text: "And finally, what does your company do? (e.g., Commercial Real Estate, Tech Hub, School)", sender: "bot" }]);
+        setMessages(prev => [...prev, { id: Date.now(), text: "And finally, what type of organization is this? (e.g., Office, School, Apartment)", sender: "bot" }]);
         return;
       }
 
@@ -111,14 +111,14 @@ export default function SmartChatbot() {
         const industry = text;
         setFlowState("idle"); // Reset flow
         
-        const waText = encodeURIComponent(`*New Client Registration Request*\nName: ${tempData.name}\nCompany: ${tempData.company}\nLocation: ${tempData.location}\nIndustry: ${industry}\n\n*Note:* Client completed the chatbot intake. Let's get them set up!`);
+        const waText = encodeURIComponent(`*New Setup Request*\nName: ${tempData.name}\nOrganization: ${tempData.company}\nLocation: ${tempData.location}\nType: ${industry}\n\n*Note:* Client completed the chatbot intake. Let's get them set up!`);
         const waLink = `https://wa.me/254706123513?text=${waText}`;
         
         setMessages(prev => [...prev, { 
           id: Date.now(), 
-          text: "Perfect! I have all your details. Click the button below to connect directly with our sales team on WhatsApp to finalize your registration.", 
+          text: "Perfect! I have all your details. Click the button below to connect directly with our team on WhatsApp to finalize your setup.", 
           sender: "bot",
-          action: { label: "Chat with Sales", url: waLink }
+          action: { label: "Chat with Team", url: waLink }
         }]);
         setTempData({ name: "", company: "", location: "", industry: "", problem: "" });
         return;
@@ -133,7 +133,7 @@ export default function SmartChatbot() {
       if (lowerInput.match(/\b(hi|hello|hey|hii|heya|greetings)\b/)) {
         setMessages(prev => [...prev, { 
           id: Date.now(), 
-          text: "Hello! 👋 How can I help you today? You can ask me about pricing, how the system works, or type 'register' to get started.", 
+          text: "Hello! 👋 How can I help you today? I can help you understand how karibu-vms works, guide you to registration, or connect you with support.", 
           sender: "bot" 
         }]);
       }
@@ -141,29 +141,29 @@ export default function SmartChatbot() {
         setFlowState("awaiting_problem_company");
         setMessages(prev => [...prev, { 
           id: Date.now(), 
-          text: "I'm sorry to hear you're experiencing an issue. Let's create a support ticket for you. First, what is your Company or Building Name?", 
+          text: "I can help with that. Let's create a support ticket. First, what is your organization's name?", 
           sender: "bot" 
         }]);
       }
       else if (lowerInput.includes("pric") || lowerInput.includes("cost") || lowerInput.includes("pay") || lowerInput.includes("plan") || lowerInput.includes("subscription")) {
         setMessages(prev => [...prev, { 
           id: Date.now(), 
-          text: "Our pricing uses a flexible **Per-Visitor Model**. You only pay for the exact volume of people entering your facility. Base features include unlimited guards and gates. Type 'Register' to start setting up your account and get a custom quote!", 
+          text: "Our pricing is transparent and designed to scale with your visitor volume. You only pay for what you use. Type 'Start setup' to get an account and a custom quote!", 
           sender: "bot"
         }]);
       } 
       else if (lowerInput.includes("how") || lowerInput.includes("work") || lowerInput.includes("feature") || lowerInput.includes("detail") || lowerInput.includes("about")) {
         setMessages(prev => [...prev, { 
           id: Date.now(), 
-          text: "karibu-vms can do it all! Visitors self-register via QR code, the system checks blacklists automatically, and guards use a live dashboard for instant approvals. Zero hardware required.", 
+          text: "karibu-vms replaces manual visitor books with a digital process for check-in, verification, approval, checkout, and visitor records. Everything is managed seamlessly from one place.", 
           sender: "bot" 
         }]);
       } 
-      else if (lowerInput.includes("register") || lowerInput.includes("buy") || lowerInput.includes("trial") || lowerInput.includes("sales") || lowerInput.includes("start")) {
+      else if (lowerInput.includes("setup") || lowerInput.includes("register") || lowerInput.includes("buy") || lowerInput.includes("trial") || lowerInput.includes("sales") || lowerInput.includes("start")) {
         setFlowState("awaiting_reg_name");
         setMessages(prev => [...prev, { 
           id: Date.now(), 
-          text: "Let's get your building secured! To start the setup process, what is your Name?", 
+          text: "Let's get your organization set up! To start, what is your name?", 
           sender: "bot"
         }]);
       } 
@@ -174,7 +174,7 @@ export default function SmartChatbot() {
 
         setMessages(prev => [...prev, { 
           id: Date.now(), 
-          text: "I'm just a simple bot and I'm not sure how to answer that! Please click the button below to ask our team directly on WhatsApp.", 
+          text: "I might need a human to help with that. Please click the button below to ask our team directly on WhatsApp.", 
           sender: "bot",
           action: { label: "Ask on WhatsApp", url: waLink }
         }]);
@@ -189,41 +189,41 @@ export default function SmartChatbot() {
   };
 
   const quickActions = [
-    { label: "Report a Problem", text: "I need support for a problem" },
-    { label: "Check Pricing", text: "Tell me about pricing" },
-    { label: "Register Account", text: "I want to register an account" }
+    { label: "Get help", text: "I need help with an issue" },
+    { label: "Ask about pricing", text: "Tell me about pricing" },
+    { label: "Start setup", text: "I want to start setup" }
   ];
 
   return (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
       {isOpen && (
-        <div className="w-[320px] sm:w-[380px] h-[500px] bg-white border border-zinc-200 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[2rem] flex flex-col overflow-hidden mb-4 animate-in slide-in-from-bottom-5 duration-300">
+        <div className="w-[calc(100vw-3rem)] sm:w-[380px] h-[500px] max-h-[calc(100vh-8rem)] bg-white border border-zinc-100 shadow-xl rounded-3xl flex flex-col overflow-hidden mb-4 animate-in slide-in-from-bottom-5 duration-300">
           
           {/* Chat Header */}
-          <div className="bg-zinc-900 p-5 flex items-center justify-between text-white">
+          <div className="bg-white border-b border-zinc-100 p-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white text-zinc-900 flex items-center justify-center font-black tracking-tighter text-xs shrink-0">
-                m-vms
+              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold tracking-tighter text-sm shrink-0 border border-blue-100">
+                k.
               </div>
               <div>
-                <h3 className="font-bold text-sm">karibu-vms Assistant</h3>
-                <p className="text-[11px] text-zinc-400">Usually replies instantly</p>
+                <h3 className="font-semibold text-sm text-zinc-900">karibu-vms Support</h3>
+                <p className="text-[12px] text-zinc-500">We reply instantly</p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-2 rounded-full transition-colors">
+            <button onClick={() => setIsOpen(false)} className="text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 p-2 rounded-full transition-colors">
               <X size={18} />
             </button>
           </div>
 
           {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-zinc-50">
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-zinc-50/50">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] flex flex-col gap-2 ${msg.sender === "user" ? "items-end" : "items-start"}`}>
-                  <div className={`p-3.5 rounded-2xl text-sm font-medium leading-relaxed shadow-sm ${
+                  <div className={`px-4 py-3 text-sm leading-relaxed ${
                     msg.sender === "user" 
-                    ? "bg-zinc-900 text-white rounded-br-sm" 
-                    : "bg-white border border-zinc-200 text-zinc-800 rounded-bl-sm"
+                    ? "bg-blue-600 text-white rounded-2xl rounded-br-sm shadow-sm" 
+                    : "bg-white border border-zinc-100 text-zinc-700 rounded-2xl rounded-bl-sm shadow-sm"
                   }`}>
                     <span dangerouslySetInnerHTML={{ __html: msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
                   </div>
@@ -232,9 +232,9 @@ export default function SmartChatbot() {
                       href={msg.action.url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="bg-[#25D366] text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md hover:scale-105 transition-transform active:scale-95 inline-flex items-center gap-1.5"
+                      className="bg-blue-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm hover:bg-blue-700 transition-colors inline-flex items-center gap-2 mt-1"
                     >
-                      <MessageSquare size={14} fill="white" /> {msg.action.label}
+                      <HelpCircle size={14} /> {msg.action.label}
                     </a>
                   )}
                 </div>
@@ -254,7 +254,7 @@ export default function SmartChatbot() {
                     onClick={() => {
                       sendMessage(action.text);
                     }}
-                    className="whitespace-nowrap px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold rounded-full transition-colors border border-zinc-200"
+                    className="whitespace-nowrap px-3.5 py-1.5 bg-blue-50 border border-blue-100 hover:border-blue-200 hover:bg-blue-100 text-blue-700 text-xs font-medium rounded-full transition-all"
                   >
                     {action.label}
                   </button>
@@ -262,15 +262,15 @@ export default function SmartChatbot() {
               </div>
             )}
 
-            <form onSubmit={handleSendMessage} className="relative">
+            <form onSubmit={handleSendMessage} className="relative mt-2">
               <input 
                 type="text" 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type your reply..." 
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-3 pl-4 pr-12 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                placeholder="Type your message..." 
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-zinc-900"
               />
-              <button type="submit" disabled={!inputValue.trim()} className="absolute right-1.5 top-1.5 p-1.5 bg-zinc-900 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 transition-colors">
+              <button type="submit" disabled={!inputValue.trim()} className="absolute right-1.5 top-1.5 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors">
                 <Send size={16} />
               </button>
             </form>
@@ -281,14 +281,16 @@ export default function SmartChatbot() {
       {/* Floating Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${
-          isOpen ? "bg-zinc-800 rotate-90" : "bg-zinc-900"
+        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border transition-all duration-300 hover:scale-105 active:scale-95 ${
+          isOpen ? "bg-white border-zinc-200 rotate-90" : "bg-blue-600 border-transparent shadow-blue-500/30"
         }`}
       >
         {isOpen ? (
-          <X className="text-white w-6 h-6" />
+          <X className="text-zinc-900 w-6 h-6" />
         ) : (
-          <MessageSquare className="text-white w-6 h-6" />
+          <div className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-lg">
+            k.
+          </div>
         )}
       </button>
 

@@ -9,6 +9,10 @@ import GuardDashboardHeader from "@/components/GuardDashboardHeader";
 import GuardProfileErrorState from "@/components/GuardProfileErrorState";
 import GuardStats from "@/components/GuardStats";
 import GuardVisitorsTable from "@/components/GuardVisitorsTable";
+import { ActionCard } from "@/components/dashboard/shared/ActionCard";
+import { AppSurface, PageContainer } from "@/components/dashboard/shared/AppShell";
+import { Badge } from "@/components/ui/badge";
+import { ScanLine, ShieldCheck, UserRoundPlus } from "lucide-react";
 
 const AddVisitorModal = dynamic(() => import("@/components/dashboard/guard/add-visitor/AddVisitorModal"), { ssr: false });
 const GuardQrModal = dynamic(() => import("@/components/dashboard/guard/GuardQrModal"), { ssr: false });
@@ -41,12 +45,8 @@ export default function GuardDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-6 relative overflow-x-hidden">
-      <div className="fixed inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
-      <div className="fixed top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none z-0" />
-      <div className="fixed bottom-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-zinc-400/20 blur-[100px] pointer-events-none z-0" />
-
-      <div className="max-w-7xl mx-auto space-y-6 relative z-10">
+    <AppSurface variant="guard" className="min-h-screen">
+      <PageContainer className="space-y-6 lg:space-y-8">
         <GuardDashboardHeader
           guardGateName={dashboard.guardGateName}
           onLogout={dashboard.handleLogout}
@@ -56,6 +56,40 @@ export default function GuardDashboard() {
           }}
           onShowAddVisitor={() => setShowAddModal(true)}
         />
+
+        <section className="grid gap-4 lg:grid-cols-[1.25fr_0.85fr_0.85fr]">
+          <div className="rounded-[1.6rem] border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 text-slate-900 shadow-sm">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <Badge className="border-blue-200 bg-blue-100 text-blue-800 hover:bg-blue-100">Live security desk</Badge>
+                <h2 className="mt-4 text-3xl font-black tracking-tight md:text-4xl text-slate-900">{dashboard.guardGateName}</h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+                  Process arrivals, verify approvals, and move checked-in visitors out quickly from one queue.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3 text-blue-600">
+                <ShieldCheck className="h-7 w-7" />
+              </div>
+            </div>
+          </div>
+          <ActionCard
+            title="Register walk-in"
+            description="Open the desk form for guests without a QR scan."
+            icon={UserRoundPlus}
+            tone="success"
+            onClick={() => setShowAddModal(true)}
+          />
+          <ActionCard
+            title="Display gate QR"
+            description="Let visitors self-register from their phone."
+            icon={ScanLine}
+            tone="primary"
+            onClick={() => {
+              dashboard.tickQrTimestamp();
+              setShowQrModal(true);
+            }}
+          />
+        </section>
 
         {!dashboard.isLocked && (
           <GuardStats
@@ -86,8 +120,6 @@ export default function GuardDashboard() {
           onDirectApprove={dashboard.handleDirectApprove}
           onManualOverride={dashboard.handleManualOverride}
         />
-      </div>
-
       <AddVisitorModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
@@ -114,6 +146,7 @@ export default function GuardDashboard() {
         customFieldLabels={dashboard.customFieldLabels}
       />
       <PhotoLightbox photoUrl={enlargedPhoto} onClose={() => setEnlargedPhoto(null)} />
-    </div>
+      </PageContainer>
+    </AppSurface>
   );
 }

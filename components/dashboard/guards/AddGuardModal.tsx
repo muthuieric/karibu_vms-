@@ -77,8 +77,8 @@ export default function AddGuardModal({
               <Input
                 required
                 type="password"
-                placeholder="Min 6 characters"
-                minLength={6}
+                placeholder="Min 8 chars, 1 uppercase, 1 symbol"
+                minLength={8}
                 value={newGuard.password}
                 onChange={(e) => onNewGuardChange({ ...newGuard, password: e.target.value })}
                 className="h-11 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-zinc-900 transition-colors"

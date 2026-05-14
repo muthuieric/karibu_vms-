@@ -3,30 +3,53 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  LayoutDashboard, QrCode, Shield, LogOut, AlertOctagon, 
-  Settings, Menu, X, ListPlus, Building2
+import {
+  AlertOctagon,
+  Blocks,
+  CreditCard,
+  Gauge,
+  LifeBuoy,
+  PanelsTopLeft,
+  ScanLine,
+  Settings,
+  ShieldCheck,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+
+import { AppSurface } from "@/components/dashboard/shared/AppShell";
+import { DashboardSidebar, type DashboardNavItem } from "@/components/dashboard/shared/DashboardSidebar";
+import { LockedAccountBanner } from "@/components/dashboard/shared/LockedAccountBanner";
+import { LoadingState } from "@/components/dashboard/shared/StateBlocks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/lib/supabase";
+
+const adminNavItems: DashboardNavItem[] = [
+  { href: "/dashboard/company-admin", label: "Overview", icon: Gauge, exact: true },
+  { href: "/dashboard/company-admin/qr", label: "Gate QR Code", icon: ScanLine },
+  { href: "/dashboard/company-admin/guards", label: "Security Team", icon: ShieldCheck },
+  { href: "/dashboard/company-admin/rules", label: "Building Rules", icon: PanelsTopLeft },
+  { href: "/dashboard/company-admin/departments", label: "Departments", icon: Blocks },
+  { href: "/dashboard/company-admin/blacklist", label: "Blacklist", icon: AlertOctagon, danger: true },
+  { href: "/dashboard/company-admin/billing", label: "Billing", icon: CreditCard },
+  { href: "/dashboard/company-admin/support", label: "Help Desk", icon: LifeBuoy },
+  { href: "/dashboard/company-admin/settings", label: "Settings", icon: Settings },
+];
 
 export default function CompanyAdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  
+
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [visitorCount, setVisitorCount] = useState(0);
-  const [amountDue, setAmountDue] = useState(0); 
-
+  const [amountDue, setAmountDue] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const verifyAccountStatus = async () => {
       try {
         const { data: authData } = await supabase.auth.getUser();
-        
+
         if (authData?.user) {
           const { data: profile } = await supabase
             .from("profiles")
@@ -41,7 +64,6 @@ export default function CompanyAdminLayout({ children }: { children: React.React
           }
 
           if (profile?.company_id) {
-            // 1. Fetch Company Lock Status
             const { data: company } = await supabase
               .from("companies")
               .select("is_locked, created_at")
@@ -50,25 +72,24 @@ export default function CompanyAdminLayout({ children }: { children: React.React
 
             let countStartDate = company?.created_at || new Date().toISOString();
 
-            // 2. Fetch recent transactions
             const { data: recentTx } = await supabase
               .from("transactions")
               .select("created_at, status")
               .eq("company_id", profile.company_id)
               .order("created_at", { ascending: false })
-              .limit(10); 
+              .limit(10);
 
             if (recentTx && recentTx.length > 0) {
-              const lastPaid = recentTx.find(tx => 
-                tx.status && (tx.status.toUpperCase() === 'COMPLETED' || tx.status.toUpperCase() === 'SUCCESS' || tx.status.toUpperCase() === 'PAID')
+              const lastPaid = recentTx.find((tx) =>
+                tx.status &&
+                (tx.status.toUpperCase() === "COMPLETED" ||
+                  tx.status.toUpperCase() === "SUCCESS" ||
+                  tx.status.toUpperCase() === "PAID")
               );
 
-              if (lastPaid) {
-                countStartDate = lastPaid.created_at;
-              }
+              if (lastPaid) countStartDate = lastPaid.created_at;
             }
 
-            // 3. Count visitors
             const { count } = await supabase
               .from("visitors")
               .select("*", { count: "exact", head: true })
@@ -78,10 +99,7 @@ export default function CompanyAdminLayout({ children }: { children: React.React
             const unpaidVisitors = count || 0;
             setVisitorCount(unpaidVisitors);
             setAmountDue(unpaidVisitors * 3);
-
-            // 4. Initialize lock based ONLY on Superadmin manual lock status
-            const accountLocked = company?.is_locked === true;
-            setIsLocked(accountLocked);
+            setIsLocked(company?.is_locked === true);
           }
         }
       } catch (error) {
@@ -101,153 +119,92 @@ export default function CompanyAdminLayout({ children }: { children: React.React
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-transparent">
-        <p className="text-zinc-500 font-medium animate-pulse">Verifying access...</p>
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <LoadingState label="Verifying admin access..." />
       </div>
     );
   }
 
-  // Safe pathname reading to prevent hydration crashes
   const safePathname = pathname || "";
-  const normalizedPath = safePathname.endsWith('/') ? safePathname.slice(0, -1) : safePathname;
-  
+  const normalizedPath = safePathname.endsWith("/") ? safePathname.slice(0, -1) : safePathname;
   const isPaymentSuccessPage = normalizedPath.includes("/payment-success");
   const isExactAdminPage = normalizedPath === "/dashboard/company-admin";
   const isDepartmentsPage = normalizedPath.includes("/departments");
   const isBlacklistPage = normalizedPath.includes("/blacklist");
-  
   const isRestrictedRoute = isExactAdminPage || isDepartmentsPage || isBlacklistPage;
   const showLockdownPopup = isLocked && isRestrictedRoute && !isPaymentSuccessPage;
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-transparent relative overflow-hidden">
-      {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between bg-white/90 backdrop-blur-md border-b border-zinc-200/60 p-4 shrink-0 z-30 shadow-sm">
-        <div>
-          <h2 className="text-lg font-extrabold text-zinc-900 tracking-tight">VMS Portal</h2>
-          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-0.5">Admin Dashboard</p>
-        </div>
-        <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-zinc-600 hover:bg-zinc-100 rounded-md transition-colors">
-          <Menu size={24} />
-        </button>
-      </div>
+    <div className="flex h-screen flex-col overflow-hidden bg-background md:flex-row">
+      <DashboardSidebar
+        brand="Karibu VMS"
+        subtitle="Admin Dashboard"
+        pathname={normalizedPath}
+        navItems={adminNavItems}
+        isMobileOpen={isMobileMenuOpen}
+        onMobileOpenChange={setIsMobileMenuOpen}
+        onLogout={handleLogout}
+      />
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-          <div className="relative w-72 max-w-[80%] bg-white/95 backdrop-blur-xl h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
-            <div className="p-4 border-b border-zinc-200/60 flex items-center justify-between bg-zinc-50/50">
-              <h2 className="text-lg font-extrabold text-zinc-900 tracking-tight">Menu</h2>
-              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-zinc-500 hover:text-zinc-900 bg-zinc-200 hover:bg-zinc-300 rounded-full transition-colors">
-                <X size={18} />
-              </button>
-            </div>
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-              <Link href="/dashboard/company-admin" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors font-medium text-sm ${normalizedPath === "/dashboard/company-admin" ? "text-blue-700 bg-blue-50" : "text-zinc-600 hover:bg-zinc-100/50"}`}><LayoutDashboard size={20} /> Overview</Link>
-              <Link href="/dashboard/company-admin/qr" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/qr") ? "text-blue-700 bg-blue-50" : "text-zinc-600 hover:bg-zinc-100/50"}`}><QrCode size={20} /> Gate QR Code</Link>
-              <Link href="/dashboard/company-admin/guards" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/guards") ? "text-blue-700 bg-blue-50" : "text-zinc-600 hover:bg-zinc-100/50"}`}><Shield size={20} /> Security Team</Link>
-              <Link href="/dashboard/company-admin/rules" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/rules") ? "text-blue-700 bg-blue-50" : "text-zinc-600 hover:bg-zinc-100/50"}`}><ListPlus size={20} /> Building Rules</Link>
-              <Link href="/dashboard/company-admin/departments" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/departments") ? "text-blue-700 bg-blue-50" : "text-zinc-600 hover:bg-zinc-100/50"}`}><Building2 size={20} /> Departments</Link>
-              <Link href="/dashboard/company-admin/blacklist" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/blacklist") ? "text-red-700 bg-red-50" : "text-zinc-600 hover:bg-zinc-100/50"}`}><AlertOctagon size={20} /> Blacklist</Link>
-              {/* <Link href="/dashboard/company-admin/billing" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/billing") ? "text-blue-700 bg-blue-50" : "text-zinc-600 hover:bg-zinc-100/50"}`}><CreditCard size={20} /> Billing</Link> */}
-              
-              {/* Help Desk Link Restored */}
-              {/* <Link href="/dashboard/company-admin/support" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/support") ? "text-blue-700 bg-blue-50" : "text-zinc-600 hover:bg-zinc-100/50"}`}><LifeBuoy size={20} /> Help Desk</Link> */}
-
-              <Link href="/dashboard/company-admin/settings" onClick={() => setIsMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/settings") ? "text-blue-700 bg-blue-50" : "text-zinc-600 hover:bg-zinc-100/50"}`}><Settings size={20} /> Settings</Link>
-            </nav>
-            <div className="p-4 border-t border-zinc-200/60">
-              <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-3 w-full text-zinc-600 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors font-medium text-sm"><LogOut size={20} /> Sign Out</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Desktop Sidebar */}
-      <aside className="w-64 bg-white/80 backdrop-blur-md border-r border-zinc-200/60 hidden md:flex flex-col shadow-sm z-20 h-full shrink-0">
-        <div className="p-6 border-b border-zinc-200/60">
-          <h2 className="text-xl font-extrabold text-zinc-900 tracking-tight">VMS Portal</h2>
-          <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mt-1">Admin Dashboard</p>
-        </div>
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <Link href="/dashboard/company-admin" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm ${normalizedPath === "/dashboard/company-admin" ? "text-blue-700 bg-blue-50/80 shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"}`}><LayoutDashboard size={18} /> Overview</Link>
-          <Link href="/dashboard/company-admin/qr" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/qr") ? "text-blue-700 bg-blue-50/80 shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"}`}><QrCode size={18} /> Gate QR Code</Link>
-          <Link href="/dashboard/company-admin/guards" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/guards") ? "text-blue-700 bg-blue-50/80 shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"}`}><Shield size={18} /> Security Team</Link>
-          <Link href="/dashboard/company-admin/rules" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/rules") ? "text-blue-700 bg-blue-50/80 shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"}`}><ListPlus size={18} /> Building Rules</Link>
-          <Link href="/dashboard/company-admin/departments" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/departments") ? "text-blue-700 bg-blue-50/80 shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"}`}><Building2 size={18} /> Departments</Link>
-          <Link href="/dashboard/company-admin/blacklist" className={`flex items-center gap-3 py-2.5 px-3 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/blacklist") ? "text-red-700 bg-red-50/80 shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"}`}><AlertOctagon size={18} /> Blacklist</Link>
-          {/* <Link href="/dashboard/company-admin/billing" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/billing") ? "text-blue-700 bg-blue-50/80 shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"}`}><CreditCard size={18} /> Billing</Link>
-          
-          {/* Help Desk Link Restored */}
-          {/* <Link href="/dashboard/company-admin/support" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/support") ? "text-blue-700 bg-blue-50/80 shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"}`}><LifeBuoy size={18} /> Help Desk</Link> */} 
-
-          <Link href="/dashboard/company-admin/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors font-medium text-sm ${normalizedPath.includes("/settings") ? "text-blue-700 bg-blue-50/80 shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"}`}><Settings size={18} /> Settings</Link>
-        </nav>
-        <div className="p-4 border-t border-zinc-200/60">
-          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 w-full text-zinc-600 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors font-medium text-sm"><LogOut size={18} /> Sign Out</button>
-        </div>
-      </aside>
-
-      <main className="flex-1 w-full relative z-10 h-full overflow-y-auto bg-zinc-50 flex flex-col">
-        
-        {/* Persistent Warning Banner */}
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {isLocked && !isPaymentSuccessPage && (
-          <div className="bg-red-600 text-white text-center py-2.5 text-sm font-semibold shadow-md flex items-center justify-center gap-2 shrink-0 z-[60]">
-            <AlertOctagon className="w-4 h-4" /> Your account has been locked manually by administration.
-          </div>
+          <LockedAccountBanner
+            title="Account locked"
+            message="Your account has been locked manually by administration."
+          />
         )}
 
-        {showLockdownPopup ? (
-          <div className="flex-1 flex items-center justify-center p-4 sm:p-6 bg-zinc-100 border-l border-zinc-200/50 shadow-inner">
-            <Card className="max-w-md w-full border border-red-900/50 bg-zinc-900 text-zinc-100 shadow-[0_0_60px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200">
-              <div className="h-1.5 bg-red-600 w-full absolute top-0 left-0" />
-              <CardHeader className="text-center pb-2 pt-8">
-                <div className="mx-auto bg-red-500/10 w-16 h-16 rounded-full flex items-center justify-center mb-4 ring-8 ring-zinc-900">
-                  <AlertOctagon className="w-8 h-8 text-red-500" />
-                </div>
-                <CardTitle className="text-2xl font-bold text-white tracking-tight">Access Restricted</CardTitle>
-                <CardDescription className="text-zinc-400 mt-2 px-2 leading-relaxed">
-                  Management logs, departments, and blacklists are locked by administration.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-4 px-6 pb-6">
-                
-                <div className="bg-black/40 p-5 rounded-xl border border-zinc-800 space-y-4 shadow-inner">
-                  <div className="flex justify-between items-center pb-3 border-b border-zinc-800/80">
-                    <span className="text-sm text-zinc-400">Unpaid Visitors</span>
-                    <span className="text-lg font-bold text-white">{visitorCount}</span>
+        <AppSurface className="flex-1 overflow-y-auto" variant="admin">
+          {showLockdownPopup ? (
+            <div className="flex min-h-full items-center justify-center bg-background p-4 sm:p-6">
+              <Card className="w-full max-w-md border-destructive/20">
+                <CardHeader className="text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-destructive/15 bg-destructive/10 text-destructive">
+                    <AlertOctagon className="h-8 w-8" />
                   </div>
-                  <div className="flex justify-between items-center pb-3 border-b border-zinc-800/80">
-                    <span className="text-sm text-zinc-400">Rate per Visitor</span>
-                    <span className="text-lg font-bold text-white">KES 3.00</span>
+                  <CardTitle className="text-2xl">Access Restricted</CardTitle>
+                  <CardDescription>
+                    Management logs, departments, and blacklists are locked by administration.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="rounded-2xl border border-border bg-surface-muted p-5">
+                    <div className="flex justify-between border-b border-border pb-3">
+                      <span className="text-sm text-text-muted">Unpaid Visitors</span>
+                      <span className="font-bold text-text-main">{visitorCount}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-border py-3">
+                      <span className="text-sm text-text-muted">Rate per Visitor</span>
+                      <span className="font-bold text-text-main">KES 3.00</span>
+                    </div>
+                    <div className="flex items-end justify-between pt-3">
+                      <span className="text-sm font-semibold text-text-muted">Total Amount Due</span>
+                      <span className="text-2xl font-bold text-text-main">
+                        KES {amountDue > 0 ? amountDue.toLocaleString() : "0"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center pt-1">
-                    <span className="text-sm text-zinc-400 font-medium">Total Amount Due</span>
-                    <span className="text-2xl font-black text-white">KES {amountDue > 0 ? amountDue.toLocaleString() : '0'}</span>
-                  </div>
-                </div>
 
-                <div className="flex flex-col gap-3 pt-2">
-                  <Button disabled className="bg-zinc-800 w-full text-white font-bold h-12 rounded-lg text-base transition-all">
-                    <AlertOctagon className="w-5 h-5 mr-2" /> Account Locked Manually
-                  </Button>
+                  <div className="space-y-3">
+                    <Button disabled className="w-full">
+                      <AlertOctagon className="h-4 w-4" />
+                      Account Locked Manually
+                    </Button>
+                    <Button variant="outline" className="w-full" asChild>
+                      <Link href="/dashboard/company-admin/billing">View Billing History</Link>
+                    </Button>
+                  </div>
 
-                  <Button variant="ghost" className="text-zinc-400 hover:text-white h-12 rounded-lg" asChild>
-                    <Link href="/dashboard/company-admin/billing">View Billing History</Link>
-                  </Button>
-                </div>
-                <p className="text-[10px] text-center text-zinc-500 font-medium leading-relaxed mt-1">
-                  Payments are currently managed manually. Please contact the Superadmin to unlock your account.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div className="relative flex-1 w-full flex flex-col h-full pb-10">
-            {children}
-          </div>
-        )}
+                  <p className="text-center text-xs leading-5 text-text-muted">
+                    Payments are currently managed manually. Please contact the Superadmin to unlock your account.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            children
+          )}
+        </AppSurface>
       </main>
     </div>
   );

@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { AlertOctagon, Flag, Loader2, Plus, X } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import { useCompanyBlacklist } from "@/hooks/useCompanyBlacklist";
+import { PageHeader } from "@/components/dashboard/shared/PageHeader";
+import { EmptyState, ErrorState } from "@/components/dashboard/shared/StateBlocks";
 import "react-phone-input-2/lib/style.css";
 
 export default function BlacklistPage() {
@@ -17,57 +19,45 @@ export default function BlacklistPage() {
 
   if (!blacklist.companyId && !blacklist.loading) {
     return (
-      <div className="min-h-screen p-6 flex items-center justify-center">
-        <div className="bg-red-50 text-red-700 p-6 rounded-xl border border-red-200 text-center max-w-md shadow-sm">
-          <AlertOctagon className="w-10 h-10 mb-3 mx-auto" />
-          <h2 className="font-bold text-lg">Profile Error</h2>
-          <p className="text-sm mt-1">Could not verify your building manager profile. Please log in again.</p>
-        </div>
+      <div className="min-h-screen p-6 flex items-center justify-center bg-background">
+        <ErrorState
+          title="Profile Error"
+          description="Could not verify your building manager profile. Please log in again."
+        />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-4 md:p-6 pb-20">
+    <div className="min-h-full bg-background p-4 md:p-6 lg:p-8 pb-20">
       <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
         
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end border-b border-zinc-200 pb-4 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-red-100 text-red-700 rounded-lg shrink-0">
-              <AlertOctagon className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Restricted Access</h1>
-              <p className="text-zinc-500 mt-1 text-sm md:text-base">Manage blacklisted individuals blocked from checking in.</p>
-            </div>
-          </div>
-          <Button onClick={() => setShowRedFlagModal(true)} variant="destructive" className="w-full sm:w-auto h-11 shadow-sm">
-            <Plus className="mr-2 h-5 w-5" /> Add Red Flag
+        <PageHeader
+          title="Restricted Access"
+          description="Manage blacklisted individuals blocked from checking in."
+          icon={AlertOctagon}
+          tone="danger"
+        >
+          <Button onClick={() => setShowRedFlagModal(true)} variant="destructive" className="w-full sm:w-auto">
+            <Plus className="h-4 w-4" /> Add Red Flag
           </Button>
-        </div>
+        </PageHeader>
 
         {/* RED FLAGS / BLACKLIST TABLE */}
-        <Card className="shadow-sm border-zinc-200 bg-white overflow-hidden">
-          <CardHeader className="bg-white border-b border-zinc-100 pb-5">
+        <Card>
+          <CardHeader className="border-b border-border pb-5">
             <CardTitle className="text-xl">Blacklisted Visitors</CardTitle>
             <CardDescription>These individuals will be strictly prohibited from passing the security gates.</CardDescription>
           </CardHeader>
-          <CardContent className="p-0 sm:p-6 sm:pt-6 bg-zinc-50/30">
+          <CardContent className="p-0 sm:p-6 sm:pt-6">
             {blacklist.loading ? (
                <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-zinc-400" /></div>
             ) : blacklist.redFlags.length === 0 ? (
-               <div className="text-center py-16 text-zinc-500 bg-white sm:rounded-xl border border-dashed border-zinc-200 m-0 sm:m-2">
-                 <div className="bg-zinc-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-100 shadow-sm">
-                    <Flag className="w-8 h-8 text-zinc-300" />
-                 </div>
-                 <p className="font-bold text-zinc-800 text-lg">No visitors blacklisted.</p>
-                 <p className="text-sm mt-1 max-w-sm mx-auto text-zinc-500">Your building is safe and clear of any restricted individuals.</p>
-               </div>
+               <EmptyState title="No visitors blacklisted" description="Your building is clear of restricted individuals." icon={Flag} />
             ) : (
-              <div className="rounded-none sm:rounded-md border-y sm:border overflow-x-auto bg-white shadow-sm">
+              <div className="rounded-none sm:rounded-2xl border-y sm:border border-border overflow-x-auto bg-surface">
                 <Table>
-                  <TableHeader className="bg-zinc-50">
+                  <TableHeader className="bg-surface-muted">
                     <TableRow>
                       <TableHead className="whitespace-nowrap pl-4 sm:pl-6">Name</TableHead>
                       <TableHead className="whitespace-nowrap">ID Number</TableHead>

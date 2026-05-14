@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 
 // We MUST use the Service Role Key here to safely bypass RLS 
 // and to be allowed to create Auth users on the backend.
@@ -15,6 +16,10 @@ export async function POST(request: Request) {
 
     if (!companyName || !fullName || !email || !password) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (!isStrongPassword(password)) {
+      return NextResponse.json({ error: PASSWORD_REQUIREMENTS_MESSAGE }, { status: 400 });
     }
 
     // 1. Create the Company (Locked & Pending, saving all contact info and Plan Tier)

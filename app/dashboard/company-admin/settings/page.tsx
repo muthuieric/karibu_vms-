@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, ShieldCheck, MapPin, Crosshair, Lock } from "lucide-react";
+import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 
 export default function SettingsPage() {
   const [userEmail, setUserEmail] = useState("");
@@ -69,7 +71,7 @@ export default function SettingsPage() {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
-    if (newPassword.length < 6) return setMessage({ type: "error", text: "Password must be at least 6 characters long." });
+    if (!isStrongPassword(newPassword)) return setMessage({ type: "error", text: PASSWORD_REQUIREMENTS_MESSAGE });
     if (newPassword !== confirmPassword) return setMessage({ type: "error", text: "New passwords do not match." });
 
     setLoadingPass(true);
@@ -135,16 +137,14 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-4 md:p-6">
+    <div className="min-h-full bg-background p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
         
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-zinc-200 pb-4 gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Account Settings</h1>
-            <p className="text-zinc-500 mt-1 text-sm md:text-base">Manage your profile details and security credentials.</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Account Settings"
+          description="Manage your profile details, security credentials, and gate verification settings."
+          icon={ShieldCheck}
+        />
 
         {/* Global Message Banner for Password */}
         {message && (
@@ -229,7 +229,7 @@ export default function SettingsPage() {
                       value={newPassword} 
                       onChange={(e) => setNewPassword(e.target.value)} 
                       className="h-11 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-zinc-900 transition-colors" 
-                      placeholder="Enter at least 6 characters"
+                      placeholder="Min 8 chars, 1 uppercase, 1 symbol"
                     />
                   </div>
                   <div className="space-y-2">

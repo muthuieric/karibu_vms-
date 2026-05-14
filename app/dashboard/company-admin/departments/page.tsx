@@ -10,11 +10,12 @@ export default function DepartmentsPage() {
   const departmentsPage = useCompanyDepartments();
 
   if (departmentsPage.isLoading) {
-    return <div className="p-6 text-center text-gray-500">Loading your workspace...</div>;
+    return <div className="p-6 text-center text-text-muted">Loading your workspace...</div>;
   }
 
   return (
-    <div className="p-6 space-y-8 max-w-6xl mx-auto">
+    <div className="min-h-full bg-background p-4 md:p-6 lg:p-8">
+      <div className="space-y-8 max-w-6xl mx-auto">
       <DepartmentsHeader />
 
       <AddDepartmentCard
@@ -63,6 +64,7 @@ export default function DepartmentsPage() {
         onDeleteHost={departmentsPage.handleDeleteHost}
         onClearSearch={() => departmentsPage.setSearchQuery("")}
       />
+      </div>
     </div>
   );
 }

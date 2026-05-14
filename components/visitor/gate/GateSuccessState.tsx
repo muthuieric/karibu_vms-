@@ -5,12 +5,14 @@ import { Card, CardTitle } from "@/components/ui/card";
 
 export default function GateSuccessState() {
   return (
-    <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
-      <Card className="max-w-md w-full border-zinc-200 shadow-xl text-center p-8 bg-white/90 backdrop-blur-sm">
-        <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
-        <CardTitle className="text-2xl font-black text-zinc-900 tracking-tight mb-2">Registration Sent!</CardTitle>
-        <p className="text-zinc-500 font-medium leading-relaxed">
-          Your details have been securely transmitted. <strong className="text-zinc-900">Please wait for the security guard to approve your entry.</strong>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="max-w-md w-full text-center p-8">
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-success/15 bg-success/10 text-success">
+          <CheckCircle2 className="w-10 h-10" />
+        </div>
+        <CardTitle className="text-2xl font-bold tracking-tight mb-2">Registration Sent</CardTitle>
+        <p className="text-text-muted font-medium leading-relaxed">
+          Your details have been securely transmitted. <strong className="text-text-main">Please wait for the security guard to approve your entry.</strong>
         </p>
       </Card>
     </div>

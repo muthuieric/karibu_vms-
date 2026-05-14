@@ -1,6 +1,7 @@
 "use client";
 
 import { DoorOpen, Loader2, Pencil, Trash2, X } from "lucide-react";
+import { EmptyState } from "@/components/dashboard/shared/StateBlocks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,7 +43,7 @@ export default function GatesManagementCard({
   onDeleteGate,
 }: GatesManagementCardProps) {
   return (
-    <Card className="shadow-sm border-zinc-200 bg-white md:col-span-1 h-fit">
+    <Card className="md:col-span-1 h-fit">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2">
           <DoorOpen className="h-5 w-5" /> Building Gates
@@ -57,17 +58,17 @@ export default function GatesManagementCard({
             onChange={(e) => onNewGateNameChange(e.target.value)}
             required
           />
-          <Button type="submit" disabled={isCreatingGate || !newGateName.trim()} className="bg-zinc-900 hover:bg-zinc-800 text-white">
+          <Button type="submit" disabled={isCreatingGate || !newGateName.trim()}>
             {isCreatingGate ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
           </Button>
         </form>
 
         <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
           {gates.length === 0 ? (
-            <p className="text-sm text-zinc-500 text-center py-4 border rounded-md border-dashed">No gates created yet.</p>
+            <EmptyState title="No gates created yet" description="Add your first entry point to assign guards correctly." icon={DoorOpen} className="py-6" />
           ) : (
             gates.map((gate) => (
-              <div key={gate.id} className="p-3 border border-zinc-200 rounded-md bg-zinc-50 flex flex-col justify-center transition-colors">
+              <div key={gate.id} className="p-3 border border-border rounded-xl bg-surface-muted flex flex-col justify-center transition-colors">
                 {editingGateId === gate.id ? (
                   <form onSubmit={onUpdateGate} className="flex gap-2 w-full items-center">
                     <Input
@@ -76,7 +77,7 @@ export default function GatesManagementCard({
                       className="h-8 text-sm"
                       autoFocus
                     />
-                    <Button type="submit" size="sm" disabled={isUpdatingGate} className="h-8 px-2 bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button type="submit" size="sm" disabled={isUpdatingGate} className="h-8 px-2">
                       Save
                     </Button>
                     <Button type="button" size="sm" variant="ghost" onClick={onCancelEditGate} className="h-8 px-2">
@@ -85,13 +86,13 @@ export default function GatesManagementCard({
                   </form>
                 ) : (
                   <div className="flex items-center justify-between w-full">
-                    <span className="font-medium text-sm text-zinc-900">{gate.name}</span>
+                    <span className="font-medium text-sm text-text-main">{gate.name}</span>
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onEditGateStart(gate)}
-                        className="h-7 w-7 p-0 text-zinc-500 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                        className="h-7 w-7 p-0 text-text-muted hover:text-primary hover:bg-primary/10 transition-all"
                         title="Edit Gate"
                       >
                         <Pencil className="h-4 w-4" />
@@ -100,7 +101,7 @@ export default function GatesManagementCard({
                         variant="ghost"
                         size="sm"
                         onClick={() => onDeleteGate(gate.id, gate.name)}
-                        className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-100 transition-all"
+                        className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
                         title="Delete Gate"
                       >
                         <Trash2 className="h-4 w-4" />

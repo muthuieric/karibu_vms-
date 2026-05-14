@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LifeBuoy, Loader2, MessageSquare, Send, Clock, CheckCircle2 } from "lucide-react";
 import { useCompanySupport } from "@/hooks/useCompanySupport";
+import { PageHeader } from "@/components/dashboard/shared/PageHeader";
+import { EmptyState } from "@/components/dashboard/shared/StateBlocks";
 
 export default function SupportPage() {
   const support = useCompanySupport();
@@ -20,27 +22,20 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 p-4 md:p-6 pb-20">
+    <div className="min-h-full bg-background p-4 md:p-6 lg:p-8 pb-20">
       <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
         
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end border-b border-zinc-200 pb-4 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 text-blue-700 rounded-lg shrink-0">
-              <LifeBuoy className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Help Desk</h1>
-              <p className="text-zinc-500 mt-1 text-sm md:text-base">Submit support requests or report issues directly to our team.</p>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Help Desk"
+          description="Submit support requests or report issues directly to the Karibu VMS team."
+          icon={LifeBuoy}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           
           {/* Create Ticket Form */}
           <div className="lg:col-span-1">
-            <Card className="shadow-sm border-zinc-200 bg-white sticky top-6">
+            <Card className="sticky top-6">
               <CardHeader className="bg-zinc-50/50 border-b border-zinc-100 pb-5">
                 <CardTitle className="text-lg">Submit a Ticket</CardTitle>
                 <CardDescription>Need assistance? Let us know below.</CardDescription>
@@ -77,7 +72,7 @@ export default function SupportPage() {
 
           {/* Ticket History List */}
           <div className="lg:col-span-2">
-            <Card className="shadow-sm border-zinc-200 bg-white h-full">
+            <Card className="h-full">
               <CardHeader className="bg-white border-b border-zinc-100 pb-5">
                 <CardTitle className="text-xl">Your Support History</CardTitle>
                 <CardDescription>Track the status of your previous requests.</CardDescription>
@@ -86,13 +81,7 @@ export default function SupportPage() {
                 {support.loading ? (
                    <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-zinc-400" /></div>
                 ) : support.tickets.length === 0 ? (
-                   <div className="text-center py-16 text-zinc-500 bg-white sm:rounded-xl border border-dashed border-zinc-200 m-0 sm:m-2">
-                     <div className="bg-zinc-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-100 shadow-sm">
-                        <MessageSquare className="w-8 h-8 text-zinc-300" />
-                     </div>
-                     <p className="font-bold text-zinc-800 text-lg">No support tickets.</p>
-                     <p className="text-sm mt-1 max-w-sm mx-auto text-zinc-500">You haven&apos;t submitted any requests yet.</p>
-                   </div>
+                   <EmptyState title="No support tickets" description="You haven&apos;t submitted any requests yet." icon={MessageSquare} />
                 ) : (
                   <div className="rounded-none sm:rounded-md border-y sm:border overflow-x-auto bg-white shadow-sm">
                     <Table>

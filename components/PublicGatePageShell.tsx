@@ -9,14 +9,13 @@ type PublicGatePageShellProps = {
 
 export default function PublicGatePageShell({ children }: PublicGatePageShellProps) {
   return (
-    <div className="min-h-screen bg-zinc-50 p-4 py-8 flex items-center justify-center relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] h-[300px] w-[300px] rounded-full bg-blue-400/20 blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] h-[300px] w-[300px] rounded-full bg-amber-400/20 blur-[100px] pointer-events-none" />
-
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F8FAFC] p-4 py-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.18),transparent_28rem),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.14),transparent_24rem)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.4),rgba(248,250,252,0.96))]" />
       <Suspense
         fallback={
-          <div className="flex flex-col items-center z-10">
-            <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-4" />
+          <div className="z-10 flex flex-col items-center">
+            <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
           </div>
         }
       >

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { PageContainer } from "@/components/dashboard/shared/AppShell";
+import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -116,18 +118,16 @@ export default function SuperadminTransactionsPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 lg:p-10 max-w-6xl mx-auto space-y-6 md:space-y-8">
+    <PageContainer className="max-w-6xl">
       
       {/* Header Section */}
-      <div className="border-b border-zinc-200 pb-4 flex items-center gap-3">
-        <div className="p-3 bg-emerald-100 text-emerald-700 rounded-lg shrink-0">
-          <Receipt className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-zinc-900">Master Ledger</h1>
-          <p className="text-zinc-500 mt-1 text-sm md:text-base">View every successful transaction processed across all companies.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Master Ledger"
+        eyebrow="Revenue operations"
+        description="View every transaction processed across all companies with searchable platform receipt history."
+        icon={Receipt}
+        tone="dark"
+      />
 
       {/* Global Error Banner */}
       {error && (
@@ -298,6 +298,6 @@ export default function SuperadminTransactionsPage() {
 
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

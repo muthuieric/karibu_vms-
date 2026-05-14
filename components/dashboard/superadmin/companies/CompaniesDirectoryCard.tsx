@@ -5,20 +5,20 @@ import {
   CalendarDays,
   CheckCircle,
   Eye,
-  Loader2,
   Lock,
   Mail,
   MapPin,
   Phone,
-  Search,
   Unlock,
   User,
   UserPlus,
   Layers, // NEW: Icon for plans
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { DataTableShell } from "@/components/dashboard/shared/DataTableShell";
+import { EmptyState, LoadingState } from "@/components/dashboard/shared/StateBlocks";
+import { SearchInput } from "@/components/dashboard/shared/Fields";
+import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Company = {
@@ -48,16 +48,8 @@ type CompaniesDirectoryCardProps = {
 };
 
 function CompanyStatusBadge({ company }: { company: Company }) {
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border ${
-      company.subscription_status === "pending_approval" ? "bg-purple-50 text-purple-700 border-purple-200" :
-      company.subscription_status === "paid" ? "bg-green-50 text-green-700 border-green-200" :
-      company.subscription_status === "trial" ? "bg-amber-50 text-amber-700 border-amber-200" :
-      "bg-red-50 text-red-700 border-red-200"
-    }`}>
-      {company.subscription_status === "pending_approval" ? "PENDING APPROVAL" : company.subscription_status.toUpperCase()}
-    </span>
-  );
+  const status = company.subscription_status === "pending_approval" ? "pending" : company.subscription_status;
+  return <StatusBadge status={status}>{company.subscription_status === "pending_approval" ? "Pending approval" : company.subscription_status}</StatusBadge>;
 }
 
 function CompanyMobileStatusBadge({ company }: { company: Company }) {
@@ -86,42 +78,27 @@ export default function CompaniesDirectoryCard({
   onChangePlanTier, // NEW
 }: CompaniesDirectoryCardProps) {
   return (
-    <Card className="shadow-sm border-zinc-200 bg-white/90 backdrop-blur-sm overflow-hidden">
-      <CardHeader className="pb-4 border-b border-zinc-200/60 mb-2 space-y-5">
-        <div>
-          <CardTitle>Registered Buildings/Companies</CardTitle>
-          <CardDescription>All organizations currently using your platform.</CardDescription>
-        </div>
-        <div className="relative w-full md:max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
-          <Input
+    <DataTableShell
+      title="Registered Buildings"
+      description="All organizations currently using your platform."
+      filters={
+        <div className="w-full md:w-96">
+          <SearchInput
             placeholder="Search by company or email..."
-            className="pl-9 bg-white/80 border-zinc-200 focus:ring-indigo-500 w-full"
             value={searchTerm}
             onChange={(e) => onSearchTermChange(e.target.value)}
           />
         </div>
-      </CardHeader>
+      }
+    >
 
-      <CardContent className="p-0">
+      <div className="p-0">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-zinc-500 px-4">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-indigo-600" />
-            <p>Loading companies...</p>
-          </div>
+          <LoadingState label="Loading companies..." />
         ) : companies.length === 0 ? (
-          <div className="text-center py-16 text-zinc-500 px-4">
-            <div className="bg-white border border-zinc-200 shadow-sm w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Building2 className="w-8 h-8 text-zinc-400" />
-            </div>
-            <p className="font-bold text-zinc-900 text-lg">No companies found</p>
-            <p className="text-sm mt-1 max-w-sm mx-auto">Click &quot;New Company&quot; to onboard your first client.</p>
-          </div>
+          <EmptyState title="No companies found" description="Click New Company to onboard your first client." />
         ) : filteredCompanies.length === 0 ? (
-          <div className="text-center py-12 text-zinc-500 px-4">
-            <p className="font-bold text-zinc-900">No matching companies</p>
-            <p className="text-sm mt-1">Try adjusting your search query.</p>
-          </div>
+          <EmptyState title="No matching companies" description="Try adjusting your search query." />
         ) : (
           <>
             <div className="hidden md:block">
@@ -321,7 +298,7 @@ export default function CompaniesDirectoryCard({
             </div>
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </DataTableShell>
   );
 }

@@ -13,22 +13,22 @@ export default function PhotoLightbox({ photoUrl, onClose }: PhotoLightboxProps)
 
   return (
     <div
-      className="fixed inset-0 bg-black/90 z-[80] flex flex-col items-center justify-center p-4 cursor-pointer backdrop-blur-sm"
+      className="fixed inset-0 bg-slate-900/80 z-[80] flex flex-col items-center justify-center p-4 cursor-pointer backdrop-blur-sm"
       onClick={onClose}
     >
       <div className="relative max-w-2xl w-full flex flex-col items-center">
         <button
-          className="absolute -top-12 right-0 text-white/70 hover:text-white transition-colors p-2"
+          className="absolute -top-14 right-0 text-white/80 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-full p-2 transition-all"
           onClick={(e) => { e.stopPropagation(); onClose(); }}
         >
-          <X size={32} />
+          <X size={24} />
         </button>
         <Image
           src={photoUrl}
           alt="Enlarged security photo"
           width={1000}
           height={1000}
-          className="w-full h-auto rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] border-4 border-zinc-800 object-contain max-h-[85vh]"
+          className="w-full h-auto rounded-2xl shadow-2xl border border-white/10 object-contain max-h-[85vh] bg-slate-50"
           onClick={(e) => e.stopPropagation()}
           unoptimized
         />

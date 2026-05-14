@@ -7,6 +7,7 @@ import PlatformKpiGrid from "@/components/dashboard/superadmin/overview/Platform
 import SuperadminOverviewHeader from "@/components/dashboard/superadmin/overview/SuperadminOverviewHeader";
 import SuperadminOverviewLoading from "@/components/dashboard/superadmin/overview/SuperadminOverviewLoading";
 import WorkspaceLeaderboardCard from "@/components/dashboard/superadmin/overview/WorkspaceLeaderboardCard";
+import { PageContainer } from "@/components/dashboard/shared/AppShell";
 
 type TopCompany = {
   id: string;
@@ -107,7 +108,7 @@ export default function SuperadminOverview() {
   }, []);
 
   return (
-    <div className="p-4 md:p-6 lg:p-10 max-w-7xl mx-auto space-y-6 md:space-y-8">
+    <PageContainer>
       <SuperadminOverviewHeader />
 
       {loading ? (
@@ -122,6 +123,6 @@ export default function SuperadminOverview() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { AlertOctagon } from "lucide-react";
+import { LockedAccountBanner } from "@/components/dashboard/shared/LockedAccountBanner";
+import { LoadingState } from "@/components/dashboard/shared/StateBlocks";
 
 export default function GuardLayout({ children }: { children: React.ReactNode }) {
   const [isLocked, setIsLocked] = useState<boolean>(false);
@@ -44,8 +45,8 @@ export default function GuardLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <p className="text-zinc-500 font-medium animate-pulse">Initializing Scanner...</p>
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <LoadingState label="Loading guard dashboard..." />
       </div>
     );
   }
@@ -54,9 +55,7 @@ export default function GuardLayout({ children }: { children: React.ReactNode })
   if (isLocked) {
     return (
       <div className="flex flex-col h-screen overflow-hidden">
-        <div className="bg-red-600 text-white text-center py-2 text-sm font-semibold flex items-center justify-center gap-2 shrink-0 z-50">
-          <AlertOctagon className="w-4 h-4" /> System Unpaid - Limited Functionality. Please contact administration.
-        </div>
+        <LockedAccountBanner message="System unpaid. Please contact administration." />
         <div className="flex-1 overflow-y-auto">
           {children}
         </div>
