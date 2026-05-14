@@ -88,9 +88,19 @@ export default function AddVisitorForm({
       title="New visitor"
       description="Add a guest from the security desk."
       onClose={onClose}
-      className="max-w-3xl overflow-hidden"
+      className="max-w-3xl"
+      footer={
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:justify-end">
+          <Button type="button" variant="ghost" onClick={onClose} className="sm:w-auto w-full font-bold h-11 border border-slate-200">
+            Cancel
+          </Button>
+          <Button type="submit" form="add-visitor-form" className="h-11 sm:w-auto w-full bg-blue-600 text-base font-bold text-white hover:bg-blue-700 shadow-sm" disabled={isSubmitting || !agreedToTerms}>
+            {isSubmitting ? "Adding Guest..." : "Add Visitor"}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={onSubmit} className="space-y-8 mt-2">
+      <form id="add-visitor-form" onSubmit={onSubmit} className="space-y-8">
         
         {/* Visitor details section */}
         <section className="space-y-4">
@@ -292,28 +302,52 @@ export default function AddVisitorForm({
 
         {/* Entry confirmation */}
         <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">Entry confirmation</h3>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 shadow-sm">
-            The guest will be added to the current visitor queue after submission. By registering, the visitor agrees to comply with all building security policies and procedures. Data is handled in accordance with local data protection laws.
+          <div className="border-b border-slate-100 pb-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Entry confirmation</h3>
+            <p className="mt-1 text-sm text-slate-500">Review the notice before adding this visitor to the queue.</p>
           </div>
-          <div className="flex items-start gap-2.5 pt-2">
+          
+          <div className="rounded-[1.4rem] border border-blue-100 bg-blue-50/30 p-5 shadow-sm space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">1</div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Queue update</p>
+                <p className="text-sm text-slate-600 mt-0.5">This guest will appear in the current visitor queue.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">2</div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Entry notice</p>
+                <p className="text-sm text-slate-600 mt-0.5">The visitor has been informed of the building entry rules.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">3</div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Data use</p>
+                <p className="text-sm text-slate-600 mt-0.5">Their details will be stored for visitor records and security review.</p>
+              </div>
+            </div>
+          </div>
+
+          <label
+            htmlFor="terms"
+            className="flex cursor-pointer items-start gap-3 rounded-[1.4rem] border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
+          >
             <input
               type="checkbox"
               id="terms"
               required
               checked={agreedToTerms}
               onChange={(e) => onAgreedToTermsChange(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-600"
             />
-            <Label htmlFor="terms" className="cursor-pointer text-sm font-medium leading-snug text-slate-700">
-              The visitor has agreed to the conditions and consents to data processing. <span className="text-red-500">*</span>
-            </Label>
-          </div>
+            <span className="text-sm font-bold leading-snug text-slate-800">
+              I confirm the visitor has agreed to the entry notice and data-use terms. <span className="text-red-500">*</span>
+            </span>
+          </label>
         </section>
-
-        <Button type="submit" className="h-[52px] w-full bg-blue-600 text-base font-bold text-white hover:bg-blue-700 shadow-sm" disabled={isSubmitting || !agreedToTerms}>
-          {isSubmitting ? "Adding Guest..." : "Add Visitor"}
-        </Button>
       </form>
     </ModalShell>
   );

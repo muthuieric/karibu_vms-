@@ -40,7 +40,7 @@ function NavLinks({
   onNavigate?: () => void;
 }) {
   return (
-    <nav className="flex-1 space-y-2 overflow-y-auto p-4">
+    <nav className="flex-1 space-y-1.5 overflow-y-auto p-4">
       {navItems.map((item) => {
         const active = isActive(pathname, item);
         const Icon = item.icon;
@@ -51,23 +51,21 @@ function NavLinks({
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all",
-              active && !item.danger && "bg-slate-950 text-white shadow-lg shadow-slate-950/10",
-              active && item.danger && "bg-destructive text-white shadow-lg shadow-red-500/15",
-              !active && "text-slate-500 hover:bg-white hover:text-slate-950 hover:shadow-sm"
+              "group flex items-center gap-3 rounded-[1rem] px-3 py-2.5 text-sm font-bold transition-all",
+              active && !item.danger && "bg-blue-50 text-blue-700",
+              active && item.danger && "bg-red-50 text-red-600",
+              !active && "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
             )}
           >
             <span
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors",
+                "flex h-8 w-8 shrink-0 items-center justify-center transition-colors",
                 active
-                  ? "border-white/15 bg-white/15 text-white"
-                  : item.danger
-                    ? "border-red-100 bg-red-50 text-red-500 group-hover:bg-red-100"
-                    : "border-slate-200 bg-slate-50 text-slate-500 group-hover:bg-blue-50 group-hover:text-primary"
+                  ? item.danger ? "text-red-600" : "text-blue-700"
+                  : "text-slate-400 group-hover:text-slate-600"
               )}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-5 w-5" />
             </span>
             <span className="truncate">{item.label}</span>
           </Link>
@@ -85,53 +83,47 @@ export function DashboardSidebar({
   isMobileOpen,
   onMobileOpenChange,
   onLogout,
-  accent = "primary",
 }: DashboardSidebarProps) {
-  const accentClass = accent === "warning" ? "text-warning-foreground" : accent === "dark" ? "text-slate-300" : "text-primary";
-  const shellClass =
-    accent === "dark"
-      ? "border-slate-800 bg-slate-950 text-white"
-      : "border-white/70 bg-white/80 text-text-main backdrop-blur-xl";
-  const titleClass = accent === "dark" ? "text-white" : "text-text-main";
-
   return (
     <>
-      <div className={cn("flex items-center justify-between border-b p-4 shadow-sm md:hidden", shellClass)}>
+      {/* Mobile Top Bar */}
+      <div className="flex items-center justify-between border-b border-slate-100 bg-white p-4 shadow-sm md:hidden">
         <div>
-          <h2 className={cn("text-lg font-bold tracking-tight", titleClass)}>{brand}</h2>
-          <p className={cn("mt-0.5 text-[10px] font-bold uppercase tracking-wider", accentClass)}>
+          <h2 className="text-lg font-black tracking-tight text-slate-900">{brand}</h2>
+          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-600">
             {subtitle}
           </p>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => onMobileOpenChange(true)} aria-label="Open menu">
+        <Button variant="ghost" size="icon" onClick={() => onMobileOpenChange(true)} aria-label="Open menu" className="text-slate-600">
           <Menu className="h-5 w-5" />
         </Button>
       </div>
 
+      {/* Mobile Sidebar Overlay */}
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <button
             type="button"
-            className="fixed inset-0 bg-slate-950/55 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm"
             aria-label="Close menu"
             onClick={() => onMobileOpenChange(false)}
           />
-          <div className={cn("relative flex h-full w-80 max-w-[86%] flex-col border-r shadow-modal animate-in slide-in-from-left duration-200", shellClass)}>
-            <div className="flex items-center justify-between border-b border-inherit p-4">
+          <div className="relative flex h-full w-80 max-w-[86%] flex-col border-r border-slate-100 bg-white shadow-2xl animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 p-4">
               <div>
-                <h2 className={cn("text-lg font-bold tracking-tight", titleClass)}>{brand}</h2>
-                <p className={cn("mt-0.5 text-[10px] font-bold uppercase tracking-wider", accentClass)}>
+                <h2 className="text-lg font-black tracking-tight text-slate-900">{brand}</h2>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-600">
                   {subtitle}
                 </p>
               </div>
-              <Button variant="ghost" size="icon-sm" onClick={() => onMobileOpenChange(false)} aria-label="Close menu">
+              <Button variant="ghost" className="h-8 w-8 rounded-full p-0 text-slate-500 hover:bg-slate-100 hover:text-slate-900" onClick={() => onMobileOpenChange(false)} aria-label="Close menu">
                 <X className="h-4 w-4" />
               </Button>
             </div>
             <NavLinks pathname={pathname} navItems={navItems} onNavigate={() => onMobileOpenChange(false)} />
-            <div className="border-t border-inherit p-4">
-              <Button variant="ghost" className="w-full justify-start text-text-muted hover:text-destructive" onClick={onLogout}>
-                <LogOut className="h-4 w-4" />
+            <div className="border-t border-slate-100 p-4">
+              <Button variant="ghost" className="w-full justify-start text-slate-500 hover:bg-slate-50 hover:text-red-600 font-bold" onClick={onLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </Button>
             </div>
@@ -139,24 +131,25 @@ export function DashboardSidebar({
         </div>
       )}
 
-      <aside className={cn("hidden h-full w-72 shrink-0 flex-col border-r md:flex", shellClass)}>
-        <div className="border-b border-inherit p-5">
-          <div className={cn("rounded-[1.35rem] border p-4", accent === "dark" ? "border-white/10 bg-white/5" : "border-slate-200 bg-white")}>
+      {/* Desktop Sidebar */}
+      <aside className="hidden h-full w-72 shrink-0 flex-col border-r border-slate-100 bg-white md:flex z-10">
+        <div className="border-b border-slate-100 p-5">
+          <div className="rounded-[1.4rem] border border-blue-100 bg-blue-50/30 p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className={cn("text-xl font-bold tracking-tight", titleClass)}>{brand}</h2>
-                <p className={cn("mt-1 text-xs font-bold uppercase tracking-wider", accentClass)}>{subtitle}</p>
+                <h2 className="text-xl font-black tracking-tight text-slate-900">{brand}</h2>
+                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-blue-600">{subtitle}</p>
               </div>
-              <div className={cn("rounded-2xl p-2", accent === "dark" ? "bg-white/10 text-white" : "bg-primary/10 text-primary")}>
+              <div className="rounded-xl p-2 bg-blue-100 text-blue-700">
                 <ChevronsUpDown className="h-4 w-4" />
               </div>
             </div>
           </div>
         </div>
         <NavLinks pathname={pathname} navItems={navItems} />
-        <div className="border-t border-inherit p-4">
-          <Button variant="ghost" className="w-full justify-start text-text-muted hover:text-destructive" onClick={onLogout}>
-            <LogOut className="h-4 w-4" />
+        <div className="border-t border-slate-100 p-4">
+          <Button variant="ghost" className="w-full justify-start text-slate-500 hover:bg-slate-50 hover:text-red-600 font-bold" onClick={onLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>
         </div>
