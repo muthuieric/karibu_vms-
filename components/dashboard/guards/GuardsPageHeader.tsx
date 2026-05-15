@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Shield } from "lucide-react";
+import { ContactRound, Plus } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 
@@ -11,12 +11,12 @@ type GuardsPageHeaderProps = {
 export default function GuardsPageHeader({ onAddGuard }: GuardsPageHeaderProps) {
   return (
     <PageHeader
-      title="Security Team"
-      description="Manage guard accounts, assigned gates, and the desk access your security team uses every day."
-      icon={Shield}
+      title="Security team"
+      description="Manage guards and assign them to entry points."
+      icon={ContactRound}
     >
-      <Button onClick={onAddGuard} className="w-full sm:w-auto">
-        <Plus className="h-4 w-4" /> Add New Guard
+      <Button onClick={onAddGuard} className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 font-bold rounded-xl h-11 px-6">
+        <Plus className="h-4 w-4 mr-2" /> Add Guard
       </Button>
     </PageHeader>
   );

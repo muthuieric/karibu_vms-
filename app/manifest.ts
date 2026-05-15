@@ -4,21 +4,16 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Karibu VMS",
     short_name: "Karibu",
-    description: "Security Command Center",
+    description: "Digital visitor management for secure check-in, checkout, and entry records.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#4F46E5",
+    theme_color: "#2563EB",
     icons: [
       {
-        src: "/icon-192x192.png",
-        sizes: "192x192",
-        type: "image/png",
-      },
-      {
-        src: "/icon-512x512.png",
-        sizes: "512x512",
-        type: "image/png",
+        src: "/favicon.ico",
+        sizes: "any",
+        type: "image/x-icon",
       },
     ],
   };

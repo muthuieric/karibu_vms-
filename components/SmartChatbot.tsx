@@ -197,7 +197,13 @@ export default function SmartChatbot() {
   return (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
       {isOpen && (
-        <div className="w-[calc(100vw-3rem)] sm:w-[380px] h-[500px] max-h-[calc(100vh-8rem)] bg-white border border-zinc-100 shadow-xl rounded-3xl flex flex-col overflow-hidden mb-4 animate-in slide-in-from-bottom-5 duration-300">
+        <section
+          id="karibu-support-chat"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="karibu-support-chat-title"
+          className="w-[calc(100vw-3rem)] sm:w-[380px] h-[500px] max-h-[calc(100vh-8rem)] bg-white border border-zinc-100 shadow-xl rounded-3xl flex flex-col overflow-hidden mb-4 animate-in slide-in-from-bottom-5 duration-300"
+        >
           
           {/* Chat Header */}
           <div className="bg-white border-b border-zinc-100 p-5 flex items-center justify-between">
@@ -206,17 +212,22 @@ export default function SmartChatbot() {
                 k.
               </div>
               <div>
-                <h3 className="font-semibold text-sm text-zinc-900">karibu-vms Support</h3>
+                <h2 id="karibu-support-chat-title" className="font-semibold text-sm text-zinc-900">karibu-vms Support</h2>
                 <p className="text-[12px] text-zinc-500">We reply instantly</p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 p-2 rounded-full transition-colors">
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close support chat"
+              className="text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 p-2 rounded-full transition-colors"
+            >
               <X size={18} />
             </button>
           </div>
 
           {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-zinc-50/50">
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-zinc-50/50" aria-live="polite">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] flex flex-col gap-2 ${msg.sender === "user" ? "items-end" : "items-start"}`}>
@@ -225,7 +236,7 @@ export default function SmartChatbot() {
                     ? "bg-blue-600 text-white rounded-2xl rounded-br-sm shadow-sm" 
                     : "bg-white border border-zinc-100 text-zinc-700 rounded-2xl rounded-bl-sm shadow-sm"
                   }`}>
-                    <span dangerouslySetInnerHTML={{ __html: msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                    <span>{msg.text}</span>
                   </div>
                   {msg.action && (
                     <a 
@@ -251,6 +262,7 @@ export default function SmartChatbot() {
                 {quickActions.map((action, i) => (
                   <button 
                     key={i} 
+                    type="button"
                     onClick={() => {
                       sendMessage(action.text);
                     }}
@@ -263,24 +275,30 @@ export default function SmartChatbot() {
             )}
 
             <form onSubmit={handleSendMessage} className="relative mt-2">
+              <label htmlFor="support-chat-message" className="sr-only">Support chat message</label>
               <input 
+                id="support-chat-message"
                 type="text" 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Type your message..." 
                 className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-zinc-900"
               />
-              <button type="submit" disabled={!inputValue.trim()} className="absolute right-1.5 top-1.5 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors">
+              <button type="submit" aria-label="Send support message" disabled={!inputValue.trim()} className="absolute right-1.5 top-1.5 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors">
                 <Send size={16} />
               </button>
             </form>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Floating Toggle Button */}
       <button 
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? "Close support chat" : "Open support chat"}
+        aria-controls="karibu-support-chat"
+        aria-expanded={isOpen}
         className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border transition-all duration-300 hover:scale-105 active:scale-95 ${
           isOpen ? "bg-white border-zinc-200 rotate-90" : "bg-blue-600 border-transparent shadow-blue-500/30"
         }`}
@@ -289,7 +307,8 @@ export default function SmartChatbot() {
           <X className="text-zinc-900 w-6 h-6" />
         ) : (
           <div className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-lg">
-            k.
+            <span aria-hidden="true">k.</span>
+            <span className="sr-only">Open support chat</span>
           </div>
         )}
       </button>

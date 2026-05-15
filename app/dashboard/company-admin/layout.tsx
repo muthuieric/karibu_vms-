@@ -3,18 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Ban,
-  Building,
-  FileText,
-  Headset,
-  LayoutGrid,
-  QrCode,
-  Receipt,
-  SlidersHorizontal,
-  Users,
-  AlertOctagon,
-} from "lucide-react";
+import { AlertOctagon, LayoutDashboard, SquareCode, ContactRound, ClipboardList, Landmark, OctagonX, WalletCards, MessageCircleQuestion, SlidersHorizontal } from "lucide-react";
 
 import { DashboardSidebar, type DashboardNavItem } from "@/components/dashboard/shared/DashboardSidebar";
 import { LockedAccountBanner } from "@/components/dashboard/shared/LockedAccountBanner";
@@ -24,15 +13,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/lib/supabase";
 
 const adminNavItems: DashboardNavItem[] = [
-  { href: "/dashboard/company-admin", label: "Overview", icon: LayoutGrid, exact: true },
-  { href: "/dashboard/company-admin/qr", label: "Gate QR Code", icon: QrCode },
-  { href: "/dashboard/company-admin/guards", label: "Security Team", icon: Users },
-  { href: "/dashboard/company-admin/rules", label: "Building Rules", icon: FileText },
-  { href: "/dashboard/company-admin/departments", label: "Departments", icon: Building },
-  { href: "/dashboard/company-admin/blacklist", label: "Blacklist", icon: Ban, danger: true },
-  { href: "/dashboard/company-admin/billing", label: "Billing", icon: Receipt },
-  { href: "/dashboard/company-admin/support", label: "Help Desk", icon: Headset },
-  { href: "/dashboard/company-admin/settings", label: "Settings", icon: SlidersHorizontal },
+  { href: "/dashboard/company-admin", label: "Admin Home", exact: true, icon: LayoutDashboard },
+  { href: "/dashboard/company-admin/qr", label: "Gate QR Code", icon: SquareCode },
+  { href: "/dashboard/company-admin/guards", label: "Security Team", icon: ContactRound },
+  { href: "/dashboard/company-admin/rules", label: "Building Rules", icon: ClipboardList },
+  { href: "/dashboard/company-admin/departments", label: "Departments", icon: Landmark },
+  { href: "/dashboard/company-admin/blacklist", label: "Blacklist", danger: true, icon: OctagonX },
+  { href: "/dashboard/company-admin/billing", label: "Payments", icon: WalletCards },
+  { href: "/dashboard/company-admin/support", label: "Help Desk", icon: MessageCircleQuestion },
+  { href: "/dashboard/company-admin/settings", label: "Account", icon: SlidersHorizontal },
 ];
 
 export default function CompanyAdminLayout({ children }: { children: React.ReactNode }) {
@@ -137,8 +126,6 @@ export default function CompanyAdminLayout({ children }: { children: React.React
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#F8FAFC] md:flex-row">
       <DashboardSidebar
-        brand="Karibu VMS"
-        subtitle="Admin Dashboard"
         pathname={normalizedPath}
         navItems={adminNavItems}
         isMobileOpen={isMobileMenuOpen}
@@ -174,11 +161,11 @@ export default function CompanyAdminLayout({ children }: { children: React.React
                       <span className="font-bold text-slate-900">{visitorCount}</span>
                     </div>
                     <div className="flex justify-between border-b border-slate-200 py-3">
-                      <span className="text-sm text-slate-500 font-bold">Rate per Visitor</span>
+                      <span className="text-sm text-slate-500 font-bold">Visitor Rate</span>
                       <span className="font-bold text-slate-900">KES 3.00</span>
                     </div>
                     <div className="flex items-end justify-between pt-3">
-                      <span className="text-sm font-bold text-slate-500">Total Amount Due</span>
+                      <span className="text-sm font-bold text-slate-500">Balance Due</span>
                       <span className="text-2xl font-black text-slate-900">
                         KES {amountDue > 0 ? amountDue.toLocaleString() : "0"}
                       </span>
@@ -191,7 +178,7 @@ export default function CompanyAdminLayout({ children }: { children: React.React
                       Account Locked Manually
                     </Button>
                     <Button variant="outline" className="w-full h-12 border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-[1rem]" asChild>
-                      <Link href="/dashboard/company-admin/billing">View Billing History</Link>
+                      <Link href="/dashboard/company-admin/billing">View Payments</Link>
                     </Button>
                   </div>
 

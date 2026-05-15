@@ -5,8 +5,8 @@ import { Card, CardTitle } from "@/components/ui/card";
 
 export default function GateSuccessState() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="max-w-md w-full text-center p-8">
+    <div className="relative z-10 flex w-full justify-center p-4">
+      <Card className="w-full max-w-md text-center p-8 bg-white">
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-success/15 bg-success/10 text-success">
           <CheckCircle2 className="w-10 h-10" />
         </div>

@@ -23,10 +23,11 @@ export default function ResetPasswordPage() {
 
         <form onSubmit={resetPassword.handleSubmit} className="space-y-5 mt-8">
           <div className="space-y-1.5">
-            <Label>New Password</Label>
+            <Label htmlFor="reset-new-password">New Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-5 w-5 text-zinc-400" />
               <Input 
+                id="reset-new-password"
                 required 
                 type="password" 
                 minLength={8}
@@ -39,10 +40,11 @@ export default function ResetPasswordPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Confirm New Password</Label>
+            <Label htmlFor="reset-confirm-password">Confirm New Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-5 w-5 text-zinc-400" />
               <Input 
+                id="reset-confirm-password"
                 required 
                 type="password" 
                 minLength={8}

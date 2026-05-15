@@ -21,6 +21,12 @@ export function useBuildingRules() {
   const [updatingRules, setUpdatingRules] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Geofence states
+  const [enableGeofence, setEnableGeofence] = useState(false);
+  const [latitude, setLatitude] = useState<string>("");
+  const [longitude, setLongitude] = useState<string>("");
+  const [radius, setRadius] = useState<string>("200");
+
   useEffect(() => {
     const fetchRules = async () => {
       const { data: authData } = await supabase.auth.getUser();
@@ -38,7 +44,7 @@ export function useBuildingRules() {
 
       const { data: company } = await supabase
         .from("companies")
-        .select("require_photo, ask_host, ask_purpose, ask_vehicle, custom_fields, plan_tier")
+        .select("require_photo, ask_host, ask_purpose, ask_vehicle, custom_fields, plan_tier, enable_geofence, lat, lng, geofence_radius")
         .eq("id", profile.company_id)
         .single();
 
@@ -49,6 +55,11 @@ export function useBuildingRules() {
         setAskPurpose(company.ask_purpose || false);
         setAskVehicle(company.ask_vehicle || false);
         setCustomFields(company.custom_fields || []);
+        
+        setEnableGeofence(company.enable_geofence || false);
+        setLatitude(company.lat ? company.lat.toString() : "");
+        setLongitude(company.lng ? company.lng.toString() : "");
+        setRadius(company.geofence_radius ? company.geofence_radius.toString() : "200");
       }
     };
 
@@ -112,6 +123,50 @@ export function useBuildingRules() {
     await saveCustomFields(updatedFields);
   };
 
+  const handleFetchLocation = () => {
+    if (!navigator.geolocation) {
+      setMessage({ type: "error", text: "Geolocation is not supported by your browser." });
+      return;
+    }
+
+    setMessage(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude.toString());
+        setLongitude(position.coords.longitude.toString());
+        setMessage({ type: "success", text: "Location coordinates updated! Remember to save." });
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        setMessage({ type: "error", text: "Failed to get location. Please allow location access in your browser." });
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  const handleSaveGeofence = async () => {
+    if (!companyId) return;
+    setMessage(null);
+    setUpdatingRules(true);
+
+    const { error } = await supabase
+      .from("companies")
+      .update({
+        enable_geofence: enableGeofence,
+        lat: latitude ? parseFloat(latitude) : null,
+        lng: longitude ? parseFloat(longitude) : null,
+        geofence_radius: radius ? parseInt(radius) : 200
+      })
+      .eq("id", companyId);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to save location settings." });
+    } else {
+      setMessage({ type: "success", text: "Location settings saved successfully." });
+    }
+    setUpdatingRules(false);
+  };
+
   return {
     planTier,
     requirePhoto,
@@ -131,5 +186,13 @@ export function useBuildingRules() {
     handleAddCustomField,
     handleToggleCustomField,
     handleDeleteCustomField,
+    
+    // Geofence exports
+    enableGeofence, setEnableGeofence,
+    latitude, setLatitude,
+    longitude, setLongitude,
+    radius, setRadius,
+    handleFetchLocation,
+    handleSaveGeofence
   };
 }

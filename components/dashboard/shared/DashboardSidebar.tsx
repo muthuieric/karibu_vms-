@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ChevronsUpDown, LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,24 +10,40 @@ import { cn } from "@/lib/utils";
 export type DashboardNavItem = {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   danger?: boolean;
   exact?: boolean;
 };
 
 type DashboardSidebarProps = {
-  brand: string;
-  subtitle: string;
+  brand?: string;
+  subtitle?: string;
+  accent?: "default" | "dark";
   pathname: string;
   navItems: DashboardNavItem[];
   isMobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
   onLogout: () => void;
-  accent?: "primary" | "warning" | "dark";
 };
 
 function isActive(pathname: string, item: DashboardNavItem) {
   return item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+function SidebarHeader({ brand = "Karibu VMS", subtitle = "Admin" }: { brand?: string; subtitle?: string }) {
+  return (
+    <div className="px-5 py-5">
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600">
+          <span className="text-xs font-bold text-white">K</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-sm font-black text-slate-900 leading-none">{brand}</span>
+          <span className="mt-1 w-fit rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">{subtitle}</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function NavLinks({
@@ -40,7 +56,7 @@ function NavLinks({
   onNavigate?: () => void;
 }) {
   return (
-    <nav className="flex-1 space-y-1.5 overflow-y-auto p-4">
+    <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2">
       {navItems.map((item) => {
         const active = isActive(pathname, item);
         const Icon = item.icon;
@@ -51,22 +67,25 @@ function NavLinks({
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "group flex items-center gap-3 rounded-[1rem] px-3 py-2.5 text-sm font-bold transition-all",
+              "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors",
               active && !item.danger && "bg-blue-50 text-blue-700",
-              active && item.danger && "bg-red-50 text-red-600",
-              !active && "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              active && item.danger && "bg-red-50 text-red-700",
+              !active && "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
             )}
           >
-            <span
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center transition-colors",
-                active
-                  ? item.danger ? "text-red-600" : "text-blue-700"
-                  : "text-slate-400 group-hover:text-slate-600"
-              )}
-            >
-              <Icon className="h-5 w-5" />
-            </span>
+            {Icon && (
+              <span
+                className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-colors",
+                  active && !item.danger && "border-blue-100 bg-white text-blue-700",
+                  active && item.danger && "border-red-100 bg-white text-red-700",
+                  !active && !item.danger && "border-slate-100 bg-slate-50 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-700",
+                  !active && item.danger && "border-red-100 bg-red-50 text-red-500 group-hover:bg-red-100 group-hover:text-red-700"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+              </span>
+            )}
             <span className="truncate">{item.label}</span>
           </Link>
         );
@@ -87,13 +106,8 @@ export function DashboardSidebar({
   return (
     <>
       {/* Mobile Top Bar */}
-      <div className="flex items-center justify-between border-b border-slate-100 bg-white p-4 shadow-sm md:hidden">
-        <div>
-          <h2 className="text-lg font-black tracking-tight text-slate-900">{brand}</h2>
-          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-600">
-            {subtitle}
-          </p>
-        </div>
+      <div className="flex items-center justify-between bg-[#F8FAFC] p-4 md:hidden">
+        <SidebarHeader brand={brand} subtitle={subtitle} />
         <Button variant="ghost" size="icon" onClick={() => onMobileOpenChange(true)} aria-label="Open menu" className="text-slate-600">
           <Menu className="h-5 w-5" />
         </Button>
@@ -108,22 +122,17 @@ export function DashboardSidebar({
             aria-label="Close menu"
             onClick={() => onMobileOpenChange(false)}
           />
-          <div className="relative flex h-full w-80 max-w-[86%] flex-col border-r border-slate-100 bg-white shadow-2xl animate-in slide-in-from-left duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 p-4">
-              <div>
-                <h2 className="text-lg font-black tracking-tight text-slate-900">{brand}</h2>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-600">
-                  {subtitle}
-                </p>
-              </div>
+          <div className="relative flex h-full min-h-0 w-72 flex-col bg-white shadow-xl animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between p-2 pr-4">
+              <SidebarHeader brand={brand} subtitle={subtitle} />
               <Button variant="ghost" className="h-8 w-8 rounded-full p-0 text-slate-500 hover:bg-slate-100 hover:text-slate-900" onClick={() => onMobileOpenChange(false)} aria-label="Close menu">
                 <X className="h-4 w-4" />
               </Button>
             </div>
             <NavLinks pathname={pathname} navItems={navItems} onNavigate={() => onMobileOpenChange(false)} />
-            <div className="border-t border-slate-100 p-4">
-              <Button variant="ghost" className="w-full justify-start text-slate-500 hover:bg-slate-50 hover:text-red-600 font-bold" onClick={onLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
+            <div className="p-4 mb-4">
+              <Button variant="ghost" className="w-full justify-start text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium" onClick={onLogout}>
+                <LogOut className="h-4 w-4 mr-3" />
                 Sign Out
               </Button>
             </div>
@@ -132,24 +141,12 @@ export function DashboardSidebar({
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="hidden h-full w-72 shrink-0 flex-col border-r border-slate-100 bg-white md:flex z-10">
-        <div className="border-b border-slate-100 p-5">
-          <div className="rounded-[1.4rem] border border-blue-100 bg-blue-50/30 p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-black tracking-tight text-slate-900">{brand}</h2>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-blue-600">{subtitle}</p>
-              </div>
-              <div className="rounded-xl p-2 bg-blue-100 text-blue-700">
-                <ChevronsUpDown className="h-4 w-4" />
-              </div>
-            </div>
-          </div>
-        </div>
+      <aside className="z-10 hidden h-full min-h-0 w-64 shrink-0 flex-col bg-[#F8FAFC] md:flex">
+        <SidebarHeader brand={brand} subtitle={subtitle} />
         <NavLinks pathname={pathname} navItems={navItems} />
-        <div className="border-t border-slate-100 p-4">
-          <Button variant="ghost" className="w-full justify-start text-slate-500 hover:bg-slate-50 hover:text-red-600 font-bold" onClick={onLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
+        <div className="p-4 mb-4">
+          <Button variant="ghost" className="w-full justify-start text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium transition-colors" onClick={onLogout}>
+            <LogOut className="h-4 w-4 mr-3" />
             Sign Out
           </Button>
         </div>

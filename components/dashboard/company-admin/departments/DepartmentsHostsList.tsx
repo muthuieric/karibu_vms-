@@ -79,38 +79,38 @@ export default function DepartmentsHostsList({
   return (
     <div className="space-y-6">
       {departmentsCount === 0 && (
-        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
-          No departments created yet. Create one above to get started!
+        <div className="rounded-[1.4rem] border border-slate-100 bg-white py-10 text-center font-bold text-slate-500 shadow-sm">
+          No departments yet. Add a department to organize visitor hosts.
         </div>
       )}
 
       {filteredDepartments.map((dept) => (
-        <Card key={dept.id} className="overflow-hidden">
-          <CardHeader className="bg-zinc-50 border-b py-3 px-4 sm:px-6">
+        <Card key={dept.id} className="overflow-hidden rounded-[1.4rem] border-slate-100 shadow-sm bg-white">
+          <CardHeader className="bg-white py-4 px-4 sm:px-6">
             {editingDeptId === dept.id ? (
               <form onSubmit={onUpdateDepartment} className="flex flex-1 gap-2 items-center">
                 <Input
                   value={editingDeptName}
                   onChange={(e) => onEditingDeptNameChange(e.target.value)}
-                  className="h-9 max-w-sm bg-white"
+                  className="h-10 max-w-sm bg-white border-slate-200 rounded-xl"
                   autoFocus
                 />
-                <Button type="submit" size="sm" disabled={isUpdatingDept} className="h-9 bg-blue-600 hover:bg-blue-700 text-white">
-                  {isUpdatingDept ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                <Button type="submit" disabled={isUpdatingDept} className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl">
+                  {isUpdatingDept ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
                 </Button>
-                <Button type="button" size="sm" variant="ghost" onClick={onCancelEditDepartment} className="h-9">
+                <Button type="button" variant="ghost" onClick={onCancelEditDepartment} className="h-10 w-10 p-0 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-200">
                   <X className="w-4 h-4" />
                 </Button>
               </form>
             ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <CardTitle className="text-lg m-0">{dept.name}</CardTitle>
+                  <CardTitle className="text-lg font-bold text-slate-900 m-0">{dept.name}</CardTitle>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-zinc-400 hover:text-blue-600 hover:bg-blue-50"
+                      className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       onClick={() => onEditDeptStart(dept.id, dept.name)}
                       title="Edit Department"
                     >
@@ -119,7 +119,7 @@ export default function DepartmentsHostsList({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-zinc-400 hover:text-red-600 hover:bg-red-50"
+                      className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       onClick={() => onDeleteDepartment(dept.id, dept.name)}
                       title="Delete Department"
                     >
@@ -127,8 +127,8 @@ export default function DepartmentsHostsList({
                     </Button>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => onSelectDept(dept.id)} className="w-fit">
-                  + Add Host
+                <Button variant="outline" size="sm" onClick={() => onSelectDept(dept.id)} className="w-fit h-9 font-bold border-blue-200 text-blue-700 hover:bg-blue-50 rounded-lg">
+                  Add Host
                 </Button>
               </div>
             )}
@@ -136,82 +136,80 @@ export default function DepartmentsHostsList({
 
           <CardContent className="p-0 sm:p-6 sm:pt-4">
             {selectedDeptId === dept.id && (
-              <form onSubmit={onAddHost} className="m-4 sm:m-0 sm:mb-6 p-4 bg-blue-50/50 rounded-lg border border-blue-100 flex gap-4 items-end flex-wrap">
+              <form onSubmit={onAddHost} className="m-4 sm:m-0 sm:mb-6 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-4 items-end flex-wrap shadow-sm">
                 <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                  <Label>Host Name *</Label>
-                  <Input required value={newHost.name} onChange={(e) => onNewHostChange({ ...newHost, name: e.target.value })} placeholder="John Doe" className="bg-white" />
+                  <Label htmlFor={`host-name-${dept.id}`} className="font-bold text-blue-900">Host Name *</Label>
+                  <Input id={`host-name-${dept.id}`} required value={newHost.name} onChange={(e) => onNewHostChange({ ...newHost, name: e.target.value })} placeholder="John Doe" className="bg-white border-blue-200 rounded-xl h-10" />
                 </div>
                 <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                  <Label>Phone Number</Label>
-                  <Input value={newHost.phone} onChange={(e) => onNewHostChange({ ...newHost, phone: e.target.value })} placeholder="+2547..." className="bg-white" />
+                  <Label htmlFor={`host-phone-${dept.id}`} className="font-bold text-blue-900">Phone Number</Label>
+                  <Input id={`host-phone-${dept.id}`} value={newHost.phone} onChange={(e) => onNewHostChange({ ...newHost, phone: e.target.value })} placeholder="+2547..." className="bg-white border-blue-200 rounded-xl h-10" />
                 </div>
                 <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                  <Label>Email</Label>
-                  <Input type="email" value={newHost.email} onChange={(e) => onNewHostChange({ ...newHost, email: e.target.value })} placeholder="john@example.com" className="bg-white" />
+                  <Label htmlFor={`host-email-${dept.id}`} className="font-bold text-blue-900">Email</Label>
+                  <Input id={`host-email-${dept.id}`} type="email" value={newHost.email} onChange={(e) => onNewHostChange({ ...newHost, email: e.target.value })} placeholder="john@example.com" className="bg-white border-blue-200 rounded-xl h-10" />
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <Button type="submit" className="flex-1 sm:flex-none">Save Host</Button>
-                  <Button type="button" variant="ghost" onClick={() => onSelectDept(null)}>Cancel</Button>
+                  <Button type="submit" className="flex-1 sm:flex-none h-10 px-6 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl">Add Host</Button>
+                  <Button type="button" variant="ghost" onClick={() => onSelectDept(null)} className="h-10 px-4 font-bold text-blue-700 hover:bg-blue-100 rounded-xl">Cancel</Button>
                 </div>
               </form>
             )}
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl sm:border border-slate-100 sm:mt-2">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-zinc-50/50">
-                    <TableHead>Host Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-100">
+                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-xs h-10">Host Name</TableHead>
+                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-xs h-10">Phone</TableHead>
+                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-xs h-10">Email</TableHead>
+                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-xs h-10 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {dept.hostsToDisplay.map(host => (
                     editingHostId === host.id ? (
-                      <TableRow key={host.id} className="bg-blue-50/30">
+                      <TableRow key={host.id} className="bg-blue-50/30 border-b border-slate-100">
                         <TableCell className="p-2 align-top">
-                          <Input value={editingHostData.name} onChange={e => onEditingHostDataChange({ ...editingHostData, name: e.target.value })} className="h-9 min-w-[120px] bg-white" />
+                          <Input value={editingHostData.name} onChange={e => onEditingHostDataChange({ ...editingHostData, name: e.target.value })} className="h-10 min-w-[120px] bg-white border-slate-200 rounded-lg" />
                         </TableCell>
                         <TableCell className="p-2 align-top">
-                          <Input value={editingHostData.phone} onChange={e => onEditingHostDataChange({ ...editingHostData, phone: e.target.value })} className="h-9 min-w-[120px] bg-white" />
+                          <Input value={editingHostData.phone} onChange={e => onEditingHostDataChange({ ...editingHostData, phone: e.target.value })} className="h-10 min-w-[120px] bg-white border-slate-200 rounded-lg" />
                         </TableCell>
                         <TableCell className="p-2 align-top">
-                          <Input value={editingHostData.email} onChange={e => onEditingHostDataChange({ ...editingHostData, email: e.target.value })} className="h-9 min-w-[120px] bg-white" />
+                          <Input value={editingHostData.email} onChange={e => onEditingHostDataChange({ ...editingHostData, email: e.target.value })} className="h-10 min-w-[120px] bg-white border-slate-200 rounded-lg" />
                         </TableCell>
                         <TableCell className="p-2 text-right align-top whitespace-nowrap">
-                          <Button size="sm" onClick={() => onUpdateHost(host.id)} disabled={isUpdatingHost} className="h-9 bg-blue-600 hover:bg-blue-700 text-white mr-1">
-                            {isUpdatingHost ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+                          <Button size="sm" onClick={() => onUpdateHost(host.id)} disabled={isUpdatingHost} className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg mr-1">
+                            {isUpdatingHost ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={onCancelEditHost} className="h-9 px-2">
+                          <Button size="sm" variant="ghost" onClick={onCancelEditHost} className="h-10 px-3 text-slate-500 hover:bg-slate-200 rounded-lg">
                             <X className="w-4 h-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      <TableRow key={host.id}>
-                        <TableCell className="font-medium text-zinc-900">{host.name}</TableCell>
-                        <TableCell className="text-zinc-600">{host.phone || "-"}</TableCell>
-                        <TableCell className="text-zinc-600">{host.email || "-"}</TableCell>
-                        <TableCell className="text-right">
+                      <TableRow key={host.id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <TableCell className="font-bold text-slate-900 h-12">{host.name}</TableCell>
+                        <TableCell className="text-slate-500 font-medium h-12">{host.phone || "-"}</TableCell>
+                        <TableCell className="text-slate-500 font-medium h-12">{host.email || "-"}</TableCell>
+                        <TableCell className="text-right h-12">
                           <div className="flex items-center justify-end gap-1">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              className="h-8 px-2.5 text-blue-600 border-blue-200 hover:bg-blue-50"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg"
                               onClick={() => onEditHostStart(host)}
                             >
-                              <Pencil className="w-3.5 h-3.5 sm:mr-1" />
-                              <span className="hidden sm:inline">Edit</span>
+                              <Pencil className="w-4 h-4" />
                             </Button>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              className="h-8 px-2.5 text-red-600 border-red-200 hover:bg-red-50"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
                               onClick={() => onDeleteHost(host.id, host.name)}
                             >
-                              <Trash2 className="w-3.5 h-3.5 sm:mr-1" />
-                              <span className="hidden sm:inline">Delete</span>
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -220,7 +218,7 @@ export default function DepartmentsHostsList({
                   ))}
                   {dept.hostsToDisplay.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-gray-500 py-6 border-b-0">
+                      <TableCell colSpan={4} className="text-center text-slate-500 font-medium py-8 border-b-0">
                         {searchQuery ? "No matching hosts found in this department." : "No hosts added to this department yet."}
                       </TableCell>
                     </TableRow>
@@ -233,10 +231,10 @@ export default function DepartmentsHostsList({
       ))}
 
       {departmentsCount > 0 && filteredDepartments.length === 0 && (
-        <div className="text-center py-10 text-zinc-500 bg-white rounded-lg border">
-          <p className="font-medium text-zinc-900 mb-1">No results found</p>
+        <div className="text-center py-10 text-slate-500 bg-white rounded-[1.4rem] border border-slate-100 shadow-sm font-medium">
+          <p className="font-bold text-slate-900 mb-1">No results found</p>
           <p>No departments or hosts matched &quot;{searchQuery}&quot;</p>
-          <Button variant="link" onClick={onClearSearch} className="text-blue-600 mt-2">
+          <Button variant="link" onClick={onClearSearch} className="text-blue-600 font-bold mt-2">
             Clear search
           </Button>
         </div>

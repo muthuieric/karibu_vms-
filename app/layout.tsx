@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://karibuvms.com"),
   title: "Karibu VMS | Enterprise Visitor Management System",
   description: "Secure your building with Karibu VMS. The modern visitor management system featuring GPS-verified geofencing, dynamic QR codes, manual ID capture, and instant host notifications. Replace paper logbooks with enterprise-grade security.",
   keywords: [
@@ -31,19 +32,15 @@ export const metadata: Metadata = {
     description: "Secure your building with Karibu VMS. The modern visitor management system featuring GPS-verified geofencing, dynamic QR codes, manual ID capture, and instant host notifications. Replace paper logbooks with enterprise-grade security.",
     siteName: "Karibu VMS",
     type: "website",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-      },
-    ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "Karibu VMS",
     description: "Enterprise Visitor Management System",
-    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -52,14 +49,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const enableVercelInsights = Boolean(process.env.VERCEL);
+
   return (
     <html lang="en" className="scroll-smooth">
       <body
         className={`${inter.variable} ${geistMono.variable} bg-background text-text-main antialiased`}
       >
         {children}
-        <Analytics />
-        <SpeedInsights />
+        {enableVercelInsights && (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
       </body>
     </html>
   );

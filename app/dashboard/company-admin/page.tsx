@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import AdminDashboardHeader from "@/components/dashboard/company-admin/AdminDashboardHeader";
 import AdminPhotoLightbox from "@/components/dashboard/company-admin/AdminPhotoLightbox";
 import AdminStatsGrid from "@/components/dashboard/company-admin/AdminStatsGrid";
 import AdminVisitInfoModal from "@/components/dashboard/company-admin/AdminVisitInfoModal";
 import MasterVisitorLog from "@/components/dashboard/company-admin/MasterVisitorLog";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
+import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Download } from "lucide-react";
 import { AdminVisitor, useCompanyAdminDashboard } from "@/hooks/useCompanyAdminDashboard";
 
 export default function AdminDashboard() {
@@ -28,34 +26,24 @@ export default function AdminDashboard() {
 
   return (
     <PageContainer>
-        <AdminDashboardHeader
-          hasActiveFilters={dashboard.hasActiveFilters}
-          onDownloadCSV={dashboard.downloadCSV}
-        />
-
-        <section className="grid gap-4">
-          <div className="rounded-[1.6rem] border border-blue-100 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <Badge className="border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 uppercase tracking-wider font-bold">Workspace</Badge>
-                <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">Building Overview</h2>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                  Manage visitors, view real-time gate activity, and monitor entry approvals across the organization.
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 shrink-0">
-                <Button asChild className="bg-blue-600 font-bold text-white hover:bg-blue-700 shadow-sm rounded-[1rem] h-11 px-6">
-                  <Link href="/dashboard/company-admin/qr">Manage Gate QR</Link>
-                </Button>
-                {dashboard.pendingCount > 0 && (
-                  <Button onClick={() => dashboard.setStatusFilter("pending")} variant="outline" className="border-orange-200 bg-orange-50 font-bold text-orange-700 hover:bg-orange-100 rounded-[1rem] h-11 px-6">
-                    Review {dashboard.pendingCount} Pending
-                  </Button>
-                )}
-              </div>
-            </div>
+        <PageHeader
+          title="Admin Home"
+          eyebrow="Company Admin"
+          description="Manage visitors, view real-time gate activity, and monitor entry approvals across the organization."
+          icon={LayoutDashboard}
+        >
+          <div className="flex flex-col gap-3 sm:flex-row shrink-0 w-full sm:w-auto">
+            <Button onClick={dashboard.downloadCSV} variant="outline" className="w-full sm:w-auto bg-white border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-xl h-11">
+              <Download className="h-4 w-4 mr-2" />
+              Export Records
+            </Button>
+            {dashboard.pendingCount > 0 && (
+              <Button onClick={() => dashboard.setStatusFilter("pending")} className="w-full sm:w-auto bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 font-bold rounded-xl h-11 px-6">
+                Waiting Review ({dashboard.pendingCount})
+              </Button>
+            )}
           </div>
-        </section>
+        </PageHeader>
         
         <AdminStatsGrid
           totalToday={dashboard.totalToday}

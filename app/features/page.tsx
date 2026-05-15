@@ -1,7 +1,13 @@
-import React from "react";
+import type { Metadata } from "next";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
-import SmartChatbot from "@/components/SmartChatbot";
+import LazySmartChatbot from "@/components/LazySmartChatbot";
+
+export const metadata: Metadata = {
+  title: "Karibu VMS Features | Check-In, Guard Tools, Entry Records",
+  description: "Explore Karibu VMS features including visitor intake, guard dashboards, QR entry, checkout tracking, departments, access restrictions, and admin records.",
+  alternates: { canonical: "/features" },
+};
 
 export default function FeaturesPage() {
   return (
@@ -71,7 +77,7 @@ export default function FeaturesPage() {
       </main>
 
       <PublicFooter />
-      <SmartChatbot />
+      <LazySmartChatbot />
     </div>
   );
 }

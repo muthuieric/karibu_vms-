@@ -46,10 +46,11 @@ export default function ForgotPasswordPage() {
 
         <form onSubmit={forgotPassword.handleSubmit} className="space-y-5 mt-8">
           <div className="space-y-1.5">
-            <Label>Work Email</Label>
+            <Label htmlFor="recovery-email">Work Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-5 w-5 text-zinc-400" />
               <Input 
+                id="recovery-email"
                 required 
                 type="email" 
                 placeholder="admin@building.com" 

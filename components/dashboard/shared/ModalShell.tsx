@@ -21,11 +21,10 @@ export function ModalShell({
   footer,
   onClose,
   className,
-  tone = "default",
 }: ModalShellProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 p-4 sm:p-6 backdrop-blur-sm">
-      <div className={cn("relative flex flex-col max-h-[92vh] w-full max-w-lg rounded-[1.4rem] bg-white shadow-2xl border border-slate-100", className)}>
+      <div role="dialog" aria-modal="true" aria-labelledby="modal-title" className={cn("relative flex flex-col max-h-[92vh] w-full max-w-lg rounded-[1.4rem] bg-white shadow-2xl border border-slate-100", className)}>
         <div className="relative shrink-0">
           <Button
             type="button"
@@ -37,7 +36,7 @@ export function ModalShell({
             <X className="h-4 w-4" />
           </Button>
           <div className="px-6 pt-6 pb-4 pr-14 border-b border-slate-100">
-            <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+            <h2 id="modal-title" className="text-xl font-bold text-slate-900">{title}</h2>
             {description && <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">{description}</p>}
           </div>
         </div>

@@ -113,6 +113,7 @@ export default function GuardDashboard() {
         askPurpose={dashboard.askPurpose}
         askVehicle={dashboard.askVehicle}
         guardGateId={dashboard.guardGateId}
+        onVisitorAdded={dashboard.addVisitorToQueue}
       />
 
       <GuardQrModal

@@ -22,7 +22,7 @@ export default function LoginPage() {
         
         <form onSubmit={login.handleLogin} className="space-y-5">
           {login.error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 break-words">
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 break-words" role="alert" aria-live="polite">
               {login.error}
             </div>
           )}
@@ -63,7 +63,7 @@ export default function LoginPage() {
           </Button>
 
           <p className="text-center text-sm text-zinc-500 mt-6">
-            Don't have an account? <Link href="/register" className="text-blue-600 font-semibold hover:text-blue-800">Register</Link>
+            Don&apos;t have an account? <Link href="/register" className="text-blue-600 font-semibold hover:text-blue-800">Register</Link>
           </p>
         </form>
       </AuthCard>

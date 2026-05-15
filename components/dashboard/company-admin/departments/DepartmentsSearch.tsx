@@ -14,12 +14,12 @@ export default function DepartmentsSearch({
 }: DepartmentsSearchProps) {
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+      <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
       <Input
         placeholder="Search by department, host name, phone, or email..."
         value={searchQuery}
         onChange={(e) => onSearchQueryChange(e.target.value)}
-        className="pl-10 h-12 bg-white text-base shadow-sm border-zinc-300 focus-visible:ring-blue-600"
+        className="h-12 rounded-xl border-slate-100 bg-white pl-10 text-base shadow-sm focus-visible:ring-blue-600"
       />
     </div>
   );

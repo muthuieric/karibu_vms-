@@ -1,12 +1,16 @@
-"use client";
-
-import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import { Button } from "@/components/ui/button";
-import SmartChatbot from "@/components/SmartChatbot";
+import LazySmartChatbot from "@/components/LazySmartChatbot";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
+
+export const metadata: Metadata = {
+  title: "Karibu VMS | Digital Visitor Management",
+  description: "Karibu VMS helps offices, schools, apartments, and gated spaces manage visitor check-in, guard approvals, checkout, and entry records.",
+  alternates: { canonical: "/" },
+};
 
 const softwareApplicationJsonLd = {
   "@context": "https://schema.org",
@@ -123,7 +127,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Step 1 */}
             <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
-              <div className="text-5xl font-black text-zinc-100 mb-6 group-hover:text-blue-50 transition-colors">01</div>
+              <div aria-hidden="true" data-step="01" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-blue-50" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Visitor arrives</h3>
               <p className="text-zinc-600 text-sm leading-relaxed">
                 The visitor approaches the reception or gate facility.
@@ -132,7 +136,7 @@ export default function LandingPage() {
 
             {/* Step 2 */}
             <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
-              <div className="text-5xl font-black text-zinc-100 mb-6 group-hover:text-orange-50 transition-colors">02</div>
+              <div aria-hidden="true" data-step="02" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-orange-50" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Capture details</h3>
               <p className="text-zinc-600 text-sm leading-relaxed">
                 Guard or a simple QR form is used to securely capture the visitor&apos;s information.
@@ -141,7 +145,7 @@ export default function LandingPage() {
 
             {/* Step 3 */}
             <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
-              <div className="text-5xl font-black text-zinc-100 mb-6 group-hover:text-green-50 transition-colors">03</div>
+              <div aria-hidden="true" data-step="03" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-green-50" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Entry reviewed</h3>
               <p className="text-zinc-600 text-sm leading-relaxed">
                 The entry is quickly reviewed or approved against host records.
@@ -150,7 +154,7 @@ export default function LandingPage() {
 
             {/* Step 4 */}
             <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
-              <div className="text-5xl font-black text-zinc-100 mb-6 group-hover:text-zinc-100 transition-colors">04</div>
+              <div aria-hidden="true" data-step="04" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-zinc-100" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Visit recorded</h3>
               <p className="text-zinc-600 text-sm leading-relaxed">
                 The visit is logged to the dashboard and checkout time is tracked later.
@@ -164,7 +168,7 @@ export default function LandingPage() {
       <section className="py-24 bg-blue-600 text-white text-center">
         <div className="container mx-auto px-6 max-w-3xl">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">Ready to improve your gate flow?</h2>
-          <p className="text-blue-100 text-lg mb-10 leading-relaxed">
+          <p className="text-white/90 text-lg mb-10 leading-relaxed">
             Start maintaining better records, organizing hosts, and securing your entry points today.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -173,7 +177,7 @@ export default function LandingPage() {
                 Register Now
               </Button>
             </Link>
-            <Link href="/login" className="w-full sm:w-auto mt-2 sm:mt-0 sm:ml-4 text-blue-100 hover:text-white font-medium text-sm transition-colors">
+            <Link href="/login" className="w-full sm:w-auto mt-2 sm:mt-0 sm:ml-4 text-white/90 hover:text-white font-medium text-sm transition-colors">
               Sign In to existing account
             </Link>
           </div>
@@ -182,7 +186,7 @@ export default function LandingPage() {
 
       <PublicFooter />
 
-      <SmartChatbot />
+      <LazySmartChatbot />
 
       <Script
         id="karibu-vms-software-schema"

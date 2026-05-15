@@ -117,7 +117,7 @@ export default function MasterVisitorLog({
 }: MasterVisitorLogProps) {
   return (
     <DataTableShell
-      title="Master Visitor Log"
+      title="Entry Records"
       description="Search, filter, and audit every building access event."
       filters={
         <div className="grid gap-3 lg:min-w-[44rem] lg:grid-cols-[1.2fr_1fr_1fr]">
@@ -149,13 +149,14 @@ export default function MasterVisitorLog({
       <div className="border-b border-slate-100 bg-white p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
-            Date Controls
+            Filter records
             {hasActiveFilters && <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">Active filters</Badge>}
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 w-full">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block">From Date</label>
+              <label htmlFor="entry-records-start-date" className="text-xs font-bold uppercase tracking-wider text-slate-500 block">From Date</label>
               <Input
+                id="entry-records-start-date"
                 type="date"
                 className="h-10 w-full bg-slate-50 border-slate-200"
                 value={startDate}
@@ -164,8 +165,9 @@ export default function MasterVisitorLog({
             </div>
 
             <div className="space-y-1.5 w-full">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block">To Date</label>
+              <label htmlFor="entry-records-end-date" className="text-xs font-bold uppercase tracking-wider text-slate-500 block">To Date</label>
               <Input
+                id="entry-records-end-date"
                 type="date"
                 className="h-10 w-full bg-slate-50 border-slate-200"
                 value={endDate}

@@ -1,8 +1,14 @@
-import React from "react";
+import type { Metadata } from "next";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
-import SmartChatbot from "@/components/SmartChatbot";
+import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Contact Karibu VMS | Visitor Management Support",
+  description: "Contact the Karibu VMS team for help setting up a digital visitor management process for your office, school, apartment, or gated facility.",
+  alternates: { canonical: "/contact" },
+};
 
 export default function ContactPage() {
   return (
@@ -22,25 +28,27 @@ export default function ContactPage() {
           <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm max-w-lg mx-auto text-left mt-8">
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-zinc-900 mb-2">Email Address</label>
+                <p className="block text-sm font-semibold text-zinc-900 mb-2">Email Address</p>
                 <div className="w-full h-11 rounded-lg bg-zinc-50 border border-zinc-200 flex items-center px-4 text-zinc-400 text-sm">
                   hello@example.com
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-zinc-900 mb-2">Phone Number</label>
+                <p className="block text-sm font-semibold text-zinc-900 mb-2">Phone Number</p>
                 <div className="w-full h-11 rounded-lg bg-zinc-50 border border-zinc-200 flex items-center px-4 text-zinc-400 text-sm">
                   +1 (555) 000-0000
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-zinc-900 mb-2">Message</label>
+                <p className="block text-sm font-semibold text-zinc-900 mb-2">Message</p>
                 <div className="w-full h-24 rounded-lg bg-zinc-50 border border-zinc-200 flex px-4 py-3 text-zinc-400 text-sm">
                   How can we help...
                 </div>
               </div>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-12 text-base font-medium transition-colors">
+              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-12 text-base font-medium transition-colors" asChild>
+                <a href="https://wa.me/254706123513" target="_blank" rel="noopener noreferrer">
                 Contact Sales
+                </a>
               </Button>
             </div>
             <p className="text-center text-xs text-zinc-500 mt-6">
@@ -51,7 +59,7 @@ export default function ContactPage() {
       </main>
 
       <PublicFooter />
-      <SmartChatbot />
+      <LazySmartChatbot />
     </div>
   );
 }

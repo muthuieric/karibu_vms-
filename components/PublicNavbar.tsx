@@ -19,7 +19,7 @@ export default function PublicNavbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
           <Link href="/about" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">About</Link>
           <Link href="/why-us" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Why Us</Link>
           <Link href="/features" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Features</Link>
@@ -41,6 +41,10 @@ export default function PublicNavbar() {
         <button 
           className="md:hidden p-2 -mr-2 text-zinc-600"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          type="button"
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-controls="public-mobile-menu"
+          aria-expanded={mobileMenuOpen}
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -48,7 +52,7 @@ export default function PublicNavbar() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-zinc-100 bg-white px-6 py-4 flex flex-col gap-4 shadow-lg">
+        <nav id="public-mobile-menu" className="md:hidden border-t border-zinc-100 bg-white px-6 py-4 flex flex-col gap-4 shadow-lg" aria-label="Mobile navigation">
           <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">About</Link>
           <Link href="/why-us" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Why Us</Link>
           <Link href="/features" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Features</Link>
@@ -63,7 +67,7 @@ export default function PublicNavbar() {
               </Button>
             </Link>
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LifeBuoy, Loader2, MessageSquare, Send, Clock, CheckCircle2 } from "lucide-react";
+import { Loader2, MessageSquare, Send, Clock, CheckCircle2 } from "lucide-react";
 import { useCompanySupport } from "@/hooks/useCompanySupport";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { EmptyState } from "@/components/dashboard/shared/StateBlocks";
@@ -28,23 +28,24 @@ export default function SupportPage() {
         <PageHeader
           title="Help Desk"
           description="Submit support requests or report issues directly to the Karibu VMS team."
-          icon={LifeBuoy}
+          icon={MessageSquare}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           
           {/* Create Ticket Form */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardHeader className="bg-zinc-50/50 border-b border-zinc-100 pb-5">
+            <Card className="sticky top-6 rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
+              <CardHeader className="bg-white pb-5">
                 <CardTitle className="text-lg">Submit a Ticket</CardTitle>
                 <CardDescription>Need assistance? Let us know below.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <form onSubmit={support.handleSubmitTicket} className="space-y-4">
                   <div>
-                    <Label className="font-semibold text-zinc-700">Subject</Label>
+                    <Label htmlFor="support-subject" className="font-semibold text-zinc-700">Subject</Label>
                     <Input 
+                      id="support-subject"
                       required 
                       placeholder="e.g. Need to add more gates" 
                       value={support.subject} 
@@ -53,8 +54,9 @@ export default function SupportPage() {
                     />
                   </div>
                   <div>
-                    <Label className="font-semibold text-zinc-700">Description</Label>
+                    <Label htmlFor="support-description" className="font-semibold text-zinc-700">Description</Label>
                     <textarea 
+                      id="support-description"
                       required 
                       placeholder="Please describe the issue or request in detail..." 
                       value={support.description} 
@@ -62,7 +64,7 @@ export default function SupportPage() {
                       className="flex min-h-[120px] w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm shadow-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 mt-1.5 resize-none"
                     />
                   </div>
-                  <Button type="submit" className="w-full h-11 bg-zinc-900 hover:bg-zinc-800 text-white font-bold" disabled={support.isSubmitting || !support.subject.trim() || !support.description.trim()}>
+                  <Button type="submit" className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl" disabled={support.isSubmitting || !support.subject.trim() || !support.description.trim()}>
                     {support.isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</> : <><Send className="w-4 h-4 mr-2" /> Submit Ticket</>}
                   </Button>
                 </form>
@@ -72,7 +74,7 @@ export default function SupportPage() {
 
           {/* Ticket History List */}
           <div className="lg:col-span-2">
-            <Card className="h-full">
+            <Card className="h-full rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
               <CardHeader className="bg-white border-b border-zinc-100 pb-5">
                 <CardTitle className="text-xl">Your Support History</CardTitle>
                 <CardDescription>Track the status of your previous requests.</CardDescription>

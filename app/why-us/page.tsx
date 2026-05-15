@@ -1,7 +1,13 @@
-import React from "react";
+import type { Metadata } from "next";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
-import SmartChatbot from "@/components/SmartChatbot";
+import LazySmartChatbot from "@/components/LazySmartChatbot";
+
+export const metadata: Metadata = {
+  title: "Why Karibu VMS | Faster, Cleaner Visitor Entry",
+  description: "See why organizations use Karibu VMS to speed up visitor entry, improve security records, simplify guard workflows, and remove paper logbooks.",
+  alternates: { canonical: "/why-us" },
+};
 
 export default function WhyUsPage() {
   return (
@@ -91,7 +97,7 @@ export default function WhyUsPage() {
       </main>
 
       <PublicFooter />
-      <SmartChatbot />
+      <LazySmartChatbot />
     </div>
   );
 }

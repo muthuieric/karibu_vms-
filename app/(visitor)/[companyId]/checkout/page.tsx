@@ -183,10 +183,11 @@ export default function PublicGateCheckOut() {
               )}
 
               <div>
-                <Label className="mb-2 block text-center">Your 4-Digit Exit Code</Label>
+                <Label htmlFor="checkout-otp" className="mb-2 block text-center">Your 4-Digit Exit Code</Label>
                 <div className="relative">
                   <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                   <Input 
+                    id="checkout-otp"
                     required 
                     value={otp} 
                     onChange={(e) => setOtp(e.target.value)} 

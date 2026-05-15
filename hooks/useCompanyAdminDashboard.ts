@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export type AdminVisitor = {
@@ -27,6 +27,14 @@ export type AdminGate = {
   name: string;
 };
 
+function addVisitorOnce(visitors: AdminVisitor[], visitor: AdminVisitor) {
+  if (visitors.some((existing) => existing.id === visitor.id)) {
+    return { visitors, added: false };
+  }
+
+  return { visitors: [visitor, ...visitors], added: true };
+}
+
 export function useCompanyAdminDashboard() {
   const [visitors, setVisitors] = useState<AdminVisitor[]>([]);
   const [gates, setGates] = useState<AdminGate[]>([]);
@@ -39,6 +47,7 @@ export function useCompanyAdminDashboard() {
   const [gateFilter, setGateFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const visitorIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let activeCompanyId: string | null = null;
@@ -122,7 +131,9 @@ export function useCompanyAdminDashboard() {
       if (visitorError) {
         console.error("Error fetching visitors:", visitorError);
       } else {
-        setVisitors(visitorData || []);
+        const initialVisitors = visitorData || [];
+        visitorIdsRef.current = new Set(initialVisitors.map((visitor) => visitor.id));
+        setVisitors(initialVisitors);
       }
 
       const { count: lifetimeCount, error: lifetimeError } = await supabase
@@ -147,7 +158,9 @@ export function useCompanyAdminDashboard() {
         if (payload.eventType === "INSERT") {
           const newVisitor = payload.new as AdminVisitor;
           if (!activeCompanyId || newVisitor.company_id !== activeCompanyId) return;
-          setVisitors((prev) => [newVisitor, ...prev]);
+          if (visitorIdsRef.current.has(newVisitor.id)) return;
+          visitorIdsRef.current.add(newVisitor.id);
+          setVisitors((prev) => addVisitorOnce(prev, newVisitor).visitors);
           setLifetimeVisitors((prev) => prev + 1);
         } else if (payload.eventType === "UPDATE") {
           if (!activeCompanyId || (payload.new as AdminVisitor).company_id !== activeCompanyId) return;
@@ -155,6 +168,7 @@ export function useCompanyAdminDashboard() {
             prev.map((visitor) => (visitor.id === payload.new.id ? (payload.new as AdminVisitor) : visitor))
           );
         } else if (payload.eventType === "DELETE") {
+          visitorIdsRef.current.delete(payload.old.id as string);
           setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.old.id));
           setLifetimeVisitors((prev) => Math.max(0, prev - 1));
         }

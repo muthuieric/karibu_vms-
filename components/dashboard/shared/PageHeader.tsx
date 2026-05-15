@@ -33,12 +33,11 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[1.6rem] border border-white/70 bg-white/80 p-5 shadow-card backdrop-blur sm:p-6",
+        "relative overflow-hidden rounded-[1.4rem] border border-slate-100 bg-white p-5 shadow-sm sm:p-6",
         tone === "dark" && "border-slate-800 bg-slate-950 text-white",
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.15),transparent_19rem)]" />
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex min-w-0 items-start gap-4">
           {Icon && (

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Link2, FileDown } from "lucide-react";
 import { ModalShell } from "@/components/dashboard/shared/ModalShell";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,7 @@ export default function GuardQrModal({
           </div>
           
           <div className="rounded-[1.4rem] border border-slate-200 bg-white p-4 shadow-sm">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrImageUrl} alt="QR Code" className="h-48 w-48 object-contain" />
+            <Image src={qrImageUrl} alt="Gate check-in QR code" width={192} height={192} unoptimized className="h-48 w-48 object-contain" />
           </div>
           
           <h3 className="mt-5 text-xl font-bold text-slate-900">Visitor self check-in</h3>

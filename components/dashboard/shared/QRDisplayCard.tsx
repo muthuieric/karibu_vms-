@@ -26,24 +26,23 @@ export function QRDisplayCard({
 }: QRDisplayCardProps) {
   const color =
     tone === "warning"
-      ? "from-orange-500 to-amber-400 text-orange-700 bg-orange-50 border-orange-100"
-      : "from-blue-600 to-sky-500 text-blue-700 bg-blue-50 border-blue-100";
+      ? "text-orange-600 bg-orange-50 border-orange-100"
+      : "text-blue-600 bg-blue-50 border-blue-100";
 
   return (
-    <Card className={cn("overflow-hidden", printClassName)}>
-      <div className={cn("h-2 bg-gradient-to-r", color.split(" ").slice(0, 2).join(" "))} />
+    <Card className={cn("rounded-[1.4rem] border-slate-100 shadow-sm overflow-hidden bg-white", printClassName)}>
       <CardHeader className="items-center text-center">
         {Icon && (
-          <div className={cn("mb-2 rounded-2xl border p-3", color.split(" ").slice(2).join(" "))}>
+          <div className={cn("mb-2 rounded-2xl border p-3", color)}>
             <Icon className="h-6 w-6" />
           </div>
         )}
-        <CardTitle className="text-2xl font-black uppercase tracking-tight">{title}</CardTitle>
-        <CardDescription className="max-w-xs">{description}</CardDescription>
+        <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">{title}</CardTitle>
+        <CardDescription className="max-w-xs text-slate-500 font-medium">{description}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-5 pb-6">
-        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-3 shadow-sm">
-          <Image src={qrUrl} alt={title} width={190} height={190} unoptimized className="h-48 w-48 rounded-xl object-contain" />
+        <div className="p-4 bg-white border-2 border-slate-100 rounded-2xl shadow-sm">
+          <Image src={qrUrl} alt={title} width={200} height={200} unoptimized className="rounded-lg object-contain" />
         </div>
         {footer}
       </CardContent>

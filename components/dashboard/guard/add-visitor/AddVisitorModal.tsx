@@ -3,8 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { compressImage } from "@/lib/image-compression";
+import { getSupabaseErrorMessage } from "@/lib/supabase-error";
 import AddVisitorForm from "@/components/dashboard/guard/add-visitor/AddVisitorForm";
 import "react-phone-input-2/lib/style.css";
+import type { Visitor } from "@/types/guard";
 
 type CustomField = {
   id: string;
@@ -32,6 +34,7 @@ export interface AddVisitorModalProps {
   askPurpose?: boolean;
   askVehicle?: boolean;
   guardGateId?: string | null;
+  onVisitorAdded?: (visitor: Visitor) => void;
 }
 
 export default function AddVisitorModal({
@@ -45,6 +48,7 @@ export default function AddVisitorModal({
   askPurpose = false,
   askVehicle = false,
   guardGateId = null,
+  onVisitorAdded,
 }: AddVisitorModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newVisitor, setNewVisitor] = useState({
@@ -220,27 +224,40 @@ export default function AddVisitorModal({
       // 3. Insert Visitor Record
       const finalGateId = guardGateId && guardGateId !== "" && guardGateId !== "unassigned" ? guardGateId : null;
 
-      const { error } = await supabase.from("visitors").insert([
-        {
-          company_id: companyId,
-          name: newVisitor.name,
-          phone: finalPhone || "",
-          document_type: askId ? newVisitor.doc_type : null,
-          id_number: askId ? newVisitor.id_number : null,
-          host_id: askHost && newVisitor.host_id ? newVisitor.host_id : null,
-          host_name: askHost && newVisitor.host_id ? hostSearchQuery : null,
-          purpose: askPurpose ? newVisitor.purpose : null,
-          vehicle_reg: askVehicle ? newVisitor.vehicle_reg : null,
-          status: "pending",
-          photo_url: uploadedPhotoUrl,
-          custom_data: { ...customAnswers, source: "guard_desk" },
-          gate_id: finalGateId
-        }
-      ]);
+      const insertPayload = {
+        company_id: companyId,
+        name: newVisitor.name.trim(),
+        phone: finalPhone || "",
+        document_type: askId ? newVisitor.doc_type : null,
+        id_number: askId ? newVisitor.id_number.trim() : null,
+        host_id: askHost && newVisitor.host_id ? newVisitor.host_id : null,
+        host_name: askHost && newVisitor.host_id ? hostSearchQuery : null,
+        purpose: askPurpose ? newVisitor.purpose.trim() || null : null,
+        vehicle_reg: askVehicle ? newVisitor.vehicle_reg.trim() || null : null,
+        status: "pending",
+        photo_url: uploadedPhotoUrl,
+        custom_data: { ...customAnswers, source: "guard_desk" },
+        gate_id: finalGateId,
+      };
 
-      if (error) throw error;
+      const { data: createdVisitor, error } = await supabase
+        .from("visitors")
+        .insert([insertPayload])
+        .select("*")
+        .single();
 
-      console.log("Checking email trigger - Plan Tier:", planTier, "Host ID:", newVisitor.host_id);
+      if (error) {
+        console.error("Supabase visitor insert failed:", {
+          error,
+          payload: insertPayload,
+        });
+        throw new Error(getSupabaseErrorMessage(error, "Failed to add visitor."));
+      }
+
+      if (createdVisitor) {
+        onVisitorAdded?.(createdVisitor as Visitor);
+      }
+
       if (askHost && newVisitor.host_id && planTier !== "basic") {
         const selectedHost = hosts.find((h) => h.id === newVisitor.host_id);
 
@@ -276,8 +293,8 @@ export default function AddVisitorModal({
       onClose();
 
     } catch (err) {
-      console.error(err);
-      const message = err instanceof Error ? err.message : "Failed to add visitor.";
+      const message = getSupabaseErrorMessage(err, "Failed to add visitor.");
+      console.error("Failed to add visitor:", err);
       alert(message);
     } finally {
       setIsSubmitting(false);

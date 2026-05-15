@@ -5,6 +5,11 @@ import { supabase } from "@/lib/supabase";
 import { filterGuardVisitors, getDynamicGateQrUrl, printGateQrPoster } from "@/lib/guard-dashboard";
 import type { CustomField, Visitor } from "@/types/guard";
 
+function addVisitorOnce(visitors: Visitor[], visitor: Visitor) {
+  if (visitors.some((existing) => existing.id === visitor.id)) return visitors;
+  return [visitor, ...visitors];
+}
+
 export function useGuardDashboard() {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,12 +35,20 @@ export function useGuardDashboard() {
 
   const tickQrTimestamp = () => setQrTimestamp(Date.now());
 
+  const addVisitorToQueue = (visitor: Visitor) => {
+    if (!companyId || visitor.company_id !== companyId) return;
+    if (guardGateId && visitor.gate_id && visitor.gate_id !== guardGateId) return;
+
+    setVisitors((prev) => {
+      return addVisitorOnce(prev, visitor);
+    });
+  };
+
   useEffect(() => {
     const initializeDashboard = async () => {
       const { data: authData, error: authError } = await supabase.auth.getUser();
 
       if (authError || !authData.user) {
-        console.error("Authentication error:", authError);
         setLoading(false);
         return undefined;
       }
@@ -130,7 +143,7 @@ export function useGuardDashboard() {
             const newVisitor = payload.new as Visitor;
             if (newVisitor.company_id !== currentCompanyId) return;
             if (!currentGateId || newVisitor.gate_id === currentGateId || !newVisitor.gate_id) {
-              setVisitors((prev) => [newVisitor, ...prev]);
+              setVisitors((prev) => addVisitorOnce(prev, newVisitor));
             }
           } else if (payload.eventType === "UPDATE") {
             const updatedVisitor = payload.new as Visitor;
@@ -291,5 +304,6 @@ export function useGuardDashboard() {
     handleCheckOut,
     handlePrintQr: () => printGateQrPoster(window.location.origin, companyId, guardGateId, guardGateName),
     getDynamicQrUrl: () => getDynamicGateQrUrl(window.location.origin, companyId, guardGateId, qrTimestamp),
+    addVisitorToQueue,
   };
 }

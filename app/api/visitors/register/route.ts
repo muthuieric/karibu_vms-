@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseErrorMessage } from "@/lib/supabase-error";
 
 type VisitorRegistrationPayload = {
   company_id?: string;
@@ -59,35 +60,53 @@ export async function POST(request: Request) {
       safeGateId = gate?.id ?? null;
     }
 
+    let safeHostId: string | null = null;
+    let safeHostName: string | null = null;
+    if (payload.host_id) {
+      const { data: host } = await supabaseAdmin
+        .from("hosts")
+        .select("id, name")
+        .eq("id", payload.host_id)
+        .eq("company_id", payload.company_id)
+        .maybeSingle();
+
+      safeHostId = host?.id ?? null;
+      safeHostName = host?.name ?? null;
+    }
+
+    const insertPayload = {
+      company_id: payload.company_id,
+      name: payload.name.trim(),
+      phone: payload.phone || "",
+      document_type: payload.document_type || null,
+      id_number: payload.id_number || null,
+      host_id: safeHostId,
+      host_name: safeHostName,
+      purpose: payload.purpose || null,
+      vehicle_reg: payload.vehicle_reg || null,
+      status: "pending",
+      photo_url: payload.photo_url || null,
+      custom_data: { ...(payload.custom_data || {}), source: "public_qr" },
+      gate_id: safeGateId,
+    };
+
     const { data, error } = await supabaseAdmin
       .from("visitors")
-      .insert([
-        {
-          company_id: payload.company_id,
-          name: payload.name.trim(),
-          phone: payload.phone || "",
-          document_type: payload.document_type || null,
-          id_number: payload.id_number || null,
-          host_id: payload.host_id || null,
-          host_name: payload.host_name || null,
-          purpose: payload.purpose || null,
-          vehicle_reg: payload.vehicle_reg || null,
-          status: "pending",
-          photo_url: payload.photo_url || null,
-          custom_data: payload.custom_data || {},
-          gate_id: safeGateId,
-        },
-      ])
+      .insert([insertPayload])
       .select("id, company_id, gate_id, status")
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error("Public visitor insert failed:", {
+        error,
+        payload: insertPayload,
+      });
+      return NextResponse.json({ error: getSupabaseErrorMessage(error, "Failed to register visitor") }, { status: 400 });
     }
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     console.error("Public visitor registration failed:", error);
-    return NextResponse.json({ error: "Failed to register visitor" }, { status: 500 });
+    return NextResponse.json({ error: getSupabaseErrorMessage(error, "Failed to register visitor") }, { status: 500 });
   }
 }

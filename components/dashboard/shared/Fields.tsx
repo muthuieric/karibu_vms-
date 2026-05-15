@@ -29,10 +29,12 @@ export function SearchInput({
   inputClassName,
   ...props
 }: React.ComponentProps<typeof Input> & { inputClassName?: string }) {
+  const ariaLabel = props["aria-label"] ?? (typeof props.placeholder === "string" ? props.placeholder : "Search");
+
   return (
     <div className={cn("relative", className)}>
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-      <Input className={cn("pl-9", inputClassName)} {...props} />
+      <Input className={cn("pl-9", inputClassName)} aria-label={ariaLabel} {...props} />
     </div>
   );
 }
@@ -42,8 +44,11 @@ export function SelectField({
   children,
   ...props
 }: React.ComponentProps<"select">) {
+  const ariaLabel = props["aria-label"] ?? "Select option";
+
   return (
     <select
+      aria-label={ariaLabel}
       className={cn(
         "min-h-10 w-full rounded-xl border border-input bg-surface px-3 py-2 text-sm font-medium text-text-main shadow-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-muted",
         className

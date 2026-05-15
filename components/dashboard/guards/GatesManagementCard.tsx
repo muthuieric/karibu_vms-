@@ -43,57 +43,61 @@ export default function GatesManagementCard({
   onDeleteGate,
 }: GatesManagementCardProps) {
   return (
-    <Card className="md:col-span-1 h-fit">
+    <Card className="h-fit rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2">
-          <DoorOpen className="h-5 w-5" /> Building Gates
+        <CardTitle className="flex items-center gap-3 text-xl">
+          <span className="rounded-2xl bg-blue-50 p-2 text-blue-600">
+            <DoorOpen className="h-5 w-5" />
+          </span>
+          Entry Points
         </CardTitle>
-        <CardDescription>Define entry points.</CardDescription>
+        <CardDescription>Create and manage visitor entry locations.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onCreateGate} className="flex gap-2 mb-6">
           <Input
-            placeholder="e.g. Main Gate"
+            placeholder="Entry point name"
             value={newGateName}
             onChange={(e) => onNewGateNameChange(e.target.value)}
+            className="bg-slate-50 border-slate-200 rounded-xl h-11"
             required
           />
-          <Button type="submit" disabled={isCreatingGate || !newGateName.trim()}>
-            {isCreatingGate ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+          <Button type="submit" disabled={isCreatingGate || !newGateName.trim()} className="bg-blue-600 text-white hover:bg-blue-700 font-bold rounded-xl h-11 px-6">
+            {isCreatingGate ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add entry point"}
           </Button>
         </form>
 
-        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
           {gates.length === 0 ? (
-            <EmptyState title="No gates created yet" description="Add your first entry point to assign guards correctly." icon={DoorOpen} className="py-6" />
+            <EmptyState title="No entry points created yet" description="Add your first entry point to assign guards correctly." icon={DoorOpen} className="py-6" />
           ) : (
             gates.map((gate) => (
-              <div key={gate.id} className="p-3 border border-border rounded-xl bg-surface-muted flex flex-col justify-center transition-colors">
+              <div key={gate.id} className="p-3 border border-slate-100 rounded-xl bg-slate-50 flex flex-col justify-center transition-colors">
                 {editingGateId === gate.id ? (
                   <form onSubmit={onUpdateGate} className="flex gap-2 w-full items-center">
                     <Input
                       value={editingGateName}
                       onChange={(e) => onEditingGateNameChange(e.target.value)}
-                      className="h-8 text-sm"
+                      className="h-9 text-sm bg-white border-slate-200 rounded-lg"
                       autoFocus
                     />
-                    <Button type="submit" size="sm" disabled={isUpdatingGate} className="h-8 px-2">
-                      Save
+                    <Button type="submit" size="sm" disabled={isUpdatingGate} className="h-9 px-3 bg-blue-600 text-white hover:bg-blue-700 font-bold rounded-lg">
+                      Save Changes
                     </Button>
-                    <Button type="button" size="sm" variant="ghost" onClick={onCancelEditGate} className="h-8 px-2">
+                    <Button type="button" size="sm" variant="ghost" onClick={onCancelEditGate} className="h-9 px-2 text-slate-500 hover:bg-slate-200 rounded-lg">
                       <X className="w-4 h-4" />
                     </Button>
                   </form>
                 ) : (
                   <div className="flex items-center justify-between w-full">
-                    <span className="font-medium text-sm text-text-main">{gate.name}</span>
+                    <span className="font-bold text-sm text-slate-700">{gate.name}</span>
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onEditGateStart(gate)}
-                        className="h-7 w-7 p-0 text-text-muted hover:text-primary hover:bg-primary/10 transition-all"
-                        title="Edit Gate"
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg"
+                        title="Edit entry point"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -101,8 +105,8 @@ export default function GatesManagementCard({
                         variant="ghost"
                         size="sm"
                         onClick={() => onDeleteGate(gate.id, gate.name)}
-                        className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
-                        title="Delete Gate"
+                        className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
+                        title="Delete entry point"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

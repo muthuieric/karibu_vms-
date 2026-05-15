@@ -1,7 +1,13 @@
-import React from "react";
+import type { Metadata } from "next";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
-import SmartChatbot from "@/components/SmartChatbot";
+import LazySmartChatbot from "@/components/LazySmartChatbot";
+
+export const metadata: Metadata = {
+  title: "About Karibu VMS | Digital Visitor Management",
+  description: "Learn how Karibu VMS replaces manual visitor books with digital check-in, verification, approvals, checkout, and searchable visitor records.",
+  alternates: { canonical: "/about" },
+};
 
 export default function AboutPage() {
   return (
@@ -21,7 +27,7 @@ export default function AboutPage() {
       </main>
 
       <PublicFooter />
-      <SmartChatbot />
+      <LazySmartChatbot />
     </div>
   );
 }

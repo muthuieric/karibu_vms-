@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { compressImage } from "@/lib/image-compression";
 import { getDistanceInMeters } from "@/lib/geo";
+import { getSupabaseErrorMessage } from "@/lib/supabase-error";
 
 type CustomField = { id: string; label: string; active: boolean };
 type Department = { id: string; name: string };
@@ -217,7 +218,6 @@ export function usePublicGateCheckIn() {
 
         if (isBanned) {
           alert(`ACCESS DENIED: You are restricted from entering the premises.\n\nReason: ${isBanned.reason}`);
-          setIsSubmitting(false);
           return;
         }
       }
@@ -285,10 +285,12 @@ export function usePublicGateCheckIn() {
         }
       }
 
+      setHostSearchQuery("");
+      setIsHostDropdownOpen(false);
       setSubmitted(true);
     } catch (err) {
-      console.error(err);
-      const message = err instanceof Error ? err.message : "Failed to submit registration.";
+      const message = getSupabaseErrorMessage(err, "Failed to submit registration.");
+      console.error("Failed to submit public visitor registration:", err);
       alert(message);
     } finally {
       setIsSubmitting(false);

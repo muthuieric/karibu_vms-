@@ -130,15 +130,15 @@ export default function VisitorCheckInForm({
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <Label className="mb-1 block">Full Name <span className="text-destructive">*</span></Label>
-            <Input required value={newVisitor.name} onChange={(e) => onNewVisitorChange({ ...newVisitor, name: e.target.value })} placeholder="e.g. John Doe" className="h-12" autoComplete="name" />
+            <Label htmlFor="visitor-name" className="mb-1 block">Full Name <span className="text-destructive">*</span></Label>
+            <Input id="visitor-name" required value={newVisitor.name} onChange={(e) => onNewVisitorChange({ ...newVisitor, name: e.target.value })} placeholder="e.g. John Doe" className="h-12" autoComplete="name" />
           </div>
 
           {rules.askPhone && (
             <div>
-              <Label className="mb-1 block">Phone Number <span className="text-destructive">*</span></Label>
+              <Label htmlFor="visitor-phone" className="mb-1 block">Phone Number <span className="text-destructive">*</span></Label>
               <PhoneInput
-                inputProps={{ autoComplete: "tel" }}
+                inputProps={{ id: "visitor-phone", autoComplete: "tel", required: true }}
                 country="ke"
                 value={newVisitor.phone}
                 onChange={phone => onNewVisitorChange({ ...newVisitor, phone })}
@@ -152,8 +152,9 @@ export default function VisitorCheckInForm({
           {rules.askId && (
             <>
               <div>
-                <Label className="mb-1 block">Document Type</Label>
+                <Label htmlFor="visitor-doc-type" className="mb-1 block">Document Type</Label>
                 <select
+                  id="visitor-doc-type"
                   className="flex h-12 w-full rounded-xl border border-input bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={newVisitor.doc_type}
                   onChange={(e) => onNewVisitorChange({ ...newVisitor, doc_type: e.target.value })}
@@ -164,8 +165,9 @@ export default function VisitorCheckInForm({
                 </select>
               </div>
               <div>
-                <Label className="mb-1 block">ID Number <span className="text-destructive">*</span></Label>
+                <Label htmlFor="visitor-id-number" className="mb-1 block">ID Number <span className="text-destructive">*</span></Label>
                 <Input
+                  id="visitor-id-number"
                   required
                   value={newVisitor.id_number}
                   onChange={(e) => onNewVisitorChange({ ...newVisitor, id_number: e.target.value })}
@@ -179,10 +181,11 @@ export default function VisitorCheckInForm({
 
           {rules.askHost && (
             <div className="relative md:col-span-2" ref={dropdownRef}>
-              <Label className="mb-1 block">Who are you visiting?</Label>
+              <Label htmlFor="visitor-host-search" className="mb-1 block">Who are you visiting?</Label>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
+                id="visitor-host-search"
                 type="text"
                 placeholder="Type to search for a host..."
                 value={hostSearchQuery}
@@ -211,9 +214,10 @@ export default function VisitorCheckInForm({
                           {dept.name}
                         </div>
                         {dept.hosts.map((host) => (
-                          <div
+                          <button
+                            type="button"
                             key={host.id}
-                            className="px-4 py-3 text-sm text-text-main hover:bg-primary/5 cursor-pointer border-b border-border last:border-0 transition-colors"
+                            className="block w-full px-4 py-3 text-left text-sm text-text-main hover:bg-primary/5 cursor-pointer border-b border-border last:border-0 transition-colors"
                             onClick={() => {
                               onNewVisitorChange({ ...newVisitor, host_id: host.id });
                               onHostSearchQueryChange(host.name);
@@ -221,7 +225,7 @@ export default function VisitorCheckInForm({
                             }}
                           >
                             <div className="font-medium">{host.name}</div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     ))
@@ -233,8 +237,9 @@ export default function VisitorCheckInForm({
 
           {rules.askPurpose && (
             <div>
-              <Label className="mb-1 block">Purpose of Visit</Label>
+              <Label htmlFor="visitor-purpose" className="mb-1 block">Purpose of Visit</Label>
               <Input
+                id="visitor-purpose"
                 value={newVisitor.purpose}
                 onChange={(e) => onNewVisitorChange({ ...newVisitor, purpose: e.target.value })}
                 placeholder="e.g. Meeting, Delivery, Interview"
@@ -245,8 +250,9 @@ export default function VisitorCheckInForm({
 
           {rules.askVehicle && (
             <div>
-              <Label className="mb-1 block">Vehicle Registration</Label>
+              <Label htmlFor="visitor-vehicle" className="mb-1 block">Vehicle Registration</Label>
               <Input
+                id="visitor-vehicle"
                 value={newVisitor.vehicle_reg}
                 onChange={(e) => onNewVisitorChange({ ...newVisitor, vehicle_reg: e.target.value })}
                 placeholder="e.g. KCA 123A (Leave blank if walk-in)"
@@ -257,8 +263,9 @@ export default function VisitorCheckInForm({
 
           {customFields.map((field) => (
             <div key={field.id}>
-              <Label className="mb-1 block">{field.label}</Label>
+              <Label htmlFor={`custom-field-${field.id}`} className="mb-1 block">{field.label}</Label>
               <Input
+                id={`custom-field-${field.id}`}
                 value={customAnswers[field.id] || ""}
                 onChange={(e) => onCustomAnswersChange({ ...customAnswers, [field.id]: e.target.value })}
                 placeholder={`Enter ${field.label.toLowerCase()}`}
@@ -296,6 +303,8 @@ export default function VisitorCheckInForm({
 
                 <div className="flex-1">
                   <input
+                    id="visitor-selfie"
+                    aria-label="Security photo"
                     type="file"
                     accept="image/*"
                     capture="user"

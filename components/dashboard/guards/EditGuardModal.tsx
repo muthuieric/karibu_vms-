@@ -35,39 +35,44 @@ export default function EditGuardModal({
   onEditingGuardDataChange,
 }: EditGuardModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-md shadow-2xl relative border-0 rounded-xl overflow-hidden bg-white">
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-full p-1.5 transition-colors"
-        >
-          <X size={18} />
-        </button>
-        <CardHeader className="pt-8 pb-4">
-          <CardTitle className="text-xl font-bold text-zinc-900">Edit Guard Profile</CardTitle>
-          <CardDescription className="text-zinc-500">Update the guard&apos;s name or assigned gate location.</CardDescription>
+    <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center overflow-y-auto p-4">
+      <Card className="my-auto max-h-[calc(100vh-2rem)] w-full max-w-md overflow-hidden rounded-[1.4rem] border-slate-100 bg-white shadow-xl">
+        <div className="flex items-center justify-between p-4 pb-0">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close edit guard dialog"
+            className="ml-auto text-slate-400 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-full p-2 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <CardHeader className="pt-2 pb-4 px-6 text-center">
+          <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">Edit Guard</CardTitle>
+          <CardDescription className="text-slate-500 font-medium">Update the guard&apos;s name or assigned gate location.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-h-[calc(100vh-11rem)] overflow-y-auto px-6 pb-0">
           <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-              <Label className="font-semibold text-zinc-700">Full Name</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-guard-name" className="font-bold text-slate-700">Full Name</Label>
               <Input
+                id="edit-guard-name"
                 required
                 value={editingGuardData.name}
                 onChange={(e) => onEditingGuardDataChange({ ...editingGuardData, name: e.target.value })}
-                className="h-11 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-blue-600 transition-colors"
+                className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 transition-colors rounded-xl"
               />
             </div>
 
-            <div>
-              <Label className="font-semibold text-zinc-700">Assigned Gate</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-guard-gate" className="font-bold text-slate-700">Assigned entry point</Label>
               <select
-                className="flex h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 transition-colors"
+                id="edit-guard-gate"
+                className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 transition-colors"
                 value={editingGuardData.gateId}
                 onChange={(e) => onEditingGuardDataChange({ ...editingGuardData, gateId: e.target.value })}
               >
-                <option value="">Unassigned (Can access all)</option>
+                <option value="">Unassigned (can access all)</option>
                 {gates.map((gate) => (
                   <option key={gate.id} value={gate.id}>
                     {gate.name}
@@ -76,10 +81,13 @@ export default function EditGuardModal({
               </select>
             </div>
 
-            <div className="pt-4">
-              <Button type="submit" className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-transform active:scale-[0.98]" disabled={isEditingGuard}>
+            <div className="sticky bottom-0 -mx-6 mt-6 flex items-center justify-end gap-3 border-t border-slate-100 bg-white px-6 py-4">
+              <Button type="button" variant="ghost" onClick={onClose} className="h-11 px-6 font-bold text-slate-500 hover:text-slate-900 rounded-xl" disabled={isEditingGuard}>
+                Cancel
+              </Button>
+              <Button type="submit" className="h-11 px-6 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition-transform active:scale-[0.98]" disabled={isEditingGuard}>
                 {isEditingGuard ? (
-                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Saving...</>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
                 ) : (
                   "Save Changes"
                 )}

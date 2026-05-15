@@ -48,8 +48,9 @@ export default function RegisterPage() {
               
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-zinc-700 font-medium text-sm">Company or Building Name</Label>
+                  <Label htmlFor="companyName" className="text-zinc-700 font-medium text-sm">Company or Building Name</Label>
                   <Input 
+                    id="companyName"
                     required 
                     placeholder="e.g. Skyline Towers" 
                     className="h-11 rounded-xl border-zinc-200 focus:border-blue-500 focus:ring-blue-500/20 bg-zinc-50 focus:bg-white px-4 text-zinc-900 transition-colors"
@@ -59,8 +60,9 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-zinc-700 font-medium text-sm">Physical Address</Label>
+                  <Label htmlFor="address" className="text-zinc-700 font-medium text-sm">Physical Address</Label>
                   <Input 
+                    id="address"
                     required 
                     placeholder="e.g. Westlands, Nairobi" 
                     className="h-11 rounded-xl border-zinc-200 focus:border-blue-500 focus:ring-blue-500/20 bg-zinc-50 focus:bg-white px-4 text-zinc-900 transition-colors"
@@ -75,8 +77,9 @@ export default function RegisterPage() {
               <h3 className="text-sm font-semibold text-zinc-900 border-b border-zinc-100 pb-2">Admin Details</h3>
               
               <div className="space-y-2">
-                <Label className="text-zinc-700 font-medium text-sm">Full Name</Label>
+                <Label htmlFor="fullName" className="text-zinc-700 font-medium text-sm">Full Name</Label>
                 <Input 
+                  id="fullName"
                   required 
                   placeholder="John Doe" 
                   className="h-11 rounded-xl border-zinc-200 focus:border-blue-500 focus:ring-blue-500/20 bg-zinc-50 focus:bg-white px-4 text-zinc-900 transition-colors"
@@ -87,8 +90,9 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-zinc-700 font-medium text-sm">Work Email</Label>
+                  <Label htmlFor="workEmail" className="text-zinc-700 font-medium text-sm">Work Email</Label>
                   <Input 
+                    id="workEmail"
                     required 
                     type="email" 
                     placeholder="admin@building.com" 
@@ -99,8 +103,9 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-zinc-700 font-medium text-sm">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-zinc-700 font-medium text-sm">Phone Number</Label>
                   <Input 
+                    id="phone"
                     required 
                     type="tel" 
                     placeholder="+254 7..." 
@@ -116,9 +121,10 @@ export default function RegisterPage() {
               <h3 className="text-sm font-semibold text-zinc-900 border-b border-zinc-100 pb-2">Account Security & Plan</h3>
               
               <div className="space-y-2">
-                <Label className="text-zinc-700 font-medium text-sm">Subscription Plan</Label>
+                <Label htmlFor="planTier" className="text-zinc-700 font-medium text-sm">Subscription Plan</Label>
                 <div className="relative">
                   <select
+                    id="planTier"
                     required
                     className="w-full h-11 pl-4 pr-10 bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 appearance-none text-sm font-medium text-zinc-900 outline-none transition-colors cursor-pointer"
                     value={formData.planTier}
@@ -136,8 +142,9 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-zinc-700 font-medium text-sm">Secure Password</Label>
+                  <Label htmlFor="securePassword" className="text-zinc-700 font-medium text-sm">Secure Password</Label>
                   <Input 
+                    id="securePassword"
                     required 
                     type="password" 
                     minLength={8}
@@ -149,8 +156,9 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-zinc-700 font-medium text-sm">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-zinc-700 font-medium text-sm">Confirm Password</Label>
                   <Input 
+                    id="confirmPassword"
                     required 
                     type="password" 
                     minLength={8}

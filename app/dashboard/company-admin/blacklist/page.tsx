@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertOctagon, Flag, Loader2, Plus, X } from "lucide-react";
+import { Flag, Loader2, OctagonX, Plus, X } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import { useCompanyBlacklist } from "@/hooks/useCompanyBlacklist";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
@@ -35,7 +35,7 @@ export default function BlacklistPage() {
         <PageHeader
           title="Restricted Access"
           description="Manage blacklisted individuals blocked from checking in."
-          icon={AlertOctagon}
+          icon={OctagonX}
           tone="danger"
         >
           <Button onClick={() => setShowRedFlagModal(true)} variant="destructive" className="w-full sm:w-auto">
@@ -74,12 +74,13 @@ export default function BlacklistPage() {
                         <TableCell className="font-mono text-zinc-600 whitespace-nowrap">{flag.phone}</TableCell>
                         <TableCell className="text-zinc-600 max-w-[300px] truncate" title={flag.reason}>{flag.reason}</TableCell>
                         <TableCell className="text-right whitespace-nowrap pr-4 sm:pr-6">
-                          <Button 
+          <Button 
                             variant="outline" 
                             size="sm"
                             onClick={() => blacklist.handleDeleteRedFlag(flag.id, flag.name)}
                             className="h-8 px-3 text-zinc-600 border-zinc-200 hover:bg-zinc-100 hover:text-zinc-900 transition-colors shadow-sm"
                             title="Remove from Blacklist"
+                            aria-label={`Remove ${flag.name} from blacklist`}
                           >
                             <X className="h-4 w-4 sm:mr-1" />
                             <span className="hidden sm:inline font-semibold">Pardon</span>
@@ -101,22 +102,25 @@ export default function BlacklistPage() {
           <Card className="w-full max-w-md shadow-2xl relative border-0 rounded-xl overflow-hidden bg-white">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-red-600"></div>
             <button 
+              type="button"
               onClick={() => setShowRedFlagModal(false)} 
+              aria-label="Close blacklist dialog"
               className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 rounded-full p-1.5 transition-colors"
             >
               <X size={18} />
             </button>
             <CardHeader className="pt-8 pb-4">
               <CardTitle className="text-xl font-bold text-red-700 flex items-center gap-2">
-                <AlertOctagon className="h-5 w-5" /> Block Visitor
+                <OctagonX className="h-5 w-5" /> Block Visitor
               </CardTitle>
               <CardDescription className="text-zinc-500">Prevent a specific individual from registering at any gate.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={(event) => blacklist.handleCreateRedFlag(event, () => setShowRedFlagModal(false))} className="space-y-4">
                 <div>
-                  <Label className="font-semibold text-zinc-700">Visitor Name <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="blacklist-name" className="font-semibold text-zinc-700">Visitor Name <span className="text-red-500">*</span></Label>
                   <Input 
+                    id="blacklist-name"
                     required 
                     placeholder="e.g. John Doe" 
                     value={blacklist.newRedFlag.name} 
@@ -127,8 +131,9 @@ export default function BlacklistPage() {
                 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="font-semibold text-zinc-700">ID Number <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="blacklist-id-number" className="font-semibold text-zinc-700">ID Number <span className="text-red-500">*</span></Label>
                     <Input 
+                      id="blacklist-id-number"
                       required 
                       placeholder="e.g. 12345678" 
                       value={blacklist.newRedFlag.id_number} 
@@ -137,8 +142,9 @@ export default function BlacklistPage() {
                     />
                   </div>
                   <div>
-                    <Label className="font-semibold text-zinc-700">Phone Number <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="blacklist-phone" className="font-semibold text-zinc-700">Phone Number <span className="text-red-500">*</span></Label>
                     <PhoneInput 
+                      inputProps={{ id: "blacklist-phone", required: true }}
                       country="ke" 
                       value={blacklist.newRedFlag.phone} 
                       onChange={phone => blacklist.setNewRedFlag({ ...blacklist.newRedFlag, phone })} 
@@ -154,8 +160,9 @@ export default function BlacklistPage() {
                 </p>
 
                 <div>
-                  <Label className="font-semibold text-zinc-700">Reason for Restriction <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="blacklist-reason" className="font-semibold text-zinc-700">Reason for Restriction <span className="text-red-500">*</span></Label>
                   <Input 
+                    id="blacklist-reason"
                     required 
                     placeholder="e.g. Hostile behavior, banned by management" 
                     value={blacklist.newRedFlag.reason} 

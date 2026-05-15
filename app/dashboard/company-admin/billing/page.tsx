@@ -6,6 +6,9 @@ import BillingHeader from "@/components/dashboard/company-admin/billing/BillingH
 import BillingLoadingSkeleton from "@/components/dashboard/company-admin/billing/BillingLoadingSkeleton";
 import CurrentStatementCard from "@/components/dashboard/company-admin/billing/CurrentStatementCard";
 import PaymentHistoryCard from "@/components/dashboard/company-admin/billing/PaymentHistoryCard";
+import { PageContainer } from "@/components/dashboard/shared/AppShell";
+import { BadgeCheck, UsersRound, WalletCards } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 type Transaction = {
   id: string;
@@ -123,23 +126,46 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="min-h-full bg-background p-4 md:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <BillingHeader />
+    <PageContainer className="max-w-6xl space-y-8">
+      <BillingHeader />
 
-        {loading ? (
-          <BillingLoadingSkeleton />
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {loading ? (
+        <BillingLoadingSkeleton />
+      ) : (
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              { label: "Balance Due", value: `KES ${amountDue.toLocaleString()}`, icon: WalletCards, tone: amountDue > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
+              { label: "Visitor Count", value: visitorCount.toLocaleString(), icon: UsersRound, tone: "text-blue-600 bg-blue-50 border-blue-100" },
+              { label: "Account Status", value: amountDue > 0 ? "Payment due" : "Settled", icon: BadgeCheck, tone: amountDue > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <Card key={item.label} className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
+                  <CardContent className="flex items-center justify-between p-5">
+                    <div>
+                      <p className="text-sm font-bold text-slate-500">{item.label}</p>
+                      <p className="mt-1 text-2xl font-black text-slate-950">{item.value}</p>
+                    </div>
+                    <span className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${item.tone}`}>
+                      <Icon className="h-5 w-5" />
+                    </span>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div className="lg:col-span-1 space-y-6">
-              <CurrentStatementCard
-                amountDue={amountDue}
-                visitorCount={visitorCount}
-                periodStart={periodStart}
-                isPaying={isPaying}
-                formatDate={formatDate}
-                onPayment={handlePayment}
-              />
+            <CurrentStatementCard
+              amountDue={amountDue}
+              visitorCount={visitorCount}
+              periodStart={periodStart}
+              isPaying={isPaying}
+              formatDate={formatDate}
+              onPayment={handlePayment}
+            />
             </div>
 
             <div className="lg:col-span-2">
@@ -149,8 +175,8 @@ export default function BillingPage() {
               />
             </div>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </PageContainer>
   );
 }

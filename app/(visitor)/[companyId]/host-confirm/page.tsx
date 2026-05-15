@@ -182,10 +182,11 @@ function HostConfirmContent() {
       <CardContent>
         <form onSubmit={handleSearchVisitor} className="space-y-4">
           <div>
-            <Label className="mb-1 block font-semibold text-zinc-700 text-center">
+            <Label htmlFor="host-confirm-otp" className="mb-1 block font-semibold text-zinc-700 text-center">
               Visitor OTP Code
             </Label>
             <Input 
+              id="host-confirm-otp"
               required 
               value={otpInput} 
               onChange={(e) => setOtpInput(e.target.value)} 
@@ -198,7 +199,7 @@ function HostConfirmContent() {
             <p className="text-sm text-red-500 font-medium text-center bg-red-50 p-3 rounded-md">{errorMsg}</p>
           )}
 
-          <Button type="submit" className="w-full h-14 text-lg font-bold bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg transition-transform active:scale-[0.98]" disabled={isLoading || otpInput.length < 4}>
+          <Button type="submit" className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-transform active:scale-[0.98]" disabled={isLoading || otpInput.length < 4}>
             {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> Searching...</> : <><Search className="mr-2 h-5 w-5" /> Find Visitor</>}
           </Button>
         </form>
