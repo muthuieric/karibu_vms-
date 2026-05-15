@@ -5,6 +5,7 @@ import { Info, ShieldCheck, Timer, UserCircle } from "lucide-react";
 import { SearchInput } from "@/components/dashboard/shared/Fields";
 import { EmptyState, LoadingSkeleton } from "@/components/dashboard/shared/StateBlocks";
 import { Button } from "@/components/ui/button";
+import { getVisitorStatusLabel, normalizeVisitorStatus } from "@/lib/visitor-display";
 import {
   Table,
   TableBody,
@@ -58,37 +59,43 @@ type GuardVisitorsTableProps = {
 };
 
 const CustomStatusBadge = ({ status, isOverride }: { status: string, isOverride?: boolean }) => {
-  if (isOverride) {
+  const normalizedStatus = normalizeVisitorStatus(status);
+  const label = getVisitorStatusLabel(status, isOverride);
+
+  if (isOverride && normalizedStatus !== "checked_out") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800 border border-orange-200">
-        Override
+        {label}
       </span>
     );
   }
-  switch (status) {
+  switch (normalizedStatus) {
     case "pending":
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800 border border-orange-200">
-          Pending
+          {label}
         </span>
       );
     case "checked_in":
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
-          <ShieldCheck className="h-3.5 w-3.5" /> Checked in
+          <ShieldCheck className="h-3.5 w-3.5" /> {label}
         </span>
       );
     case "checked_out":
-    case "auto_checked_out":
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700 border border-slate-200">
-          Checked out
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold border ${
+          isOverride
+            ? "bg-orange-100 text-orange-800 border-orange-200"
+            : "bg-slate-100 text-slate-700 border-slate-200"
+        }`}>
+          {label}
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-800 border border-red-200">
-          Restricted
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700 border border-slate-200">
+          {label}
         </span>
       );
   }

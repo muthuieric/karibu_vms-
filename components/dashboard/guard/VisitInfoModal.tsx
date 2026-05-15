@@ -2,6 +2,7 @@
 
 import { Clock, ShieldCheck, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { canUseHostConfirmation, getHostReviewLabel } from "@/lib/visitor-display";
 
 type Visitor = {
   id: string;
@@ -17,14 +18,17 @@ type VisitInfoModalProps = {
   visitor: Visitor | null;
   onClose: () => void;
   customFieldLabels: Record<string, string>;
+  planTier: string;
 };
 
 export default function VisitInfoModal({
   visitor,
   onClose,
   customFieldLabels,
+  planTier,
 }: VisitInfoModalProps) {
   if (!visitor) return null;
+  const showHostReview = Boolean(visitor.host_name && canUseHostConfirmation(planTier));
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
@@ -45,18 +49,18 @@ export default function VisitInfoModal({
             </div>
           )}
 
-          {visitor.host_name && (
+          {showHostReview && (
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Host Status</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Host review</p>
               {visitor.host_confirmed ? (
                 <div className="flex items-center text-emerald-600 font-semibold text-base mt-1">
                   <ShieldCheck className="w-5 h-5 mr-1.5" />
-                  Host confirmed arrival
+                  {getHostReviewLabel(visitor.host_confirmed)}
                 </div>
               ) : (
                 <div className="flex items-center text-orange-600 font-medium text-base mt-1">
                   <Clock className="w-5 h-5 mr-1.5" />
-                  Pending host confirmation
+                  {getHostReviewLabel(visitor.host_confirmed)}
                 </div>
               )}
             </div>

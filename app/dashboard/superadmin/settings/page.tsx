@@ -72,21 +72,18 @@ export default function SuperadminSettingsPage() {
   return (
     <PageContainer className="max-w-5xl">
       
-      {/* Header Section */}
       <PageHeader
-        title="Account Settings"
+        title="Platform Settings"
         eyebrow="Superadmin security"
         description="Manage your platform operator profile and security credentials."
         icon={Settings}
-        tone="dark"
       />
 
-      {/* Global Message Banner */}
       {message && (
-        <div className={`p-4 rounded-xl text-sm font-medium border flex items-start gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm ${
-          message.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200'
+        <div className={`p-4 rounded-xl text-sm font-medium border flex items-start gap-3 shadow-sm ${
+          message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-100' : 'bg-red-50 text-red-800 border-red-100'
         }`}>
-          {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0 text-green-600 mt-0.5" /> : <AlertCircle className="w-5 h-5 shrink-0 text-red-600 mt-0.5" />}
+          {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" /> : <AlertCircle className="w-5 h-5 shrink-0 text-red-600 mt-0.5" />}
           <div>
             <p className="font-bold">{message.type === 'success' ? 'Success' : 'Action Failed'}</p>
             <p className="mt-0.5">{message.text}</p>
@@ -96,68 +93,85 @@ export default function SuperadminSettingsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        {/* Profile Overview Card */}
-        <Card className="md:col-span-1 shadow-sm border-zinc-200 bg-white/90 backdrop-blur-sm h-fit">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Profile Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center space-x-3 text-sm text-zinc-700 bg-zinc-50 p-3.5 rounded-lg border border-zinc-100 shadow-inner">
-              <User className="h-5 w-5 text-zinc-400 shrink-0" />
-              <span className="font-semibold truncate">{userName || "Loading..."}</span>
+        <Card className="md:col-span-1 h-fit rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
+          <CardContent className="px-6 py-6">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.25rem] border border-blue-100 bg-blue-50 text-2xl font-black text-blue-600 shadow-sm md:mx-0">
+              {userName ? userName.split(" ").map((name) => name[0]).join("").substring(0, 2).toUpperCase() : <User className="h-8 w-8 text-slate-400" />}
             </div>
-            <div className="flex items-center space-x-3 text-sm text-zinc-700 bg-zinc-50 p-3.5 rounded-lg border border-zinc-100 shadow-inner">
-              <Mail className="h-5 w-5 text-zinc-400 shrink-0" />
-              <span className="font-semibold truncate">{userEmail || "Loading..."}</span>
+
+            <div className="mt-4 text-center md:text-left">
+              <p className="text-xl font-bold text-slate-900">{userName || "Loading..."}</p>
+              <p className="mt-1 text-sm font-bold uppercase tracking-wider text-slate-500">Platform Operator</p>
+            </div>
+
+            <div className="mt-8 space-y-3">
+              <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <User className="h-4 w-4 text-slate-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">Full Name</p>
+                  <p className="truncate text-sm font-bold text-slate-900">{userName || "-"}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <Mail className="h-4 w-4 text-slate-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">Email Address</p>
+                  <p className="truncate text-sm font-bold text-slate-900">{userEmail || "-"}</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Change Password Card */}
-        <Card className="md:col-span-2 shadow-sm border-0 border-t-4 border-t-amber-500 bg-white/90 backdrop-blur-sm h-fit">
-          <CardHeader className="pb-6 border-b border-zinc-100 mb-4">
+        <Card className="md:col-span-2 h-fit rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
+          <CardHeader className="pb-6">
             <CardTitle className="flex items-center text-xl font-bold">
-              <KeyRound className="mr-2 h-6 w-6 text-zinc-400" /> Security
+              <KeyRound className="mr-2 h-5 w-5 text-slate-400" /> Password & Security
             </CardTitle>
             <CardDescription>Update your account password to stay secure.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="max-w-md">
             <form onSubmit={handleUpdatePassword} className="space-y-5 max-w-md">
               
-              <div className="space-y-2">
-                <Label htmlFor="newPassword" className="font-semibold text-zinc-700">New Password</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="newPassword" className="font-bold text-slate-700 text-xs uppercase tracking-wider">New Password</Label>
                 <Input
                   id="newPassword"
                   type="password"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="h-12 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-amber-500 transition-colors"
+                  className="h-11 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-600 transition-colors border-slate-200 rounded-xl"
                   placeholder="Min 8 chars, 1 uppercase, 1 symbol"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="font-semibold text-zinc-700">Confirm New Password</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirmPassword" className="font-bold text-slate-700 text-xs uppercase tracking-wider">Confirm New Password</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="h-12 bg-zinc-50 focus:bg-white focus:ring-2 focus:ring-amber-500 transition-colors"
+                  className="h-11 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-600 transition-colors border-slate-200 rounded-xl"
                   placeholder="Type password again"
                 />
               </div>
 
-              <div className="pt-2">
+              <div className="pt-4">
                 <Button 
                   type="submit" 
                   disabled={loading || !newPassword || !confirmPassword} 
-                  className="w-full md:w-auto px-8 h-12 text-base font-bold bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm transition-transform active:scale-95"
+                  className="w-full sm:w-auto h-11 px-8 text-sm font-bold"
                 >
                   {loading ? (
-                    <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Updating...</>
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Updating...</>
                   ) : (
                     "Update Password"
                   )}

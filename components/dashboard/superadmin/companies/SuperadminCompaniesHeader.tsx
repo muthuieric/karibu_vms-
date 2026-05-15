@@ -11,14 +11,13 @@ type SuperadminCompaniesHeaderProps = {
 export default function SuperadminCompaniesHeader({ onNewCompany }: SuperadminCompaniesHeaderProps) {
   return (
     <PageHeader
-      title="Client Companies"
-      eyebrow="Workspace directory"
-      description="Manage organizations, plans, admins, approvals, and lock states from a platform-level view."
+      title="Workspaces"
+      eyebrow="Platform directory"
+      description="Manage workspaces, plans, workspace admins, approvals, and access states."
       icon={Factory}
-      tone="dark"
     >
-      <Button onClick={onNewCompany} className="bg-zinc-900 hover:bg-zinc-800 text-white w-full sm:w-auto shadow-sm">
-        <Plus className="h-4 w-4" /> New Company
+      <Button onClick={onNewCompany} className="w-full sm:w-auto">
+        <Plus className="h-4 w-4 mr-2" /> New Workspace
       </Button>
     </PageHeader>
   );

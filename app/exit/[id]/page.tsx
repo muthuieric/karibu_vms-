@@ -10,7 +10,7 @@ import { Loader2, AlertOctagon, CheckCircle2, ShieldCheck, DoorOpen } from "luci
 type Visitor = {
   id: string;
   name: string;
-  status: "pending" | "checked_in" | "checked_out" | "auto_checked_out";
+  status: "pending" | "checked_in" | "checked_out";
   company_id: string;
 };
 
@@ -85,7 +85,7 @@ export default function ExitPassPage() {
     );
   }
 
-  const isCheckedOut = visitor.status === "checked_out" || visitor.status === "auto_checked_out";
+  const isCheckedOut = visitor.status === "checked_out";
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">

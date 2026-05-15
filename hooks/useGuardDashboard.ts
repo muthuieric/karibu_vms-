@@ -109,7 +109,7 @@ export function useGuardDashboard() {
         await supabase
           .from("visitors")
           .update({
-            status: "auto_checked_out",
+            status: "checked_out",
             checked_out_at: new Date().toISOString(),
             otp_code: null,
           })
@@ -117,7 +117,7 @@ export function useGuardDashboard() {
           .in("status", ["pending", "checked_in"])
           .lt("created_at", startOfToday.toISOString());
       } catch (err) {
-        console.error("Auto-checkout script failed:", err);
+        console.error("Visitor status rollover failed:", err);
       }
 
       let query = supabase
@@ -152,7 +152,7 @@ export function useGuardDashboard() {
               setVisitors((prev) => prev.filter((visitor) => visitor.id !== updatedVisitor.id));
               return;
             }
-            if (payload.new.status === "checked_out" || payload.new.status === "auto_checked_out") {
+            if (payload.new.status === "checked_out") {
               setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.new.id));
             } else {
               setVisitors((prev) =>

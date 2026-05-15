@@ -2,6 +2,7 @@
 
 import { Clock, ShieldCheck, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { canUseHostConfirmation, getHostReviewLabel } from "@/lib/visitor-display";
 
 type Visitor = {
   name: string;
@@ -15,10 +16,13 @@ type Visitor = {
 type VisitInfoModalProps = {
   visitor: Visitor;
   customFieldLabels: Record<string, string>;
+  planTier?: string;
   onClose: () => void;
 };
 
-export default function VisitInfoModal({ visitor, customFieldLabels, onClose }: VisitInfoModalProps) {
+export default function VisitInfoModal({ visitor, customFieldLabels, planTier = "basic", onClose }: VisitInfoModalProps) {
+  const showHostReview = Boolean(visitor.host_name && canUseHostConfirmation(planTier));
+
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
       <Card className="w-full max-w-sm shadow-2xl relative border-0 overflow-hidden bg-white max-h-[80vh] overflow-y-auto">
@@ -38,18 +42,18 @@ export default function VisitInfoModal({ visitor, customFieldLabels, onClose }: 
             </div>
           )}
 
-          {visitor.host_name && (
+          {showHostReview && (
             <div>
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Host Status</p>
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Host review</p>
               {visitor.host_confirmed ? (
                 <div className="flex items-center text-green-600 font-semibold text-base mt-1">
                   <ShieldCheck className="w-5 h-5 mr-1.5" />
-                  Host confirmed arrival
+                  {getHostReviewLabel(visitor.host_confirmed)}
                 </div>
               ) : (
                 <div className="flex items-center text-amber-600 font-medium text-base mt-1">
                   <Clock className="w-5 h-5 mr-1.5" />
-                  Pending host confirmation
+                  {getHostReviewLabel(visitor.host_confirmed)}
                 </div>
               )}
             </div>

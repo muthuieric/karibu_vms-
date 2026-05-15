@@ -98,7 +98,7 @@ export default function AccountPage() {
                 <div className="mt-4 text-center md:text-left">
                   <p className="text-xl font-bold text-slate-900">{userName || "Loading..."}</p>
                   <p className="text-sm font-bold text-slate-500 flex items-center justify-center md:justify-start gap-1.5 mt-1 uppercase tracking-wider">
-                    System Administrator
+                    Workspace Admin
                   </p>
                 </div>
 

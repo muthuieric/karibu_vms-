@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Calendar, CheckCircle2, Loader2, Receipt, WalletCards } from "lucide-react";
+import { Calendar, CheckCircle2, Loader2, Receipt, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -31,7 +31,7 @@ export default function CurrentStatementCard({
           </CardTitle>
           {amountDue > 0 ? (
             <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
-              <Activity className="w-3.5 h-3.5" /> Due
+              Action Required
             </span>
           ) : (
             <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
@@ -63,7 +63,7 @@ export default function CurrentStatementCard({
 
           <div className="pt-4">
             <div className="flex justify-between items-end">
-              <span className="text-slate-900 font-bold">Balance Due</span>
+              <span className="text-slate-900 font-bold">Current Balance</span>
               <span className={`text-3xl font-black tracking-tight ${amountDue > 0 ? "text-orange-600" : "text-emerald-600"}`}>
                 KES {amountDue.toLocaleString()}
               </span>

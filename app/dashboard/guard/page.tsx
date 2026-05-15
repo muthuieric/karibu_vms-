@@ -127,6 +127,7 @@ export default function GuardDashboard() {
         visitor={displayedInfoModalVisitor}
         onClose={() => setInfoModalVisitor(null)}
         customFieldLabels={dashboard.customFieldLabels}
+        planTier={dashboard.planTier}
       />
       <PhotoLightbox photoUrl={enlargedPhoto} onClose={() => setEnlargedPhoto(null)} />
       </PageContainer>

@@ -20,7 +20,7 @@ export function DataTableShell({
   return (
     <section className={cn("overflow-hidden rounded-[1.4rem] border border-slate-100 bg-white shadow-sm", className)}>
       {(title || description || filters) && (
-        <div className="border-b border-slate-100 bg-white p-5">
+        <div className="bg-white p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             {(title || description) && (
               <div>

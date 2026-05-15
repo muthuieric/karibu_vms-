@@ -22,7 +22,7 @@ export default function PlatformKpiGrid({ stats }: PlatformKpiGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       <StatCard label="Revenue" value={`KES ${stats.totalRevenue.toLocaleString()}`} description="Total platform earnings" icon={Banknote} tone="success" />
-      <StatCard label="Clients" value={stats.totalCompanies} description={`${stats.activeCompanies} active subscriptions`} icon={Building2} tone="primary" />
+      <StatCard label="Workspaces" value={stats.totalCompanies} description={`${stats.activeCompanies} active subscriptions`} icon={Building2} tone="primary" />
       <StatCard label="Guards" value={stats.totalGuards} description="Active accounts deployed" icon={ShieldCheck} tone="warning" />
       <StatCard label="Lifetime visitors" value={stats.totalVisitors.toLocaleString()} description="Records processed to date" icon={Activity} tone="neutral" />
     </div>

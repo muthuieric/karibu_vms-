@@ -4,17 +4,16 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Banknote, CircuitBoard, Command, Factory, SlidersHorizontal } from "lucide-react";
 
-import { AppSurface } from "@/components/dashboard/shared/AppShell";
 import { DashboardSidebar, type DashboardNavItem } from "@/components/dashboard/shared/DashboardSidebar";
 import { LoadingState } from "@/components/dashboard/shared/StateBlocks";
 import { supabase } from "@/lib/supabase";
 
 const superadminNavItems: DashboardNavItem[] = [
-  { href: "/dashboard/superadmin", label: "Global Analytics", icon: Command, exact: true },
-  { href: "/dashboard/superadmin/companies", label: "Manage Companies", icon: Factory },
-  { href: "/dashboard/superadmin/billing", label: "Subscriptions & Billing", icon: Banknote },
-  { href: "/dashboard/superadmin/transactions", label: "Master Ledger", icon: CircuitBoard },
-  { href: "/dashboard/superadmin/settings", label: "Account Settings", icon: SlidersHorizontal },
+  { href: "/dashboard/superadmin", label: "Platform Home", icon: Command, exact: true },
+  { href: "/dashboard/superadmin/companies", label: "Workspaces", icon: Factory },
+  { href: "/dashboard/superadmin/billing", label: "Revenue", icon: Banknote },
+  { href: "/dashboard/superadmin/transactions", label: "Payments", icon: CircuitBoard },
+  { href: "/dashboard/superadmin/settings", label: "Platform Settings", icon: SlidersHorizontal },
 ];
 
 export default function SuperadminLayout({ children }: { children: React.ReactNode }) {
@@ -70,11 +69,10 @@ export default function SuperadminLayout({ children }: { children: React.ReactNo
         isMobileOpen={isMobileMenuOpen}
         onMobileOpenChange={setIsMobileMenuOpen}
         onLogout={handleLogout}
-        accent="dark"
       />
 
-      <main className="min-w-0 flex-1 overflow-y-auto">
-        <AppSurface variant="superadmin">{children}</AppSurface>
+      <main className="min-w-0 flex-1 overflow-y-auto bg-[#F8FAFC]">
+        {children}
       </main>
     </div>
   );

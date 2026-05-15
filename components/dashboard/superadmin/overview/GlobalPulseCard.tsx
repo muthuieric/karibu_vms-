@@ -20,43 +20,43 @@ type GlobalPulseCardProps = {
 
 export default function GlobalPulseCard({ stats }: GlobalPulseCardProps) {
   return (
-    <Card className="shadow-sm border-zinc-200/60 bg-white/90 backdrop-blur-sm flex flex-col">
-      <CardHeader className="border-b border-zinc-100/50 pb-4 bg-zinc-50/50">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Activity className="w-5 h-5 text-indigo-500" /> Global Pulse
+    <Card className="flex flex-col border-slate-100 bg-white shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Activity className="h-5 w-5 text-blue-600" /> Global Pulse
         </CardTitle>
         <CardDescription>Real-time entrance overview.</CardDescription>
       </CardHeader>
-      <CardContent className="p-6 flex-1 flex flex-col justify-around">
-        <div className="flex items-center justify-between p-4 bg-amber-50 rounded-2xl border border-amber-100">
+      <CardContent className="flex flex-1 flex-col justify-around gap-4 p-6">
+        <div className="flex items-center justify-between rounded-2xl border border-orange-100 bg-orange-50 p-4">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-amber-600 uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Pending at Gates</p>
-            <p className="text-4xl font-black text-zinc-900">{stats.pendingVisitors.toLocaleString()}</p>
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-orange-600"><Clock className="h-3.5 w-3.5" /> Pending at Gates</p>
+            <p className="text-4xl font-black text-slate-900">{stats.pendingVisitors.toLocaleString()}</p>
           </div>
-          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-amber-500">
-            <ArrowUpRight className="w-6 h-6" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-orange-500 shadow-sm">
+            <ArrowUpRight className="h-6 w-6" />
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-green-50 rounded-2xl border border-green-100">
+        <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
           <div className="space-y-1">
-            <p className="text-xs font-bold text-green-600 uppercase tracking-widest flex items-center gap-1.5"><LogIn className="w-3.5 h-3.5" /> Currently Inside</p>
-            <p className="text-4xl font-black text-zinc-900">{stats.insideVisitors.toLocaleString()}</p>
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-emerald-600"><LogIn className="h-3.5 w-3.5" /> Currently Inside</p>
+            <p className="text-4xl font-black text-slate-900">{stats.insideVisitors.toLocaleString()}</p>
           </div>
-          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-green-500">
-            <CheckCircle2 className="w-6 h-6" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-emerald-500 shadow-sm">
+            <CheckCircle2 className="h-6 w-6" />
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-zinc-100 mt-2">
+        <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
           <div className="text-center flex-1">
-            <p className="text-[10px] font-bold text-zinc-400 uppercase">Daily Check-ins</p>
-            <p className="text-xl font-bold text-zinc-800">{stats.todayVisitors.toLocaleString()}</p>
+            <p className="text-[10px] font-bold uppercase text-slate-400">Daily Check-ins</p>
+            <p className="text-xl font-bold text-slate-800">{stats.todayVisitors.toLocaleString()}</p>
           </div>
-          <div className="w-px h-8 bg-zinc-100 mx-4"></div>
+          <div className="mx-4 h-8 w-px bg-slate-200" />
           <div className="text-center flex-1">
-            <p className="text-[10px] font-bold text-zinc-400 uppercase">Avg Daily MRR</p>
-            <p className="text-xl font-bold text-zinc-800">KES {Math.round(stats.totalRevenue / 30).toLocaleString()}</p>
+            <p className="text-[10px] font-bold uppercase text-slate-400">Avg Daily MRR</p>
+            <p className="text-xl font-bold text-slate-800">KES {Math.round(stats.totalRevenue / 30).toLocaleString()}</p>
           </div>
         </div>
       </CardContent>

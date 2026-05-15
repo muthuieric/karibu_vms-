@@ -18,7 +18,7 @@ const adminNavItems: DashboardNavItem[] = [
   { href: "/dashboard/company-admin/guards", label: "Security Team", icon: ContactRound },
   { href: "/dashboard/company-admin/rules", label: "Building Rules", icon: ClipboardList },
   { href: "/dashboard/company-admin/departments", label: "Departments", icon: Landmark },
-  { href: "/dashboard/company-admin/blacklist", label: "Blacklist", danger: true, icon: OctagonX },
+  { href: "/dashboard/company-admin/blacklist", label: "Restricted List", danger: true, icon: OctagonX },
   { href: "/dashboard/company-admin/billing", label: "Payments", icon: WalletCards },
   { href: "/dashboard/company-admin/support", label: "Help Desk", icon: MessageCircleQuestion },
   { href: "/dashboard/company-admin/settings", label: "Account", icon: SlidersHorizontal },

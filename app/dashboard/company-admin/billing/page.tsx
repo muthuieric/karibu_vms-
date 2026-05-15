@@ -135,9 +135,9 @@ export default function BillingPage() {
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { label: "Balance Due", value: `KES ${amountDue.toLocaleString()}`, icon: WalletCards, tone: amountDue > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
+              { label: "Current Balance", value: `KES ${amountDue.toLocaleString()}`, icon: WalletCards, tone: amountDue > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
               { label: "Visitor Count", value: visitorCount.toLocaleString(), icon: UsersRound, tone: "text-blue-600 bg-blue-50 border-blue-100" },
-              { label: "Account Status", value: amountDue > 0 ? "Payment due" : "Settled", icon: BadgeCheck, tone: amountDue > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
+              { label: "Account Status", value: amountDue > 0 ? "Pending payment" : "Settled", icon: BadgeCheck, tone: amountDue > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
             ].map((item) => {
               const Icon = item.icon;
               return (

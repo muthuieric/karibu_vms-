@@ -1,14 +1,14 @@
 "use client";
 
-import { Download, LayoutGrid } from "lucide-react";
+import { FileDown, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type AdminDashboardHeaderProps = {
   hasActiveFilters: boolean;
-  onDownloadCSV: () => void;
+  onExportPdf: () => void;
 };
 
-export default function AdminDashboardHeader({ hasActiveFilters, onDownloadCSV }: AdminDashboardHeaderProps) {
+export default function AdminDashboardHeader({ hasActiveFilters, onExportPdf }: AdminDashboardHeaderProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
@@ -21,9 +21,9 @@ export default function AdminDashboardHeader({ hasActiveFilters, onDownloadCSV }
         </div>
       </div>
       
-      <Button onClick={onDownloadCSV} variant="outline" className="w-full sm:w-auto h-11 border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-[1rem]">
-        <Download className="h-4 w-4 mr-2" />
-        Export {hasActiveFilters ? "Filtered" : "CSV"} Report
+      <Button onClick={onExportPdf} variant="outline" className="w-full sm:w-auto h-11 border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-[1rem]">
+        <FileDown className="h-4 w-4 mr-2" />
+        Export {hasActiveFilters ? "Filtered" : "Records"} PDF
       </Button>
     </div>
   );

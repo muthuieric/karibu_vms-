@@ -1,11 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import { Eye } from "lucide-react";
 import { EmptyState, LoadingSkeleton } from "@/components/dashboard/shared/StateBlocks";
 import { SearchInput, SelectField } from "@/components/dashboard/shared/Fields";
 import { DataTableShell } from "@/components/dashboard/shared/DataTableShell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getVisitorStatusLabel, normalizeVisitorStatus } from "@/lib/visitor-display";
 import {
   Table,
   TableBody,
@@ -22,7 +25,7 @@ type Visitor = {
   phone: string;
   document_type: string;
   id_number: string;
-  status: "pending" | "checked_in" | "checked_out" | "auto_checked_out";
+  status: string;
   created_at: string;
   checked_out_at?: string;
   host_name?: string;
@@ -60,37 +63,43 @@ type MasterVisitorLogProps = {
 };
 
 const CustomStatusBadge = ({ status, isOverride }: { status: string, isOverride?: boolean }) => {
-  if (isOverride) {
+  const normalizedStatus = normalizeVisitorStatus(status);
+  const label = getVisitorStatusLabel(status, isOverride);
+
+  if (isOverride && normalizedStatus !== "checked_out") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800 border border-orange-200">
-        Override
+        {label}
       </span>
     );
   }
-  switch (status) {
+  switch (normalizedStatus) {
     case "pending":
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800 border border-orange-200">
-          Pending
+          {label}
         </span>
       );
     case "checked_in":
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
-          Inside
+          {label}
         </span>
       );
     case "checked_out":
-    case "auto_checked_out":
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700 border border-slate-200">
-          Departed
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold border ${
+          isOverride
+            ? "bg-orange-100 text-orange-800 border-orange-200"
+            : "bg-slate-100 text-slate-700 border-slate-200"
+        }`}>
+          {label}
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-800 border border-red-200">
-          Restricted
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700 border border-slate-200">
+          {label}
         </span>
       );
   }
@@ -141,7 +150,6 @@ export default function MasterVisitorLog({
             <option value="pending">Pending</option>
             <option value="checked_in">Inside</option>
             <option value="checked_out">Departed</option>
-            <option value="auto_checked_out">Auto Checked Out</option>
           </SelectField>
         </div>
       }
@@ -226,20 +234,26 @@ export default function MasterVisitorLog({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-slate-900 truncate">{visitor.name}</span>
-                          {hasExtraInfo && (
-                            <button
-                              onClick={() => onInfoClick(visitor)}
-                              className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-lg transition-colors shrink-0"
-                            >
-                              Details
-                            </button>
-                          )}
                         </div>
                         <p className="text-xs font-medium text-slate-500 mt-0.5 truncate">
                           {visitor.host_name ? `Host: ${visitor.host_name}` : "Walk-in entry"}
                         </p>
                       </div>
                     </div>
+
+                    {hasExtraInfo && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onInfoClick(visitor)}
+                        aria-label={`View details for ${visitor.name}`}
+                        className="mb-4 h-11 w-full rounded-xl border-blue-200 bg-blue-50 font-semibold text-blue-700 hover:bg-blue-100 hover:text-blue-800"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View details
+                      </Button>
+                    )}
 
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
@@ -308,12 +322,17 @@ export default function MasterVisitorLog({
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-900 whitespace-nowrap">{visitor.name}</span>
                                 {hasExtraInfo && (
-                                  <button
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => onInfoClick(visitor)}
-                                    className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition-colors shrink-0 shadow-sm border border-blue-100"
+                                    aria-label={`View details for ${visitor.name}`}
+                                    className="h-8 shrink-0 rounded-xl border-blue-200 bg-blue-50 px-3 text-xs font-semibold text-blue-700 hover:bg-blue-100 hover:text-blue-800"
                                   >
-                                    Details
-                                  </button>
+                                    <Eye className="h-3.5 w-3.5" />
+                                    View details
+                                  </Button>
                                 )}
                               </div>
                               <div className="text-xs font-medium text-slate-500 whitespace-nowrap mt-0.5">{visitor.phone || "—"}</div>

@@ -2,12 +2,12 @@ import type { ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { normalizeVisitorStatus } from "@/lib/visitor-display";
 
 type StatusBadgeProps = {
   status:
     | "checked_in"
     | "checked_out"
-    | "auto_checked_out"
     | "pending"
     | "denied"
     | "blacklisted"
@@ -16,6 +16,10 @@ type StatusBadgeProps = {
     | "active"
     | "success"
     | "paid"
+    | "failed"
+    | "expired"
+    | "unpaid"
+    | "completed"
     | "trial"
     | "neutral"
     | string;
@@ -24,23 +28,27 @@ type StatusBadgeProps = {
 };
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "success" | "pending" | "error" | "info" }> = {
-  checked_in: { label: "Checked In", variant: "success" },
+  checked_in: { label: "Inside", variant: "success" },
   active: { label: "Active", variant: "success" },
   success: { label: "Success", variant: "success" },
+  completed: { label: "Completed", variant: "success" },
   paid: { label: "Paid", variant: "success" },
+  failed: { label: "Failed", variant: "error" },
+  expired: { label: "Expired", variant: "error" },
+  unpaid: { label: "Unpaid", variant: "error" },
   pending: { label: "Pending", variant: "pending" },
   trial: { label: "Trial", variant: "pending" },
-  checked_out: { label: "Checked Out", variant: "secondary" },
-  auto_checked_out: { label: "Auto Checked Out", variant: "info" },
+  checked_out: { label: "Checked out", variant: "secondary" },
   neutral: { label: "Neutral", variant: "secondary" },
   denied: { label: "Denied", variant: "error" },
   blacklisted: { label: "Blacklisted", variant: "error" },
   locked: { label: "Locked", variant: "error" },
-  manual_override: { label: "Inside (Override)", variant: "info" },
+  manual_override: { label: "Override", variant: "info" },
 };
 
 export function StatusBadge({ status, children, className }: StatusBadgeProps) {
-  const config = statusConfig[status] ?? { label: status.replace(/_/g, " "), variant: "secondary" as const };
+  const displayStatus = normalizeVisitorStatus(status);
+  const config = statusConfig[displayStatus] ?? { label: displayStatus.replace(/_/g, " "), variant: "secondary" as const };
 
   return (
     <Badge variant={config.variant} className={cn("gap-1.5 capitalize", className)}>

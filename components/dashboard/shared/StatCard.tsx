@@ -15,30 +15,25 @@ type StatCardProps = {
   className?: string;
 };
 
-const toneMap: Record<StatTone, { icon: string; accent: string; value: string }> = {
+const toneMap: Record<StatTone, { icon: string; value: string }> = {
   primary: {
     icon: "bg-primary/10 text-primary border-primary/15",
-    accent: "from-primary/14",
     value: "text-primary",
   },
   success: {
     icon: "bg-success/10 text-success border-success/15",
-    accent: "from-success/14",
     value: "text-success",
   },
   warning: {
     icon: "bg-warning/15 text-warning-foreground border-warning/20",
-    accent: "from-warning/20",
     value: "text-warning-foreground",
   },
   danger: {
     icon: "bg-destructive/10 text-destructive border-destructive/15",
-    accent: "from-destructive/14",
     value: "text-destructive",
   },
   neutral: {
     icon: "bg-surface-muted text-text-muted border-border",
-    accent: "from-surface-muted",
     value: "text-text-main",
   },
 };
@@ -54,9 +49,8 @@ export function StatCard({
   const styles = toneMap[tone];
 
   return (
-    <Card className={cn("relative overflow-hidden border-white/70 bg-white/85 backdrop-blur", className)}>
-      <div className={cn("absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br to-transparent blur-2xl", styles.accent)} />
-      <CardContent className="relative flex min-h-36 flex-col justify-between gap-5 p-5">
+    <Card className={cn("border-slate-100 bg-white shadow-sm", className)}>
+      <CardContent className="flex min-h-36 flex-col justify-between gap-5 p-5">
         <div className="flex items-start justify-between gap-4">
           <p className="max-w-[10rem] text-xs font-black uppercase tracking-[0.18em] text-slate-400">{label}</p>
           {Icon && (

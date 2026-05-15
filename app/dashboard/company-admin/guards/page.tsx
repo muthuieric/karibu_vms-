@@ -13,7 +13,7 @@ import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-type SecurityTab = "guards" | "entry-points" | "assignments";
+type SecurityTab = "guards" | "entry-points";
 
 export default function ManageGuards() {
   const guardsPage = useCompanyAdminGuards();
@@ -61,7 +61,6 @@ export default function ManageGuards() {
           {[
             { id: "guards", label: "Guards" },
             { id: "entry-points", label: "Entry points" },
-            { id: "assignments", label: "Assignments" },
           ].map((tab) => (
             <Button
               key={tab.id}
@@ -107,16 +106,6 @@ export default function ManageGuards() {
             onUpdateGate={guardsPage.handleUpdateGate}
             onCancelEditGate={() => guardsPage.setEditingGateId(null)}
             onDeleteGate={guardsPage.handleDeleteGate}
-          />
-        )}
-
-        {activeTab === "assignments" && (
-          <GuardsAccountsCard
-            loading={guardsPage.loading}
-            guards={guardsPage.guards}
-            getGateName={guardsPage.getGateName}
-            onEditGuard={openEditGuardModal}
-            onDeleteGuard={guardsPage.handleDeleteGuard}
           />
         )}
 

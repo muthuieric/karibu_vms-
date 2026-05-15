@@ -8,7 +8,7 @@ import MasterVisitorLog from "@/components/dashboard/company-admin/MasterVisitor
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Download } from "lucide-react";
+import { FileDown, LayoutDashboard } from "lucide-react";
 import { AdminVisitor, useCompanyAdminDashboard } from "@/hooks/useCompanyAdminDashboard";
 
 export default function AdminDashboard() {
@@ -33,9 +33,9 @@ export default function AdminDashboard() {
           icon={LayoutDashboard}
         >
           <div className="flex flex-col gap-3 sm:flex-row shrink-0 w-full sm:w-auto">
-            <Button onClick={dashboard.downloadCSV} variant="outline" className="w-full sm:w-auto bg-white border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-xl h-11">
-              <Download className="h-4 w-4 mr-2" />
-              Export Records
+            <Button onClick={dashboard.exportVisitorsToPdf} variant="outline" className="w-full sm:w-auto bg-white border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-xl h-11">
+              <FileDown className="h-4 w-4 mr-2" />
+              Export PDF
             </Button>
             {dashboard.pendingCount > 0 && (
               <Button onClick={() => dashboard.setStatusFilter("pending")} className="w-full sm:w-auto bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 font-bold rounded-xl h-11 px-6">
@@ -76,6 +76,7 @@ export default function AdminDashboard() {
         <AdminVisitInfoModal
           visitor={displayedInfoModalVisitor}
           customFieldLabels={dashboard.customFieldLabels}
+          planTier={dashboard.planTier}
           onClose={() => setInfoModalVisitor(null)}
         />
       )}

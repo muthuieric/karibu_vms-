@@ -6,11 +6,10 @@ import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 export default function SuperadminOverviewHeader() {
   return (
     <PageHeader
-      title="Platform Pulse"
+      title="Platform Home"
       eyebrow="Superadmin command center"
-      description="Real-time client, revenue, guard, and visitor analytics across the Karibu VMS network."
+      description="Real-time workspace, revenue, guard, and visitor analytics across the network."
       icon={CircuitBoard}
-      tone="dark"
     />
   );
 }

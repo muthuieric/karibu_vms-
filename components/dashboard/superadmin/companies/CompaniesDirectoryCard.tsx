@@ -12,13 +12,13 @@ import {
   Unlock,
   User,
   UserPlus,
-  Layers, // NEW: Icon for plans
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import { DataTableShell } from "@/components/dashboard/shared/DataTableShell";
+import { SearchInput, SelectField } from "@/components/dashboard/shared/Fields";
 import { EmptyState, LoadingState } from "@/components/dashboard/shared/StateBlocks";
-import { SearchInput } from "@/components/dashboard/shared/Fields";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Company = {
@@ -31,7 +31,7 @@ type Company = {
   created_at: string;
   subscription_status: string;
   is_locked: boolean;
-  plan_tier?: string; // NEW: Added plan tier tracking
+  plan_tier?: string;
 };
 
 type CompaniesDirectoryCardProps = {
@@ -44,25 +44,20 @@ type CompaniesDirectoryCardProps = {
   onViewCompanyVisitors: (companyId: string, companyName: string) => void;
   onToggleCompanyLock: (companyId: string, currentLockStatus: boolean) => void;
   onApproveCompany: (companyId: string) => void;
-  onChangePlanTier: (companyId: string, newTier: string) => void; // NEW: Callback to change plan
+  onChangePlanTier: (companyId: string, newTier: string) => void;
 };
 
-function CompanyStatusBadge({ company }: { company: Company }) {
-  const status = company.subscription_status === "pending_approval" ? "pending" : company.subscription_status;
-  return <StatusBadge status={status}>{company.subscription_status === "pending_approval" ? "Pending approval" : company.subscription_status}</StatusBadge>;
+function workspaceStatus(company: Company) {
+  if (company.is_locked) return "locked";
+  if (company.subscription_status === "pending_approval") return "pending";
+  return company.subscription_status || "trial";
 }
 
-function CompanyMobileStatusBadge({ company }: { company: Company }) {
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
-      company.subscription_status === "pending_approval" ? "bg-purple-50 text-purple-700 border-purple-200" :
-      company.subscription_status === "paid" ? "bg-green-50 text-green-700 border-green-200" :
-      company.subscription_status === "trial" ? "bg-amber-50 text-amber-700 border-amber-200" :
-      "bg-red-50 text-red-700 border-red-200"
-    }`}>
-      {company.subscription_status === "pending_approval" ? "PENDING" : company.subscription_status}
-    </span>
-  );
+function WorkspaceStatusBadge({ company }: { company: Company }) {
+  const status = workspaceStatus(company);
+  const label = company.subscription_status === "pending_approval" ? "Pending approval" : status;
+
+  return <StatusBadge status={status}>{label}</StatusBadge>;
 }
 
 export default function CompaniesDirectoryCard({
@@ -75,230 +70,215 @@ export default function CompaniesDirectoryCard({
   onViewCompanyVisitors,
   onToggleCompanyLock,
   onApproveCompany,
-  onChangePlanTier, // NEW
+  onChangePlanTier,
 }: CompaniesDirectoryCardProps) {
   return (
     <DataTableShell
-      title="Registered Buildings"
-      description="All organizations currently using your platform."
+      title="Workspaces List"
+      description="Search, review, and manage every workspace on the platform."
       filters={
         <div className="w-full md:w-96">
           <SearchInput
-            placeholder="Search by company or email..."
+            placeholder="Search workspace or email..."
             value={searchTerm}
-            onChange={(e) => onSearchTermChange(e.target.value)}
+            onChange={(event) => onSearchTermChange(event.target.value)}
           />
         </div>
       }
     >
-
-      <div className="p-0">
-        {loading ? (
-          <LoadingState label="Loading companies..." />
-        ) : companies.length === 0 ? (
-          <EmptyState title="No companies found" description="Click New Company to onboard your first client." />
-        ) : filteredCompanies.length === 0 ? (
-          <EmptyState title="No matching companies" description="Try adjusting your search query." />
-        ) : (
-          <>
-            <div className="hidden md:block">
-              <Table>
-                <TableHeader className="bg-zinc-50/80">
-                  <TableRow>
-                    <TableHead className="pl-6 py-4 text-zinc-600 whitespace-nowrap">Company Info</TableHead>
-                    <TableHead className="py-4 text-zinc-600 whitespace-nowrap">Contact Details</TableHead>
-                    <TableHead className="text-zinc-600 whitespace-nowrap">Plan Tier</TableHead> {/* NEW COLUMN */}
-                    <TableHead className="text-zinc-600 whitespace-nowrap">Status</TableHead>
-                    <TableHead className="text-zinc-600 whitespace-nowrap">Date Added</TableHead>
-                    <TableHead className="pr-6 text-right text-zinc-600 whitespace-nowrap">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCompanies.map((company) => (
-                    <TableRow key={company.id} className="hover:bg-zinc-50/80 transition-colors">
-                      <TableCell className="pl-6 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-zinc-100 p-2 rounded-md border border-zinc-200 shrink-0">
-                            <Building2 className="w-5 h-5 text-zinc-500" />
-                          </div>
-                          <div>
-                            <div className="font-bold text-zinc-900 flex items-center gap-2">
-                              <span className="truncate max-w-[200px]">{company.name}</span>
-                              {company.is_locked && (
-                                <span title="Account Locked"><Lock className="inline h-3.5 w-3.5 text-red-600 shrink-0" /></span>
-                              )}
-                            </div>
-                            <div className="text-xs text-zinc-500 truncate max-w-[200px] flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3 h-3" /> {company.address || "No address provided"}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        <div className="space-y-1">
-                          <div className="text-sm font-semibold text-zinc-800 flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-zinc-400" />
-                            {company.contact_name || "N/A"}
-                          </div>
-                          <div className="text-xs text-zinc-500 flex items-center gap-1.5">
-                            <Mail className="w-3.5 h-3.5 text-zinc-400" />
-                            {company.contact_email || "N/A"}
-                          </div>
-                          <div className="text-xs text-zinc-500 flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5 text-zinc-400" />
-                            {company.contact_phone || "N/A"}
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      {/* NEW: PLAN TIER DROPDOWN */}
-                      <TableCell className="whitespace-nowrap">
-                        <select
-                          value={company.plan_tier || "basic"}
-                          onChange={(e) => onChangePlanTier(company.id, e.target.value)}
-                          className={`h-7 rounded border bg-white px-2 text-xs font-bold shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer uppercase tracking-wider
-                            ${(company.plan_tier || "basic") === "basic" ? "text-zinc-600 border-zinc-200" : ""}
-                            ${company.plan_tier === "premium" ? "text-blue-600 border-blue-200 bg-blue-50/50" : ""}
-                            ${company.plan_tier === "custom" ? "text-purple-600 border-purple-200 bg-purple-50/50" : ""}
-                          `}
-                        >
-                          <option value="basic">Basic</option>
-                          <option value="premium">Premium</option>
-                          <option value="custom">Custom</option>
-                        </select>
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        <CompanyStatusBadge company={company} />
-                      </TableCell>
-
-                      <TableCell className="text-sm text-zinc-600 whitespace-nowrap">
-                        {new Date(company.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                      </TableCell>
-
-                      <TableCell className="pr-6 text-right space-x-2 whitespace-nowrap flex justify-end items-center h-full pt-4">
-                        {company.subscription_status === "pending_approval" ? (
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold" onClick={() => onApproveCompany(company.id)}>
-                            <CheckCircle className="h-4 w-4 mr-1" /> Approve & Start Trial
-                          </Button>
-                        ) : (
-                          <>
-                            <Button size="sm" variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50 bg-white" onClick={() => onOpenAdminModal(company.id)}>
-                              <UserPlus className="h-4 w-4 mr-1" /> Add Admin
-                            </Button>
-                            <Button size="sm" variant="outline" className="text-zinc-700 border-zinc-200 hover:bg-zinc-50 bg-white" onClick={() => onViewCompanyVisitors(company.id, company.name)}>
-                              <Eye className="h-4 w-4 mr-1" /> View Data
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={company.is_locked ? "default" : "destructive"}
-                              className={company.is_locked ? "bg-zinc-800 hover:bg-zinc-900 text-white" : "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"}
-                              onClick={() => onToggleCompanyLock(company.id, company.is_locked)}
-                            >
-                              {company.is_locked ? <><Unlock className="h-4 w-4 mr-1" /> Unlock</> : <><Lock className="h-4 w-4 mr-1" /> Lock</>}
-                            </Button>
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="md:hidden divide-y divide-zinc-100">
-              {filteredCompanies.map((company) => (
-                <div key={company.id} className="p-4 space-y-4 hover:bg-zinc-50/50 transition-colors">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="font-semibold text-zinc-900 flex items-start gap-2 leading-tight">
-                      <Building2 className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="line-clamp-2">{company.name}</span>
-                        <span className="text-[10px] font-normal text-zinc-500 block mt-0.5 flex items-center gap-1">
-                          <MapPin className="w-2.5 h-2.5" /> {company.address || "No address"}
+      {loading ? (
+        <div className="p-5">
+          <LoadingState label="Loading workspaces..." />
+        </div>
+      ) : companies.length === 0 ? (
+        <div className="p-5">
+          <EmptyState title="No workspaces found" description="Create your first workspace to begin onboarding clients." />
+        </div>
+      ) : filteredCompanies.length === 0 ? (
+        <div className="p-5">
+          <EmptyState title="No matching workspaces" description="Try adjusting your search query." />
+        </div>
+      ) : (
+        <>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="pl-6">Workspace</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date Added</TableHead>
+                  <TableHead className="pr-6 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCompanies.map((company) => (
+                  <TableRow key={company.id}>
+                    <TableCell className="pl-6">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
+                          <Building2 className="h-5 w-5" />
                         </span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 font-bold text-slate-900">
+                            <span className="max-w-[220px] truncate">{company.name}</span>
+                            {company.is_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
+                          </div>
+                          <div className="mt-0.5 flex max-w-[240px] items-center gap-1 truncate text-xs text-slate-500">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            {company.address || "No address provided"}
+                          </div>
+                        </div>
                       </div>
-                      {company.is_locked && (
-                        <span title="Account Locked">
-                          <Lock className="inline h-3.5 w-3.5 text-red-600 shrink-0 mt-0.5" />
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <CompanyMobileStatusBadge company={company} />
-                    </div>
-                  </div>
+                    </TableCell>
 
-                  <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-100 space-y-1.5">
-                    <div className="text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-zinc-400" />
-                      {company.contact_name || "N/A"}
-                    </div>
-                    <div className="text-xs text-zinc-500 flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-zinc-400" />
-                      {company.contact_email || "N/A"}
-                    </div>
-                    <div className="text-xs text-zinc-500 flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-zinc-400" />
-                      {company.contact_phone || "N/A"}
-                    </div>
-                  </div>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+                          <User className="h-3.5 w-3.5 text-slate-400" />
+                          {company.contact_name || "N/A"}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <Mail className="h-3.5 w-3.5 text-slate-400" />
+                          {company.contact_email || "N/A"}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <Phone className="h-3.5 w-3.5 text-slate-400" />
+                          {company.contact_phone || "N/A"}
+                        </div>
+                      </div>
+                    </TableCell>
 
-                  {/* NEW: PLAN & DATE ON MOBILE */}
-                  <div className="flex items-center justify-between text-xs text-zinc-500 mt-2">
-                    <div className="flex items-center gap-1.5">
-                      <CalendarDays className="w-3.5 h-3.5 shrink-0" />
-                      Applied: {new Date(company.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 shrink-0" />
-                      <select
+                    <TableCell>
+                      <SelectField
                         value={company.plan_tier || "basic"}
-                        onChange={(e) => onChangePlanTier(company.id, e.target.value)}
-                        className={`h-6 rounded border bg-white px-1.5 text-[10px] font-bold shadow-sm focus:outline-none cursor-pointer uppercase
-                          ${(company.plan_tier || "basic") === "basic" ? "text-zinc-600 border-zinc-200" : ""}
-                          ${company.plan_tier === "premium" ? "text-blue-600 border-blue-200 bg-blue-50/50" : ""}
-                          ${company.plan_tier === "custom" ? "text-purple-600 border-purple-200 bg-purple-50/50" : ""}
-                        `}
+                        onChange={(event) => onChangePlanTier(company.id, event.target.value)}
+                        className="min-h-8 w-32 py-1 text-xs uppercase tracking-wider"
                       >
                         <option value="basic">Basic</option>
                         <option value="premium">Premium</option>
                         <option value="custom">Custom</option>
-                      </select>
+                      </SelectField>
+                    </TableCell>
+
+                    <TableCell>
+                      <WorkspaceStatusBadge company={company} />
+                    </TableCell>
+
+                    <TableCell className="text-sm text-slate-600">
+                      {new Date(company.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </TableCell>
+
+                    <TableCell className="pr-6">
+                      <div className="flex justify-end gap-2">
+                        {company.subscription_status === "pending_approval" ? (
+                          <Button size="sm" onClick={() => onApproveCompany(company.id)}>
+                            <CheckCircle className="h-4 w-4" /> Approve
+                          </Button>
+                        ) : (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => onOpenAdminModal(company.id)}>
+                              <UserPlus className="h-4 w-4" /> Admin
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => onViewCompanyVisitors(company.id, company.name)}>
+                              <Eye className="h-4 w-4" /> Data
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={company.is_locked ? "default" : "destructive"}
+                              onClick={() => onToggleCompanyLock(company.id, company.is_locked)}
+                            >
+                              {company.is_locked ? <><Unlock className="h-4 w-4" /> Unlock</> : <><Lock className="h-4 w-4" /> Lock</>}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="divide-y divide-slate-100 md:hidden">
+            {filteredCompanies.map((company) => (
+              <div key={company.id} className="space-y-4 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 font-bold text-slate-900">
+                      <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
+                      <span className="truncate">{company.name}</span>
+                      {company.is_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
+                    </div>
+                    <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                      <MapPin className="h-3 w-3" />
+                      <span className="truncate">{company.address || "No address provided"}</span>
                     </div>
                   </div>
+                  <WorkspaceStatusBadge company={company} />
+                </div>
 
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-100">
-                    {company.subscription_status === "pending_approval" ? (
-                      <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold" onClick={() => onApproveCompany(company.id)}>
-                        <CheckCircle className="h-4 w-4 mr-1" /> Approve & Start Trial
-                      </Button>
-                    ) : (
-                      <>
-                        <Button size="sm" variant="outline" className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50 bg-white min-w-[120px]" onClick={() => onOpenAdminModal(company.id)}>
-                          <UserPlus className="h-4 w-4 mr-1" /> Add Admin
-                        </Button>
-                        <Button size="sm" variant="outline" className="flex-1 text-zinc-700 border-zinc-200 hover:bg-zinc-50 bg-white min-w-[120px]" onClick={() => onViewCompanyVisitors(company.id, company.name)}>
-                          <Eye className="h-4 w-4 mr-1" /> View Data
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={company.is_locked ? "default" : "destructive"}
-                          className={`w-full ${company.is_locked ? "bg-zinc-800 hover:bg-zinc-900 text-white" : "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"}`}
-                          onClick={() => onToggleCompanyLock(company.id, company.is_locked)}
-                        >
-                          {company.is_locked ? <><Unlock className="h-4 w-4 mr-1" /> Unlock Account</> : <><Lock className="h-4 w-4 mr-1" /> Lock Account</>}
-                        </Button>
-                      </>
-                    )}
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                  <div className="flex items-center gap-1.5 font-semibold text-slate-800">
+                    <User className="h-3.5 w-3.5 text-slate-400" />
+                    {company.contact_name || "N/A"}
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-slate-400" />
+                    {company.contact_email || "N/A"}
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5 text-slate-400" />
+                    {company.contact_phone || "N/A"}
                   </div>
                 </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="flex items-center gap-1.5 text-slate-500">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {new Date(company.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  </div>
+                  <SelectField
+                    value={company.plan_tier || "basic"}
+                    onChange={(event) => onChangePlanTier(company.id, event.target.value)}
+                    className="min-h-8 py-1 text-xs uppercase tracking-wider"
+                  >
+                    <option value="basic">Basic</option>
+                    <option value="premium">Premium</option>
+                    <option value="custom">Custom</option>
+                  </SelectField>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {company.subscription_status === "pending_approval" ? (
+                    <Button size="sm" className="w-full" onClick={() => onApproveCompany(company.id)}>
+                      <CheckCircle className="h-4 w-4" /> Approve & Start Trial
+                    </Button>
+                  ) : (
+                    <>
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => onOpenAdminModal(company.id)}>
+                        <UserPlus className="h-4 w-4" /> Admin
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => onViewCompanyVisitors(company.id, company.name)}>
+                        <Eye className="h-4 w-4" /> Data
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={company.is_locked ? "default" : "destructive"}
+                        className="w-full"
+                        onClick={() => onToggleCompanyLock(company.id, company.is_locked)}
+                      >
+                        {company.is_locked ? <><Unlock className="h-4 w-4" /> Unlock Workspace</> : <><Lock className="h-4 w-4" /> Lock Workspace</>}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </DataTableShell>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { ModalShell } from "@/components/dashboard/shared/ModalShell";
+import { canUseHostConfirmation, getHostReviewLabel } from "@/lib/visitor-display";
 
 type Visitor = {
   name: string;
@@ -16,10 +17,13 @@ type Visitor = {
 type AdminVisitInfoModalProps = {
   visitor: Visitor;
   customFieldLabels: Record<string, string>;
+  planTier: string;
   onClose: () => void;
 };
 
-export default function AdminVisitInfoModal({ visitor, customFieldLabels, onClose }: AdminVisitInfoModalProps) {
+export default function AdminVisitInfoModal({ visitor, customFieldLabels, planTier, onClose }: AdminVisitInfoModalProps) {
+  const showHostReview = Boolean(visitor.host_name && canUseHostConfirmation(planTier));
+
   return (
     <ModalShell
       title="Visit Details"
@@ -31,27 +35,27 @@ export default function AdminVisitInfoModal({ visitor, customFieldLabels, onClos
         {visitor.document_type && (
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">ID / Document</p>
-            <p className="text-lg font-bold leading-snug text-slate-900">{visitor.document_type} - {visitor.id_number || "N/A"}</p>
+            <p className="text-lg font-bold leading-snug text-slate-900 break-words">{visitor.document_type} - {visitor.id_number || "N/A"}</p>
           </div>
         )}
         
         {visitor.host_name && (
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">Host Name</p>
-            <p className="text-lg font-bold leading-snug text-slate-900">{visitor.host_name}</p>
+            <p className="text-lg font-bold leading-snug text-slate-900 break-words">{visitor.host_name}</p>
           </div>
         )}
 
-        {visitor.host_name && (
+        {showHostReview && (
           <div>
-            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">Host Status</p>
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">Host review</p>
             {visitor.host_confirmed ? (
               <div className="inline-flex mt-1 items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
-                Confirmed Arrival
+                {getHostReviewLabel(visitor.host_confirmed)}
               </div>
             ) : (
               <div className="inline-flex mt-1 items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800 border border-orange-200">
-                Pending Confirmation
+                {getHostReviewLabel(visitor.host_confirmed)}
               </div>
             )}
           </div>
@@ -60,14 +64,14 @@ export default function AdminVisitInfoModal({ visitor, customFieldLabels, onClos
         {visitor.purpose && (
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">Purpose of Visit</p>
-            <p className="text-lg font-bold leading-snug text-slate-900">{visitor.purpose}</p>
+            <p className="text-lg font-bold leading-snug text-slate-900 break-words">{visitor.purpose}</p>
           </div>
         )}
         
         {visitor.vehicle_reg && (
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">Vehicle Registration</p>
-            <p className="font-mono text-lg font-bold leading-snug text-slate-900 uppercase">{visitor.vehicle_reg}</p>
+            <p className="font-mono text-lg font-bold leading-snug text-slate-900 uppercase break-words">{visitor.vehicle_reg}</p>
           </div>
         )}
         
@@ -77,7 +81,7 @@ export default function AdminVisitInfoModal({ visitor, customFieldLabels, onClos
           return (
             <div key={fieldId}>
               <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
-              <p className="text-lg font-bold leading-snug text-slate-900">{value}</p>
+              <p className="text-lg font-bold leading-snug text-slate-900 break-words">{value}</p>
             </div>
           );
         })}

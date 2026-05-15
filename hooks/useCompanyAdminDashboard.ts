@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { supabase } from "@/lib/supabase";
+import { canUseHostConfirmation, getHostReviewLabel, getVisitorStatusLabel, normalizeVisitorStatus } from "@/lib/visitor-display";
 
 export type AdminVisitor = {
   id: string;
@@ -10,7 +13,7 @@ export type AdminVisitor = {
   phone: string;
   document_type: string;
   id_number: string;
-  status: "pending" | "checked_in" | "checked_out" | "auto_checked_out";
+  status: string;
   created_at: string;
   checked_out_at?: string;
   host_name?: string;
@@ -41,6 +44,8 @@ export function useCompanyAdminDashboard() {
   const [lifetimeVisitors, setLifetimeVisitors] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
+  const [planTier, setPlanTier] = useState("basic");
+  const [companyName, setCompanyName] = useState("");
   const [customFieldLabels, setCustomFieldLabels] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -78,24 +83,26 @@ export function useCompanyAdminDashboard() {
         await supabase
           .from("visitors")
           .update({
-            status: "auto_checked_out",
+            status: "checked_out",
             checked_out_at: new Date().toISOString(),
           })
           .eq("company_id", profile.company_id)
           .in("status", ["pending", "checked_in"])
           .lt("created_at", startOfToday.toISOString());
       } catch (err) {
-        console.error("Auto-checkout script failed:", err);
+        console.error("Visitor status rollover failed:", err);
       }
 
       const { data: company } = await supabase
         .from("companies")
-        .select("is_locked, custom_fields")
+        .select("name, is_locked, custom_fields, plan_tier")
         .eq("id", profile.company_id)
         .single();
 
       const accountLocked = company?.is_locked === true;
       setIsLocked(accountLocked);
+      setCompanyName(company?.name || "");
+      setPlanTier(company?.plan_tier || "basic");
 
       if (accountLocked) {
         setLoading(false);
@@ -203,7 +210,7 @@ export function useCompanyAdminDashboard() {
         );
       }
 
-      const matchesStatus = statusFilter === "all" || visitor.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || normalizeVisitorStatus(visitor.status) === statusFilter;
 
       let matchesGate = true;
       if (gateFilter === "unassigned") {
@@ -232,65 +239,152 @@ export function useCompanyAdminDashboard() {
 
   const hasActiveFilters = Boolean(searchQuery || startDate || statusFilter !== "all" || gateFilter !== "all");
 
-  const downloadCSV = () => {
+  const getStatusLabel = (status: string, isOverride?: boolean) => getVisitorStatusLabel(status, isOverride);
+
+  const exportVisitorsToPdf = () => {
     if (filteredVisitors.length === 0) {
       alert("No data available to download.");
       return;
     }
 
-    const customFieldIds = Object.keys(customFieldLabels);
-    const customHeaders = customFieldIds.map((id) => customFieldLabels[id]);
-    const headers = [
-      "Date",
-      "Visitor Name",
-      "Phone Number",
-      "Document Type",
-      "ID Number",
-      "Host Name",
-      "Purpose",
-      "Vehicle Reg",
-      "Status",
-      "Entry Gate",
-      "Time In",
-      "Time Out",
-      ...customHeaders,
+    const todayStr = new Date().toISOString().split("T")[0];
+    const exportDate = new Date();
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 36;
+
+    const statusCounts = filteredVisitors.reduce<Record<string, number>>((counts, visitor) => {
+      const status = normalizeVisitorStatus(visitor.status);
+      counts[status] = (counts[status] || 0) + 1;
+      return counts;
+    }, {});
+    const showHostReview = canUseHostConfirmation(planTier);
+
+    const filterSummary = [
+      `Search: ${searchQuery || "All"}`,
+      `Status: ${statusFilter === "all" ? "All" : getStatusLabel(statusFilter)}`,
+      `Date range: ${startDate || "Any"} to ${endDate || "Any"}`,
+      `Gate: ${gateFilter === "all" ? "All" : gateFilter === "unassigned" ? "Unassigned" : getGateName(gateFilter)}`,
     ];
 
-    const csvRows = filteredVisitors.map((visitor) => {
-      const date = new Date(visitor.created_at).toLocaleDateString();
-      const timeIn = new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      const timeOut = visitor.checked_out_at
-        ? new Date(visitor.checked_out_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        : "--";
-      const standardData = [
-        `"${date}"`,
-        `"${visitor.name}"`,
-        `"${visitor.phone || "N/A"}"`,
-        `"${visitor.document_type || "N/A"}"`,
-        `"${visitor.id_number || "N/A"}"`,
-        `"${visitor.host_name || "N/A"}"`,
-        `"${visitor.purpose || "N/A"}"`,
-        `"${visitor.vehicle_reg || "N/A"}"`,
-        `"${visitor.status.replace(/_/g, " ").toUpperCase()}"`,
-        `"${getGateName(visitor.gate_id)}"`,
-        `"${timeIn}"`,
-        `"${timeOut}"`,
-      ];
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(37, 99, 235);
+    doc.text("Karibu VMS Entry Records", margin, 44);
 
-      const customData = customFieldIds.map((id) => `"${visitor.custom_data?.[id] || "N/A"}"`);
-      return [...standardData, ...customData].join(",");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    if (companyName) {
+      doc.text(companyName, margin, 62);
+    }
+    doc.text(`Exported ${exportDate.toLocaleString()}`, margin, companyName ? 78 : 62);
+
+    autoTable(doc, {
+      startY: 96,
+      margin: { left: margin, right: margin },
+      theme: "plain",
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 4, textColor: [15, 23, 42] },
+      body: [
+        ["Total records exported", filteredVisitors.length.toLocaleString()],
+        ["Inside", (statusCounts.checked_in || 0).toLocaleString()],
+        ["Departed", (statusCounts.checked_out || 0).toLocaleString()],
+        ["Pending", (statusCounts.pending || 0).toLocaleString()],
+      ],
+      columnStyles: {
+        0: { fontStyle: "bold", textColor: [100, 116, 139], cellWidth: 130 },
+        1: { fontStyle: "bold", textColor: [15, 23, 42] },
+      },
     });
 
-    const csvContent = [headers.join(","), ...csvRows].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    const todayStr = new Date().toISOString().split("T")[0];
-    link.setAttribute("download", hasActiveFilters ? `Filtered_Report_${todayStr}.csv` : `Building_Visitor_Log_${todayStr}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    autoTable(doc, {
+      startY: (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY
+        ? (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12
+        : 174,
+      margin: { left: margin, right: margin },
+      theme: "plain",
+      styles: { font: "helvetica", fontSize: 8.5, cellPadding: 3, textColor: [100, 116, 139] },
+      body: filterSummary.map((item) => [item]),
+    });
+
+    autoTable(doc, {
+      startY: (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY
+        ? (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 16
+        : 214,
+      margin: { left: margin, right: margin },
+      head: [[
+        "Visitor name",
+        "Phone",
+        "Host / department",
+        ...(showHostReview ? ["Host review"] : []),
+        "Purpose",
+        "Gate",
+        "Status",
+        "Check-in",
+        "Check-out",
+        "Created",
+      ]],
+      body: filteredVisitors.map((visitor) => {
+        const isOverride = visitor.custom_data?.manual_override === "true";
+
+        return [
+          visitor.name || "N/A",
+          visitor.phone || "N/A",
+          visitor.host_name || "N/A",
+          ...(showHostReview ? [visitor.host_name ? getHostReviewLabel(visitor.host_confirmed) : "N/A"] : []),
+          visitor.purpose || "N/A",
+          getGateName(visitor.gate_id),
+          getStatusLabel(visitor.status, isOverride),
+          new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          visitor.checked_out_at
+            ? new Date(visitor.checked_out_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : "--",
+          new Date(visitor.created_at).toLocaleDateString(),
+        ];
+      }),
+      theme: "grid",
+      headStyles: {
+        fillColor: [239, 246, 255],
+        textColor: [37, 99, 235],
+        fontStyle: "bold",
+        lineColor: [191, 219, 254],
+        lineWidth: 0.5,
+      },
+      bodyStyles: { textColor: [15, 23, 42] },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      styles: {
+        font: "helvetica",
+        fontSize: 8,
+        cellPadding: 5,
+        overflow: "linebreak",
+        valign: "top",
+        lineColor: [226, 232, 240],
+        lineWidth: 0.4,
+      },
+      columnStyles: {
+        0: { cellWidth: 82 },
+        1: { cellWidth: 66 },
+        2: { cellWidth: 84 },
+        3: { cellWidth: showHostReview ? 78 : 122 },
+        4: { cellWidth: showHostReview ? 104 : 76 },
+        5: { cellWidth: showHostReview ? 68 : 72 },
+        6: { cellWidth: showHostReview ? 66 : 62 },
+        7: { cellWidth: showHostReview ? 58 : 62 },
+        8: { cellWidth: showHostReview ? 58 : 68 },
+        ...(showHostReview ? { 9: { cellWidth: 62 } } : {}),
+      },
+      didDrawPage: () => {
+        const pageNumber = doc.getCurrentPageInfo().pageNumber;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Page ${pageNumber}`, pageWidth - margin, pageHeight - 18, { align: "right" });
+        doc.text("Karibu VMS", margin, pageHeight - 18);
+      },
+    });
+
+    doc.save(hasActiveFilters ? `Filtered_Entry_Records_${todayStr}.pdf` : `Entry_Records_${todayStr}.pdf`);
   };
 
   const totalToday = useMemo(() => {
@@ -301,9 +395,11 @@ export function useCompanyAdminDashboard() {
   return {
     loading,
     isLocked,
+    planTier,
     visitors,
     gates,
     customFieldLabels,
+    companyName,
     filteredVisitors,
     lifetimeVisitors,
     totalToday,
@@ -321,6 +417,6 @@ export function useCompanyAdminDashboard() {
     setStartDate,
     setEndDate,
     getGateName,
-    downloadCSV,
+    exportVisitorsToPdf,
   };
 }

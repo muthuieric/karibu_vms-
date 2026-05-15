@@ -142,9 +142,9 @@ export function useSuperadminCompanies() {
     setLoadingVisitors(false);
   };
 
-  const toggleCompanyLock = async (companyId: string, currentLockStatus: boolean) => {
+  const toggleCompanyLock = async (companyId: string, currentLockStatus: boolean, skipConfirm = false) => {
     const action = currentLockStatus ? "Unlock" : "Lock";
-    if (!window.confirm(`Are you sure you want to ${action} this company's account?`)) return;
+    if (!skipConfirm && !window.confirm(`Are you sure you want to ${action} this company's account?`)) return;
 
     const { error } = await supabase.from("companies").update({ is_locked: !currentLockStatus }).eq("id", companyId);
     if (error) {
