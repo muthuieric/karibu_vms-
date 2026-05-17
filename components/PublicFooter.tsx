@@ -16,10 +16,11 @@ export default function PublicFooter() {
           <Link href="/about" className="hover:text-zinc-900 transition-colors">About</Link>
           <Link href="/why-us" className="hover:text-zinc-900 transition-colors">Why Us</Link>
           <Link href="/features" className="hover:text-zinc-900 transition-colors">Features</Link>
+          <Link href="/pricing" className="hover:text-zinc-900 transition-colors">Pricing</Link>
           <Link href="/contact" className="hover:text-zinc-900 transition-colors">Contact</Link>
           <span className="text-zinc-300">|</span>
-          <a href="#" className="hover:text-zinc-900 transition-colors">Privacy</a>
-          <a href="#" className="hover:text-zinc-900 transition-colors">Terms</a>
+          <Link href="/privacy" className="hover:text-zinc-900 transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-zinc-900 transition-colors">Terms</Link>
         </div>
 
         <p className="text-sm text-zinc-500">

@@ -27,13 +27,7 @@ export default function PublicGatePageShell({ children }: PublicGatePageShellPro
         </Suspense>
       </div>
 
-      <div className="mt-8 flex flex-col items-center gap-2 opacity-70 hover:opacity-100 transition-opacity relative z-10 shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-slate-200/50 border border-slate-200 flex items-center justify-center">
-          {/* Logo Placeholder */}
-          <span className="text-[10px] font-bold text-slate-400">LT</span>
-        </div>
-        <span className="text-xs font-semibold text-slate-500">Powered by Luffi Tech</span>
-      </div>
+     
     </div>
   );
 }

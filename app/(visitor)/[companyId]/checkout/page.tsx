@@ -259,5 +259,6 @@ export default function PublicGateCheckOut() {
         </CardContent>
       </Card>
     </div>
+    
   );
 }

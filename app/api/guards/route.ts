@@ -53,6 +53,7 @@ export async function POST(request: Request) {
   try {
     // --- GATE FIX 1: Extract gateId from the incoming request ---
     const { email, password, fullName, companyId, gateId } = await request.json();
+    const normalizedEmail = typeof email === "string" ? email.toLowerCase() : "";
 
     if (!email || !password || !fullName || !companyId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
 
     // 1. Create the user in the Supabase Auth system
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
+      email: normalizedEmail,
       password: password,
       email_confirm: true,
     });
@@ -86,6 +87,7 @@ export async function POST(request: Request) {
         company_id: companyId,
         role: "guard",
         full_name: fullName,
+        email: normalizedEmail,
         // --- GATE FIX 2: Save the assigned gate to the database ---
         gate_id: gateId || null, 
       });

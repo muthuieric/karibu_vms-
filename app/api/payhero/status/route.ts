@@ -12,7 +12,12 @@ export async function GET(req: Request) {
     }
 
     const statusData = await getPayHeroTransactionStatus(reference);
-    const normalizedStatus = normalizePayHeroStatus(statusData.Status || statusData.status, statusData.ResultCode || statusData.result_code);
+    const rawStatus = statusData.Status || statusData.status;
+    const rawResultCode = statusData.ResultCode || statusData.result_code;
+    const normalizedStatus = normalizePayHeroStatus(
+      typeof rawStatus === "string" ? rawStatus : null,
+      typeof rawResultCode === "string" || typeof rawResultCode === "number" ? rawResultCode : null
+    );
     const supabaseAdmin = createSupabaseAdmin();
 
     const { data: existingRows } = await supabaseAdmin

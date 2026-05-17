@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 
 export type GuardProfile = {
   id: string;
   full_name: string;
+  email?: string | null;
   role: string;
   gate_id: string | null;
 };
@@ -15,15 +17,35 @@ export type Gate = {
   name: string;
 };
 
+export type NewGuard = {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  gateId: string;
+};
+
+export type GuardPasswordData = {
+  guardId: string;
+  guardName: string;
+  password: string;
+  confirmPassword: string;
+};
+
 export function useCompanyAdminGuards() {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [guards, setGuards] = useState<GuardProfile[]>([]);
   const [gates, setGates] = useState<Gate[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newGuard, setNewGuard] = useState({ name: "", email: "", password: "", gateId: "" });
+  const [newGuard, setNewGuard] = useState<NewGuard>({ name: "", email: "", password: "", confirmPassword: "", gateId: "" });
+  const [createGuardError, setCreateGuardError] = useState("");
   const [isEditingGuard, setIsEditingGuard] = useState(false);
   const [editingGuardData, setEditingGuardData] = useState({ id: "", name: "", gateId: "" });
+  const [passwordData, setPasswordData] = useState<GuardPasswordData>({ guardId: "", guardName: "", password: "", confirmPassword: "" });
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
   const [newGateName, setNewGateName] = useState("");
   const [isCreatingGate, setIsCreatingGate] = useState(false);
   const [editingGateId, setEditingGateId] = useState<string | null>(null);
@@ -46,7 +68,7 @@ export function useCompanyAdminGuards() {
 
         const { data: guardsData } = await supabase
           .from("profiles")
-          .select("*")
+          .select("id, full_name, email, role, gate_id, created_at")
           .eq("company_id", profileData.company_id)
           .eq("role", "guard")
           .order("created_at", { ascending: false });
@@ -153,6 +175,33 @@ export function useCompanyAdminGuards() {
 
   const handleCreateGuard = async (e: React.FormEvent, onSuccess?: () => void) => {
     e.preventDefault();
+    setCreateGuardError("");
+
+    if (!newGuard.name.trim() || !newGuard.email.trim()) {
+      setCreateGuardError("Please complete all guard account fields.");
+      return;
+    }
+
+    if (!newGuard.password) {
+      setCreateGuardError("Password is required.");
+      return;
+    }
+
+    if (!newGuard.confirmPassword) {
+      setCreateGuardError("Confirm password is required.");
+      return;
+    }
+
+    if (!isStrongPassword(newGuard.password)) {
+      setCreateGuardError(PASSWORD_REQUIREMENTS_MESSAGE);
+      return;
+    }
+
+    if (newGuard.password !== newGuard.confirmPassword) {
+      setCreateGuardError("Passwords do not match.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -180,15 +229,15 @@ export function useCompanyAdminGuards() {
       const result = await response.json();
 
       if (result.error) {
-        alert(`Error: ${result.error}`);
+        setCreateGuardError(result.error);
       } else {
-        setNewGuard({ name: "", email: "", password: "", gateId: "" });
+        setNewGuard({ name: "", email: "", password: "", confirmPassword: "", gateId: "" });
         onSuccess?.();
         fetchData();
       }
     } catch (error) {
       console.error(error);
-      alert("Something went wrong connecting to the server.");
+      setCreateGuardError("Something went wrong connecting to the server.");
     } finally {
       setIsSubmitting(false);
     }
@@ -262,6 +311,82 @@ export function useCompanyAdminGuards() {
     }
   };
 
+  const startPasswordUpdate = (guard: GuardProfile) => {
+    setPasswordData({ guardId: guard.id, guardName: guard.full_name, password: "", confirmPassword: "" });
+    setPasswordError("");
+    setPasswordSuccess("");
+  };
+
+  const clearCreateGuardFeedback = () => {
+    setCreateGuardError("");
+  };
+
+  const clearPasswordUpdate = () => {
+    setPasswordData({ guardId: "", guardName: "", password: "", confirmPassword: "" });
+    setPasswordError("");
+  };
+
+  const handleUpdateGuardPassword = async (e: React.FormEvent, onSuccess?: () => void) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (!passwordData.password) {
+      setPasswordError("New password is required.");
+      return;
+    }
+
+    if (!passwordData.confirmPassword) {
+      setPasswordError("Confirm new password is required.");
+      return;
+    }
+
+    if (!isStrongPassword(passwordData.password)) {
+      setPasswordError(PASSWORD_REQUIREMENTS_MESSAGE);
+      return;
+    }
+
+    if (passwordData.password !== passwordData.confirmPassword) {
+      setPasswordError("Please enter matching passwords.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        setPasswordError("Session expired. Please log in again.");
+        return;
+      }
+
+      const response = await fetch(`/api/guards/${passwordData.guardId}/password`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ password: passwordData.password }),
+      });
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        setPasswordError(result.error || "Failed to update guard password.");
+        return;
+      }
+
+      setPasswordSuccess("Password updated successfully.");
+      onSuccess?.();
+      setPasswordData({ guardId: "", guardName: "", password: "", confirmPassword: "" });
+    } catch (error) {
+      console.error(error);
+      setPasswordError("Something went wrong updating the password.");
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   const getGateName = (gateId: string | null) => {
     if (!gateId) return "Unassigned";
     const gate = gates.find((item) => item.id === gateId);
@@ -283,8 +408,13 @@ export function useCompanyAdminGuards() {
     loading,
     isSubmitting,
     newGuard,
+    createGuardError,
     isEditingGuard,
     editingGuardData,
+    passwordData,
+    isUpdatingPassword,
+    passwordError,
+    passwordSuccess,
     newGateName,
     isCreatingGate,
     editingGateId,
@@ -292,6 +422,7 @@ export function useCompanyAdminGuards() {
     isUpdatingGate,
     setNewGuard,
     setEditingGuardData,
+    setPasswordData,
     setNewGateName,
     setEditingGateId,
     setEditingGateName,
@@ -301,7 +432,11 @@ export function useCompanyAdminGuards() {
     handleCreateGuard,
     handleUpdateGuard,
     handleDeleteGuard,
+    handleUpdateGuardPassword,
     getGateName,
     startEditGuard,
+    startPasswordUpdate,
+    clearPasswordUpdate,
+    clearCreateGuardFeedback,
   };
 }

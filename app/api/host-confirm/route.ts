@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
       const { data: visitor, error } = await supabaseAdmin
         .from("visitors")
-        .select("id, name, phone, purpose, photo_url, host_confirmed, status")
+        .select("id, name, phone, purpose, photo_url, host_confirmed, status, created_at, checked_in_at")
         .eq("company_id", companyId)
         .eq("otp_code", otp.trim())
         .order("created_at", { ascending: false })

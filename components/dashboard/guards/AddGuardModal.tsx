@@ -15,6 +15,7 @@ type NewGuard = {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
   gateId: string;
 };
 
@@ -22,6 +23,7 @@ type AddGuardModalProps = {
   gates: Gate[];
   newGuard: NewGuard;
   isSubmitting: boolean;
+  error?: string;
   onClose: () => void;
   onSubmit: (event: React.FormEvent) => void;
   onNewGuardChange: (guard: NewGuard) => void;
@@ -31,6 +33,7 @@ export default function AddGuardModal({
   gates,
   newGuard,
   isSubmitting,
+  error,
   onClose,
   onSubmit,
   onNewGuardChange,
@@ -53,7 +56,7 @@ export default function AddGuardModal({
           <CardDescription className="text-slate-500 font-medium">They will use these credentials to log into the gate tablet.</CardDescription>
         </CardHeader>
         <CardContent className="max-h-[calc(100vh-11rem)] overflow-y-auto px-6 pb-0">
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4" noValidate>
             <div className="space-y-1.5">
               <Label htmlFor="add-guard-name" className="font-bold text-slate-700">Full Name</Label>
               <Input
@@ -77,19 +80,6 @@ export default function AddGuardModal({
                 className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 transition-colors rounded-xl"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="add-guard-password" className="font-bold text-slate-700">Initial Password</Label>
-              <Input
-                id="add-guard-password"
-                required
-                type="password"
-                placeholder="Min 8 chars, 1 uppercase, 1 symbol"
-                minLength={8}
-                value={newGuard.password}
-                onChange={(e) => onNewGuardChange({ ...newGuard, password: e.target.value })}
-                className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 transition-colors rounded-xl"
-              />
-            </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="add-guard-gate" className="font-bold text-slate-700">Assign to entry point</Label>
@@ -108,6 +98,43 @@ export default function AddGuardModal({
               </select>
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-1">Select which entry point this guard will manage.</p>
             </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="add-guard-password" className="font-bold text-slate-700">Password</Label>
+              <Input
+                id="add-guard-password"
+                required
+                type="password"
+                autoComplete="new-password"
+                placeholder="Min 8 chars, 1 uppercase, 1 symbol"
+                minLength={8}
+                value={newGuard.password}
+                onChange={(e) => onNewGuardChange({ ...newGuard, password: e.target.value })}
+                className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 transition-colors rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="add-guard-confirm-password" className="font-bold text-slate-700">Confirm Password</Label>
+              <Input
+                id="add-guard-confirm-password"
+                required
+                type="password"
+                autoComplete="new-password"
+                placeholder="Re-enter password"
+                minLength={8}
+                value={newGuard.confirmPassword}
+                onChange={(e) => onNewGuardChange({ ...newGuard, confirmPassword: e.target.value })}
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? "add-guard-error" : undefined}
+                className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 transition-colors rounded-xl"
+              />
+            </div>
+
+            {error && (
+              <p id="add-guard-error" className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700" role="alert">
+                {error}
+              </p>
+            )}
 
             <div className="sticky bottom-0 -mx-6 mt-6 flex items-center justify-end gap-3 border-t border-slate-100 bg-white px-6 py-4">
               <Button type="button" variant="ghost" onClick={onClose} className="h-11 px-6 font-bold text-slate-500 hover:text-slate-900 rounded-xl" disabled={isSubmitting}>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Info, ShieldCheck, Timer, UserCircle } from "lucide-react";
+import { Info, ShieldCheck, Timer } from "lucide-react";
 import { SearchInput } from "@/components/dashboard/shared/Fields";
 import { EmptyState, LoadingSkeleton } from "@/components/dashboard/shared/StateBlocks";
 import { Button } from "@/components/ui/button";
@@ -267,8 +267,8 @@ export default function GuardVisitorsTable({
                           unoptimized
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-600 shrink-0">
-                          <UserCircle className="w-6 h-6" />
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-600 shrink-0 font-bold text-lg">
+                          {visitor.name.charAt(0)}
                         </div>
                       )}
                       
@@ -358,8 +358,8 @@ export default function GuardVisitorsTable({
                                 unoptimized
                               />
                             ) : (
-                              <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-600 shrink-0">
-                                <UserCircle className="w-6 h-6" />
+                              <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100 text-blue-600 shrink-0 font-bold">
+                                {visitor.name.charAt(0)}
                               </div>
                             )}
 

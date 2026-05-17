@@ -8,6 +8,7 @@ import GatesManagementCard from "@/components/dashboard/guards/GatesManagementCa
 import GuardsAccountsCard from "@/components/dashboard/guards/GuardsAccountsCard";
 import GuardsPageHeader from "@/components/dashboard/guards/GuardsPageHeader";
 import GuardsProfileError from "@/components/dashboard/guards/GuardsProfileError";
+import UpdateGuardPasswordModal from "@/components/dashboard/guards/UpdateGuardPasswordModal";
 import { GuardProfile, useCompanyAdminGuards } from "@/hooks/useCompanyAdminGuards";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,11 +20,27 @@ export default function ManageGuards() {
   const guardsPage = useCompanyAdminGuards();
   const [showModal, setShowModal] = useState(false);
   const [showEditGuardModal, setShowEditGuardModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [activeTab, setActiveTab] = useState<SecurityTab>("guards");
 
   const openEditGuardModal = (guard: GuardProfile) => {
     guardsPage.startEditGuard(guard);
     setShowEditGuardModal(true);
+  };
+
+  const openPasswordModal = (guard: GuardProfile) => {
+    guardsPage.startPasswordUpdate(guard);
+    setShowPasswordModal(true);
+  };
+
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    guardsPage.clearPasswordUpdate();
+  };
+
+  const closeAddGuardModal = () => {
+    setShowModal(false);
+    guardsPage.clearCreateGuardFeedback();
   };
 
   if (!guardsPage.companyId && !guardsPage.loading) {
@@ -84,7 +101,9 @@ export default function ManageGuards() {
             guards={guardsPage.guards}
             getGateName={guardsPage.getGateName}
             onEditGuard={openEditGuardModal}
+            onUpdatePassword={openPasswordModal}
             onDeleteGuard={guardsPage.handleDeleteGuard}
+            passwordSuccess={guardsPage.passwordSuccess}
           />
         )}
 
@@ -114,7 +133,8 @@ export default function ManageGuards() {
           gates={guardsPage.gates}
           newGuard={guardsPage.newGuard}
           isSubmitting={guardsPage.isSubmitting}
-          onClose={() => setShowModal(false)}
+          error={guardsPage.createGuardError}
+          onClose={closeAddGuardModal}
           onSubmit={(event) => guardsPage.handleCreateGuard(event, () => setShowModal(false))}
           onNewGuardChange={guardsPage.setNewGuard}
         />
@@ -128,6 +148,17 @@ export default function ManageGuards() {
           onClose={() => setShowEditGuardModal(false)}
           onSubmit={(event) => guardsPage.handleUpdateGuard(event, () => setShowEditGuardModal(false))}
           onEditingGuardDataChange={guardsPage.setEditingGuardData}
+        />
+      )}
+
+      {showPasswordModal && (
+        <UpdateGuardPasswordModal
+          passwordData={guardsPage.passwordData}
+          isUpdatingPassword={guardsPage.isUpdatingPassword}
+          error={guardsPage.passwordError}
+          onClose={closePasswordModal}
+          onSubmit={(event) => guardsPage.handleUpdateGuardPassword(event, () => setShowPasswordModal(false))}
+          onPasswordDataChange={guardsPage.setPasswordData}
         />
       )}
     </PageContainer>

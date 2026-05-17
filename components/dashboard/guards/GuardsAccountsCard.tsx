@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Pencil, Trash2, UserX } from "lucide-react";
+import { KeyRound, Loader2, Pencil, Trash2, UserX } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/shared/StateBlocks";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 type GuardProfile = {
   id: string;
   full_name: string;
+  email?: string | null;
   role: string;
   gate_id: string | null;
 };
@@ -19,7 +20,9 @@ type GuardsAccountsCardProps = {
   guards: GuardProfile[];
   getGateName: (gateId: string | null) => string;
   onEditGuard: (guard: GuardProfile) => void;
+  onUpdatePassword: (guard: GuardProfile) => void;
   onDeleteGuard: (id: string, name: string) => void;
+  passwordSuccess?: string;
 };
 
 export default function GuardsAccountsCard({
@@ -27,7 +30,9 @@ export default function GuardsAccountsCard({
   guards,
   getGateName,
   onEditGuard,
+  onUpdatePassword,
   onDeleteGuard,
+  passwordSuccess,
 }: GuardsAccountsCardProps) {
   return (
     <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
@@ -36,6 +41,11 @@ export default function GuardsAccountsCard({
         <CardDescription>Personnel authorized to manage visitor entry points.</CardDescription>
       </CardHeader>
       <CardContent className="p-0 sm:p-6 sm:pt-0">
+        {passwordSuccess && (
+          <p className="mx-4 mb-4 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 sm:mx-0" role="status">
+            {passwordSuccess}
+          </p>
+        )}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12 text-slate-500">
             <Loader2 className="w-8 h-8 animate-spin mb-3 text-blue-600" />
@@ -60,6 +70,9 @@ export default function GuardsAccountsCard({
                       <div className="font-bold whitespace-nowrap text-slate-900">
                         {guard.full_name}
                       </div>
+                      <div className="mt-1 text-xs font-medium text-slate-500">
+                        {guard.email || "No email recorded"}
+                      </div>
                     </TableCell>
 
                     <TableCell className="whitespace-nowrap">
@@ -76,6 +89,17 @@ export default function GuardsAccountsCard({
                           title="Edit guard"
                         >
                           <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onUpdatePassword(guard)}
+                          className="h-8 rounded-lg px-3 text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-all"
+                          title="Update password"
+                        >
+                          <KeyRound className="h-4 w-4 sm:mr-1.5" />
+                          <span className="hidden sm:inline text-xs font-bold">Update password</span>
+                          <span className="sr-only sm:hidden">Update password</span>
                         </Button>
                         <Button
                           variant="ghost"

@@ -1,12 +1,13 @@
 "use client";
 
-import { Clock, ShieldCheck, X } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ModalShell } from "@/components/dashboard/shared/ModalShell";
 import { canUseHostConfirmation, getHostReviewLabel } from "@/lib/visitor-display";
 
 type Visitor = {
   id: string;
   name: string;
+  document_type?: string;
+  id_number?: string;
   host_name?: string;
   host_confirmed?: boolean;
   purpose?: string;
@@ -28,69 +29,99 @@ export default function VisitInfoModal({
   planTier,
 }: VisitInfoModalProps) {
   if (!visitor) return null;
-  const showHostReview = Boolean(visitor.host_name && canUseHostConfirmation(planTier));
+
+  const showHostReview = Boolean(
+    visitor.host_name && canUseHostConfirmation(planTier)
+  );
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-sm shadow-xl relative border-0 overflow-hidden bg-white max-h-[80vh] overflow-y-auto rounded-2xl">
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-full p-1.5 transition-colors">
-          <X size={18} />
-        </button>
-        <CardHeader className="pt-8 pb-4 border-b border-slate-100">
-          <CardTitle className="text-xl font-bold text-slate-900">Visit Details</CardTitle>
-          <CardDescription className="text-slate-500">Extra information provided by {visitor.name}.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-6 space-y-5 bg-slate-50/50">
-          {visitor.host_name && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Host Name</p>
-              <p className="font-medium text-slate-900 text-lg leading-snug">{visitor.host_name}</p>
-            </div>
-          )}
+    <ModalShell
+      title="Visit Details"
+      description={`Extra information provided by ${visitor.name}.`}
+      onClose={onClose}
+      className="max-w-sm"
+    >
+      <div className="mt-2 space-y-5 rounded-[1.4rem] border border-slate-100 bg-slate-50/50 p-5">
+        {(visitor.document_type || visitor.id_number) && (
+          <div>
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+              ID / Document
+            </p>
+            <p className="break-words text-lg font-bold leading-snug text-slate-900">
+              {visitor.document_type || "Document"} - {visitor.id_number || "N/A"}
+            </p>
+          </div>
+        )}
 
-          {showHostReview && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Host review</p>
-              {visitor.host_confirmed ? (
-                <div className="flex items-center text-emerald-600 font-semibold text-base mt-1">
-                  <ShieldCheck className="w-5 h-5 mr-1.5" />
-                  {getHostReviewLabel(visitor.host_confirmed)}
-                </div>
-              ) : (
-                <div className="flex items-center text-orange-600 font-medium text-base mt-1">
-                  <Clock className="w-5 h-5 mr-1.5" />
-                  {getHostReviewLabel(visitor.host_confirmed)}
-                </div>
-              )}
-            </div>
-          )}
+        {visitor.host_name && (
+          <div>
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+              Host Name
+            </p>
+            <p className="break-words text-lg font-bold leading-snug text-slate-900">
+              {visitor.host_name}
+            </p>
+          </div>
+        )}
 
-          {visitor.purpose && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Purpose of Visit</p>
-              <p className="font-medium text-slate-900 text-lg leading-snug">{visitor.purpose}</p>
-            </div>
-          )}
-          {visitor.vehicle_reg && (
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Vehicle Registration</p>
-              <p className="font-mono font-medium text-slate-900 text-lg leading-snug">{visitor.vehicle_reg}</p>
-            </div>
-          )}
+        {showHostReview && (
+          <div>
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+              Host review
+            </p>
 
-          {visitor.custom_data && Object.entries(visitor.custom_data).map(([fieldId, value]) => {
-            if (!value.trim()) return null;
+            {visitor.host_confirmed ? (
+              <div className="mt-1 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                {getHostReviewLabel(visitor.host_confirmed)}
+              </div>
+            ) : (
+              <div className="mt-1 inline-flex items-center rounded-full border border-orange-200 bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800">
+                {getHostReviewLabel(visitor.host_confirmed)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {visitor.purpose && (
+          <div>
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+              Purpose of Visit
+            </p>
+            <p className="break-words text-lg font-bold leading-snug text-slate-900">
+              {visitor.purpose}
+            </p>
+          </div>
+        )}
+
+        {visitor.vehicle_reg && (
+          <div>
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+              Vehicle Registration
+            </p>
+            <p className="break-words font-mono text-lg font-bold uppercase leading-snug text-slate-900">
+              {visitor.vehicle_reg}
+            </p>
+          </div>
+        )}
+
+        {visitor.custom_data &&
+          Object.entries(visitor.custom_data).map(([fieldId, value]) => {
+            if (!value?.trim()) return null;
+
             const label = customFieldLabels[fieldId] || "Custom Field";
+
             return (
               <div key={fieldId}>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">{label}</p>
-                <p className="font-medium text-slate-900 text-lg leading-snug">{value}</p>
+                <p className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+                  {label}
+                </p>
+                <p className="break-words text-lg font-bold leading-snug text-slate-900">
+                  {value}
+                </p>
               </div>
             );
           })}
-        </CardContent>
-      </Card>
-    </div>
+      </div>
+    </ModalShell>
   );
 }
