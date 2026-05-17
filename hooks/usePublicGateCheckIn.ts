@@ -10,6 +10,92 @@ type CustomField = { id: string; label: string; active: boolean };
 type Department = { id: string; name: string };
 type Host = { id: string; name: string; phone: string; email: string; department_id: string };
 type RedFlag = { id_number?: string | null; phone?: string | null; name?: string | null; reason?: string | null };
+type VisitorFormData = {
+  name: string;
+  phone: string;
+  id_number: string;
+  doc_type: string;
+  host_id: string;
+  purpose: string;
+  vehicle_reg: string;
+};
+type ValidationErrors = Partial<Record<"name" | "phone" | "id_number" | "host_id" | "selfie" | "terms", string>>;
+
+function validateDocumentNumber(docType: string, value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return "Document number is required.";
+  }
+
+  if (docType === "National ID" && !/^\d{7,8}$/.test(trimmedValue)) {
+    return "National ID should be 7 to 8 digits.";
+  }
+
+  if (docType === "Passport" && !/^[A-Za-z0-9]{6,12}$/.test(trimmedValue)) {
+    return "Passport should be 6 to 12 letters or numbers.";
+  }
+
+  if (docType === "Driver's License" && !/^[A-Za-z0-9/-]{5,20}$/.test(trimmedValue)) {
+    return "Driver's License should be 5 to 20 letters, numbers, slash, or hyphen.";
+  }
+
+  return null;
+}
+
+function validatePublicRegistration({
+  visitor,
+  rules,
+  hasSelfie,
+  agreedToTerms,
+}: {
+  visitor: VisitorFormData;
+  rules: {
+    requirePhoto: boolean;
+    askPhone: boolean;
+    askId: boolean;
+    askHost: boolean;
+  };
+  hasSelfie: boolean;
+  agreedToTerms: boolean;
+}) {
+  const errors: ValidationErrors = {};
+  const name = visitor.name.trim();
+  const phoneDigits = visitor.phone.replace(/\D/g, "");
+
+  if (name.length < 2) {
+    errors.name = "Full name must be at least 2 characters.";
+  }
+
+  if (rules.askPhone) {
+    if (!phoneDigits) {
+      errors.phone = "Phone number is required.";
+    } else if (phoneDigits.length < 8 || phoneDigits.length > 15) {
+      errors.phone = "Phone number should have 8 to 15 digits.";
+    } else if (phoneDigits.startsWith("254") && !/^254[71]\d{8}$/.test(phoneDigits)) {
+      errors.phone = "Kenyan numbers should use 2547XXXXXXXX or 2541XXXXXXXX.";
+    }
+  }
+
+  if (rules.askId) {
+    const documentError = validateDocumentNumber(visitor.doc_type, visitor.id_number);
+    if (documentError) errors.id_number = documentError;
+  }
+
+  if (rules.askHost && !visitor.host_id) {
+    errors.host_id = "Please select a host from the list.";
+  }
+
+  if (rules.requirePhoto && !hasSelfie) {
+    errors.selfie = "Security photo is required.";
+  }
+
+  if (!agreedToTerms) {
+    errors.terms = "Please agree to the terms before submitting.";
+  }
+
+  return errors;
+}
 
 export function usePublicGateCheckIn() {
   const params = useParams();
@@ -55,6 +141,7 @@ export function usePublicGateCheckIn() {
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -185,9 +272,15 @@ export function usePublicGateCheckIn() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!agreedToTerms) return alert("You must agree to the Terms and Conditions to proceed.");
-    if (rules.requirePhoto && !selfieFile) return alert("A security photo is required by building management.");
-    if (rules.askHost && !newVisitor.host_id) return alert("Please select a valid host from the dropdown list.");
+    const errors = validatePublicRegistration({
+      visitor: newVisitor,
+      rules,
+      hasSelfie: Boolean(selfieFile),
+      agreedToTerms,
+    });
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) return;
 
     setIsSubmitting(true);
     let uploadedPhotoUrl = null;
@@ -297,6 +390,41 @@ export function usePublicGateCheckIn() {
     }
   };
 
+  const handleNewVisitorChange = (visitor: VisitorFormData) => {
+    setNewVisitor(visitor);
+    setValidationErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+
+      if (visitor.name.trim().length >= 2) delete nextErrors.name;
+      if (visitor.host_id) delete nextErrors.host_id;
+
+      if (visitor.phone.replace(/\D/g, "")) delete nextErrors.phone;
+      if (visitor.id_number.trim()) delete nextErrors.id_number;
+
+      return nextErrors;
+    });
+  };
+
+  const handleSelfieFileChange = (file: File) => {
+    setSelfieFile(file);
+    setValidationErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+      delete nextErrors.selfie;
+      return nextErrors;
+    });
+  };
+
+  const handleAgreedToTermsChange = (value: boolean) => {
+    setAgreedToTerms(value);
+    if (value) {
+      setValidationErrors((currentErrors) => {
+        const nextErrors = { ...currentErrors };
+        delete nextErrors.terms;
+        return nextErrors;
+      });
+    }
+  };
+
   return {
     loading,
     companyName,
@@ -315,15 +443,16 @@ export function usePublicGateCheckIn() {
     selfiePreview,
     isSubmitting,
     agreedToTerms,
+    validationErrors,
     selfieInputRef,
     dropdownRef,
     handleSubmit,
-    setNewVisitor,
+    setNewVisitor: handleNewVisitorChange,
     setHostSearchQuery,
     setIsHostDropdownOpen,
     setCustomAnswers,
-    setSelfieFile,
+    setSelfieFile: handleSelfieFileChange,
     setSelfiePreview,
-    setAgreedToTerms,
+    setAgreedToTerms: handleAgreedToTermsChange,
   };
 }

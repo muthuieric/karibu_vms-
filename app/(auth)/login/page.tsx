@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { AuthCard, AuthShell } from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,14 @@ export default function LoginPage() {
     <AuthShell>
       <AuthCard>
         <div className="text-center mb-8">
+          <Image
+            src="/logo.svg"
+            alt="Karibu VMS logo"
+            width={140}
+            height={46}
+            className="mx-auto mb-6 h-11 w-auto"
+            priority
+          />
           <h1 className="text-3xl font-semibold text-zinc-900 tracking-tight">Welcome back</h1>
           <p className="mt-2 text-zinc-500 text-sm">
             Access your workspace to manage visits, teams, and entry records.

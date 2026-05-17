@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="400" height="120">
+  <g transform="translate(10, 20)">
+    <path d="M15 10 C15 10, 45 0, 75 10 C75 10, 75 50, 45 75 C15 50, 15 10, 15 10 Z" fill="#1e293b" />
+    <path d="M30 15 L30 65" stroke="#2563eb" stroke-width="10" stroke-linecap="round" />
+    <path d="M60 20 L30 45 L60 65" stroke="#2563eb" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <circle cx="65" cy="45" r="8" fill="#10b981" />
+  </g>
+  <g transform="translate(110, 72)" font-family="system-ui, -apple-system, sans-serif">
+    <text x="0" y="0" font-size="48" font-weight="800" fill="#f8fafc" letter-spacing="-1">Karibu</text>
+    <text x="155" y="0" font-size="48" font-weight="300" fill="#2563eb" letter-spacing="-1">VMS</text>
+    <text x="5" y="24" font-size="14" font-weight="500" fill="#94a3b8" letter-spacing="3.5" text-transform="uppercase">Visitor Management</text>
+  </g>
+</svg>

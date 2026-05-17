@@ -47,6 +47,7 @@ function CheckInFormContent() {
       selfiePreview={gate.selfiePreview}
       isSubmitting={gate.isSubmitting}
       agreedToTerms={gate.agreedToTerms}
+      validationErrors={gate.validationErrors}
       selfieInputRef={gate.selfieInputRef}
       dropdownRef={gate.dropdownRef}
       onSubmit={gate.handleSubmit}

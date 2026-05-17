@@ -7,7 +7,6 @@ import {
   Camera,
   CheckCircle2,
   ClipboardCheck,
-  FileText,
   Loader2,
   MapPin,
   Search,
@@ -51,6 +50,8 @@ type VisitorFormData = {
   vehicle_reg: string;
 };
 
+type ValidationErrors = Partial<Record<"name" | "phone" | "id_number" | "host_id" | "selfie" | "terms", string>>;
+
 type Rules = {
   requirePhoto: boolean;
   askPhone: boolean;
@@ -73,6 +74,7 @@ type VisitorCheckInFormProps = {
   selfiePreview: string | null;
   isSubmitting: boolean;
   agreedToTerms: boolean;
+  validationErrors: ValidationErrors;
   selfieInputRef: RefObject<HTMLInputElement | null>;
   dropdownRef: RefObject<HTMLDivElement | null>;
   onSubmit: (event: FormEvent) => void;
@@ -87,6 +89,12 @@ type VisitorCheckInFormProps = {
 
 function RequiredMark() {
   return <span className="text-red-500">*</span>;
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+
+  return <p className="mt-1.5 text-sm font-medium text-red-600">{message}</p>;
 }
 
 function SectionHeader({
@@ -127,6 +135,7 @@ export default function VisitorCheckInForm({
   selfiePreview,
   isSubmitting,
   agreedToTerms,
+  validationErrors,
   selfieInputRef,
   dropdownRef,
   onSubmit,
@@ -175,8 +184,15 @@ export default function VisitorCheckInForm({
 
         {/* Header */}
         <div className="border-b border-slate-100 bg-slate-50 px-5 py-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
-            <Building2 className="h-6 w-6" aria-hidden="true" />
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 p-2">
+            <Image
+              src="/icon.svg"
+              alt="Karibu VMS logo"
+              width={40}
+              height={40}
+              className="h-10 w-10 object-contain"
+              priority
+            />
           </div>
 
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-blue-700">
@@ -196,7 +212,7 @@ export default function VisitorCheckInForm({
         </div>
 
         <CardContent className="p-5 sm:p-6">
-          <form onSubmit={onSubmit} className="space-y-6">
+          <form onSubmit={onSubmit} className="space-y-6" noValidate>
             {/* Section 1 */}
             <section className="space-y-4" aria-labelledby="visitor-details-heading">
               <SectionHeader
@@ -225,6 +241,7 @@ export default function VisitorCheckInForm({
                     className="h-11 rounded-xl border-slate-200 bg-slate-50 text-base focus:bg-white focus:ring-blue-500/20"
                     autoComplete="name"
                   />
+                  <FieldError message={validationErrors.name} />
                 </div>
 
                 {rules.askPhone && (
@@ -251,6 +268,7 @@ export default function VisitorCheckInForm({
                       containerClass="w-full"
                       buttonClass="!border-slate-200 !bg-slate-100 !rounded-l-xl hover:!bg-slate-200"
                     />
+                    <FieldError message={validationErrors.phone} />
                   </div>
                 )}
 
@@ -305,6 +323,7 @@ export default function VisitorCheckInForm({
                         className="h-11 rounded-xl border-slate-200 bg-slate-50 text-base focus:bg-white focus:ring-blue-500/20"
                         autoComplete="off"
                       />
+                      <FieldError message={validationErrors.id_number} />
                     </div>
                   </>
                 )}
@@ -356,6 +375,7 @@ export default function VisitorCheckInForm({
                         value={newVisitor.host_id}
                         onChange={() => {}}
                       />
+                      <FieldError message={validationErrors.host_id} />
 
                       {isHostDropdownOpen && (
                         <div className="absolute z-10 mt-2 max-h-60 w-full overflow-y-auto overflow-x-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
@@ -541,6 +561,7 @@ export default function VisitorCheckInForm({
                       </Button>
                     </div>
                   </div>
+                  <FieldError message={validationErrors.selfie} />
                 </div>
               </section>
             )}
@@ -635,12 +656,13 @@ export default function VisitorCheckInForm({
                   security purposes. <RequiredMark />
                 </Label>
               </div>
+              <FieldError message={validationErrors.terms} />
             </section>
 
             <Button
               type="submit"
               className="h-12 w-full rounded-xl bg-blue-600 text-base font-bold text-white shadow-sm hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/20"
-              disabled={isSubmitting || !agreedToTerms}
+              disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>

@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function PublicFooter() {
@@ -6,10 +7,13 @@ export default function PublicFooter() {
     <footer className="bg-white py-12 border-t border-zinc-100">
       <div className="container mx-auto px-6 max-w-6xl flex flex-col md:flex-row justify-between items-center gap-6">
         <Link href="/" className="flex items-center gap-2">
-           <div className="w-5 h-5 bg-blue-600 rounded-sm flex items-center justify-center">
-              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-           </div>
-           <span className="text-lg font-bold tracking-tight text-zinc-900">karibu-vms</span>
+          <Image
+            src="/logo.svg"
+            alt="Karibu VMS logo"
+            width={120}
+            height={40}
+            className="h-9 w-auto"
+          />
         </Link>
         
         <div className="flex flex-wrap justify-center gap-6 text-sm font-medium text-zinc-500">
@@ -24,7 +28,7 @@ export default function PublicFooter() {
         </div>
 
         <p className="text-sm text-zinc-500">
-          &copy; {new Date().getFullYear()} karibu-vms.
+          &copy; {new Date().getFullYear()} Karibu VMS.
         </p>
       </div>
     </footer>

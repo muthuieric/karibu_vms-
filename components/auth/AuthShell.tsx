@@ -11,9 +11,7 @@ export function AuthShell({ children, wide = false }: AuthShellProps) {
     <div className="min-h-screen bg-zinc-50 flex flex-col">
       {/* Small Header for Home link */}
       <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-10">
-        <Link href="/" className="text-xl font-bold tracking-tight text-zinc-900">
-          karibu-vms
-        </Link>
+     
         <Link href="/" className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors">
           Back to Home
         </Link>
@@ -35,10 +33,8 @@ export function AuthShell({ children, wide = false }: AuthShellProps) {
                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-100 rounded-full opacity-50 mix-blend-multiply translate-y-1/3 -translate-x-1/4"></div>
                
                <div className="relative z-10">
-                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-blue-200 text-blue-700 text-xs font-semibold mb-6 shadow-sm">
-                   <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                   Next-gen VMS
-                 </div>
+               
+               
                  
                  <h3 className="text-3xl font-bold text-zinc-900 mb-8 tracking-tight leading-tight">A cleaner way to manage every visit.</h3>
                  <ul className="space-y-5">

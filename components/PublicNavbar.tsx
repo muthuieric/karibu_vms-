@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import Image from "next/image";
 
 export default function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -13,10 +14,14 @@ export default function PublicNavbar() {
       <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-zinc-100 bg-white/90 backdrop-blur-md">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between max-w-6xl">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-blue-600 rounded-sm flex items-center justify-center">
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-            </div>
-            <span className="text-xl font-bold tracking-tight text-zinc-900">karibu-vms</span>
+            <Image
+              src="/logo.svg"
+              alt="Karibu VMS logo"
+              width={120}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
           </Link>
 
           {/* Desktop Nav */}

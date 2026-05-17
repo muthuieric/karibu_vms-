@@ -1,6 +1,7 @@
 "use client";
 
-import { DoorOpen, LogOutIcon, ScanQrCode, UserPlus2 } from "lucide-react";
+import Image from "next/image";
+import { LogOutIcon, ScanQrCode, UserPlus2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type GuardDashboardHeaderProps = {
@@ -19,8 +20,14 @@ export default function GuardDashboardHeader({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
-          <DoorOpen className="h-6 w-6" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50">
+          <Image
+            src="/icon.svg"
+            alt="Karibu VMS logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain"
+          />
         </div>
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Guard Workspace</p>

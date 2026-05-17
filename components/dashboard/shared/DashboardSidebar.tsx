@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { LogOut, Menu, X } from "lucide-react";
@@ -34,9 +35,13 @@ function SidebarHeader({ brand = "Karibu VMS", subtitle = "Admin" }: { brand?: s
   return (
     <div className="px-5 py-5">
       <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600">
-          <span className="text-xs font-bold text-white">K</span>
-        </div>
+        <Image
+          src="/icon.svg"
+          alt="Karibu VMS logo"
+          width={32}
+          height={32}
+          className="h-8 w-8 shrink-0 object-contain"
+        />
         <div className="flex flex-col">
           <span className="text-sm font-black text-slate-900 leading-none">{brand}</span>
           <span className="mt-1 w-fit rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">{subtitle}</span>

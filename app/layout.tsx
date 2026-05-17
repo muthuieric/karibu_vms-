@@ -16,8 +16,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://karibuvms.com"),
-  title: "Karibu VMS | Enterprise Visitor Management System",
-  description: "Secure your building with Karibu VMS. The modern visitor management system featuring GPS-verified geofencing, dynamic QR codes, manual ID capture, and instant host notifications. Replace paper logbooks with enterprise-grade security.",
+  manifest: "/manifest.webmanifest",
+  title: {
+    default: "Karibu VMS",
+    template: "%s | Karibu VMS",
+  },
+  description:
+    "Karibu VMS is a modern visitor management system for secure visitor check-in, guard workflows, host confirmation, and building access records.",
   keywords: [
     "Visitor Management System",
     "VMS",
@@ -27,16 +32,25 @@ export const metadata: Metadata = {
     "Karibu VMS",
     "Digital Logbook",
   ],
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
-    title: "Karibu VMS | Enterprise Visitor Management System",
-    description: "Secure your building with Karibu VMS. The modern visitor management system featuring GPS-verified geofencing, dynamic QR codes, manual ID capture, and instant host notifications. Replace paper logbooks with enterprise-grade security.",
+    title: "Karibu VMS",
+    description:
+      "A modern visitor management system for secure visitor check-in and building access control.",
     siteName: "Karibu VMS",
     type: "website",
+    images: ["/og-image.png"],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Karibu VMS",
-    description: "Enterprise Visitor Management System",
+    description:
+      "A modern visitor management system for secure visitor check-in and building access control.",
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useEffect, useRef } from "react";
 import { X, Send, HelpCircle } from "lucide-react";
 
@@ -13,10 +14,114 @@ type ChatMessage = {
   };
 };
 
+const PRIVATE_DASHBOARD_RESPONSE =
+  "For security reasons, this action must be done from your dashboard by an authorized user.";
+
+const suggestedQuestions = [
+  "What is Karibu VMS?",
+  "How does visitor self check-in work?",
+  "What can guards do?",
+  "What can admins manage?",
+  "What is included in Basic?",
+  "What is included in Premium?",
+  "Can I assign guards to entry points?",
+  "Can I customize visitor forms?",
+  "Can visitors agree to entry terms?",
+  "Is visitor information secure?",
+  "How do I contact support?",
+];
+
+function includesAny(input: string, keywords: string[]) {
+  return keywords.some((keyword) => input.includes(keyword));
+}
+
+function getProductAnswer(input: string) {
+  if (
+    includesAny(input, [
+      "show today's visitors",
+      "show todays visitors",
+      "today's visitors",
+      "todays visitors",
+      "show visitors",
+      "visitor id numbers",
+      "id numbers",
+      "reset password",
+      "export records",
+      "payment history",
+      "unlock company",
+      "delete visitor",
+    ])
+  ) {
+    return PRIVATE_DASHBOARD_RESPONSE;
+  }
+
+  if (includesAny(input, ["what is karibu", "what is karibu vms", "about karibu", "about karibu vms"])) {
+    return "Karibu VMS is a modern visitor management system for secure check-in, guard workflows, host confirmation, and building access records.";
+  }
+
+  if (includesAny(input, ["self check-in", "self check in", "visitor check-in", "visitor check in", "how does visitor"])) {
+    return "Visitors scan a gate QR code, complete the self check-in form, accept entry terms, and submit their visit details for the security team to review.";
+  }
+
+  if (includesAny(input, ["qr", "code", "registration"])) {
+    return "Each gate can use a QR code for visitor registration, helping visitors open the correct self check-in page for that entry point.";
+  }
+
+  if (includesAny(input, ["guard", "guards", "security team"])) {
+    return "Guards can register visitors, review submitted details, capture required information, manage check-ins, and support checkout at the gate.";
+  }
+
+  if (includesAny(input, ["admin", "dashboard", "manage"])) {
+    return "Admins can manage visitor rules, guards, departments, hosts, entry points, restricted visitor alerts, and visitor access settings from the dashboard.";
+  }
+
+  if (includesAny(input, ["host confirmation", "host confirm", "host approval", "notify host"])) {
+    return "Host confirmation helps notify the right host about a visitor so the visit can be reviewed or approved according to the building workflow.";
+  }
+
+  if (includesAny(input, ["custom form", "custom forms", "visitor rules", "rules", "entry terms", "terms", "consent"])) {
+    return "Admins can configure visitor rules, custom form fields, required photos, host selection, and entry terms so visitors know what they are agreeing to.";
+  }
+
+  if (includesAny(input, ["department", "departments", "hosts"])) {
+    return "Departments and hosts keep people organized, making it easier for visitors and guards to select who is being visited.";
+  }
+
+  if (includesAny(input, ["entry point", "entry points", "gate", "gates", "assign guards"])) {
+    return "Karibu VMS supports multiple gates or entry points, and guards can be assigned to the places where they work.";
+  }
+
+  if (includesAny(input, ["restricted", "blacklist", "alert", "alerts", "denied"])) {
+    return "Restricted visitor alerts help security teams spot people who should not be allowed in, based on records configured by authorized admins.";
+  }
+
+  if (includesAny(input, ["basic", "free"])) {
+    return "Basic includes the core digital visitor workflow for check-in, visitor records, guard use, and essential building access tracking.";
+  }
+
+  if (includesAny(input, ["premium", "otp", "phone verification", "verification"])) {
+    return "Premium adds stronger controls such as advanced rules, host workflows, and OTP phone verification when included in the selected plan.";
+  }
+
+  if (includesAny(input, ["pricing", "price", "cost", "pay", "plan", "subscription"])) {
+    return "Karibu VMS has Basic and Premium options. Basic covers core visitor management, while Premium adds more advanced security and workflow features.";
+  }
+
+  if (includesAny(input, ["privacy", "secure", "security", "data", "records"])) {
+    return "Karibu VMS is designed for authorized access, clear visitor consent, and secure handling of visitor information for access-control purposes.";
+  }
+
+  if (includesAny(input, ["support", "contact", "demo", "sales"])) {
+    return "You can contact support or request a demo from the website. Tell me your organization details and I can help connect you with the team.";
+  }
+
+  return null;
+}
+
 export default function SmartChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 1, text: "Hi, I can help you understand how karibu-vms works, guide you to registration, or connect you with support.", sender: "bot" }
+    { id: 1, text: "Hi, I can answer public questions about Karibu VMS, visitor check-in, guard workflows, admin tools, pricing, privacy, or support.", sender: "bot" }
   ]);
   const [inputValue, setInputValue] = useState("");
   
@@ -71,7 +176,7 @@ export default function SmartChatbot() {
         setFlowState("idle"); // Reset flow
         
         const waText = encodeURIComponent(`*Support Ticket*\nCompany: ${tempData.company}\nIssue: ${problem}`);
-        const waLink = `https://wa.me/254706123513?text=${waText}`;
+        const waLink = `https://wa.me/254702104690?text=${waText}`;
         
         setMessages(prev => [...prev, { 
           id: Date.now(), 
@@ -112,7 +217,7 @@ export default function SmartChatbot() {
         setFlowState("idle"); // Reset flow
         
         const waText = encodeURIComponent(`*New Setup Request*\nName: ${tempData.name}\nOrganization: ${tempData.company}\nLocation: ${tempData.location}\nType: ${industry}\n\n*Note:* Client completed the chatbot intake. Let's get them set up!`);
-        const waLink = `https://wa.me/254706123513?text=${waText}`;
+        const waLink = `https://wa.me/254702104690?text=${waText}`;
         
         setMessages(prev => [...prev, { 
           id: Date.now(), 
@@ -128,16 +233,24 @@ export default function SmartChatbot() {
       // FLOW 3: IDLE KEYWORD RECOGNITION & FALLBACK
       // ==========================================
       const lowerInput = text.toLowerCase();
+      const productAnswer = getProductAnswer(lowerInput);
       
       // Catch Greetings first
       if (lowerInput.match(/\b(hi|hello|hey|hii|heya|greetings)\b/)) {
         setMessages(prev => [...prev, { 
           id: Date.now(), 
-          text: "Hello! 👋 How can I help you today? I can help you understand how karibu-vms works, guide you to registration, or connect you with support.", 
+          text: "Hello. I can help with public Karibu VMS questions about self check-in, guards, admins, pricing, privacy, or support.", 
           sender: "bot" 
         }]);
       }
-      else if (lowerInput.includes("support") || lowerInput.includes("problem") || lowerInput.includes("issue") || lowerInput.includes("ticket") || lowerInput.includes("help") || lowerInput.includes("error")) {
+      else if (productAnswer) {
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: productAnswer,
+          sender: "bot"
+        }]);
+      }
+      else if (lowerInput.includes("problem") || lowerInput.includes("issue") || lowerInput.includes("ticket") || lowerInput.includes("error")) {
         setFlowState("awaiting_problem_company");
         setMessages(prev => [...prev, { 
           id: Date.now(), 
@@ -145,20 +258,6 @@ export default function SmartChatbot() {
           sender: "bot" 
         }]);
       }
-      else if (lowerInput.includes("pric") || lowerInput.includes("cost") || lowerInput.includes("pay") || lowerInput.includes("plan") || lowerInput.includes("subscription")) {
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          text: "Our pricing is transparent and designed to scale with your visitor volume. You only pay for what you use. Type 'Start setup' to get an account and a custom quote!", 
-          sender: "bot"
-        }]);
-      } 
-      else if (lowerInput.includes("how") || lowerInput.includes("work") || lowerInput.includes("feature") || lowerInput.includes("detail") || lowerInput.includes("about")) {
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          text: "karibu-vms replaces manual visitor books with a digital process for check-in, verification, approval, checkout, and visitor records. Everything is managed seamlessly from one place.", 
-          sender: "bot" 
-        }]);
-      } 
       else if (lowerInput.includes("setup") || lowerInput.includes("register") || lowerInput.includes("buy") || lowerInput.includes("trial") || lowerInput.includes("sales") || lowerInput.includes("start")) {
         setFlowState("awaiting_reg_name");
         setMessages(prev => [...prev, { 
@@ -170,7 +269,7 @@ export default function SmartChatbot() {
       // FALLBACK: WhatsApp Routing for unknown questions
       else {
         const waText = encodeURIComponent(`Hi, I have a question from the website: "${text}"`);
-        const waLink = `https://wa.me/254706123513?text=${waText}`;
+        const waLink = `https://wa.me/254702104690?text=${waText}`;
 
         setMessages(prev => [...prev, { 
           id: Date.now(), 
@@ -189,9 +288,8 @@ export default function SmartChatbot() {
   };
 
   const quickActions = [
-    { label: "Get help", text: "I need help with an issue" },
-    { label: "Ask about pricing", text: "Tell me about pricing" },
-    { label: "Start setup", text: "I want to start setup" }
+    ...suggestedQuestions.map((question) => ({ label: question, text: question })),
+    { label: "Start setup", text: "I want to start setup" },
   ];
 
   return (
@@ -208,8 +306,14 @@ export default function SmartChatbot() {
           {/* Chat Header */}
           <div className="bg-white border-b border-zinc-100 p-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold tracking-tighter text-sm shrink-0 border border-blue-100">
-                k.
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100 p-1.5">
+                <Image
+                  src="/icon.svg"
+                  alt="Karibu VMS logo"
+                  width={30}
+                  height={30}
+                  className="h-7 w-7 object-contain"
+                />
               </div>
               <div>
                 <h2 id="karibu-support-chat-title" className="font-semibold text-sm text-zinc-900">karibu-vms Support</h2>
@@ -296,20 +400,24 @@ export default function SmartChatbot() {
       <button 
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        aria-label={isOpen ? "Close support chat" : "Open support chat"}
+        aria-label={isOpen ? "Close Karibu VMS assistant" : "Open Karibu VMS assistant"}
         aria-controls="karibu-support-chat"
         aria-expanded={isOpen}
         className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border transition-all duration-300 hover:scale-105 active:scale-95 ${
-          isOpen ? "bg-white border-zinc-200 rotate-90" : "bg-blue-600 border-transparent shadow-blue-500/30"
+          isOpen ? "bg-white border-blue-100 rotate-90" : "bg-blue-600 border-transparent shadow-blue-500/30"
         }`}
       >
         {isOpen ? (
-          <X className="text-zinc-900 w-6 h-6" />
+          <X className="text-blue-700 w-6 h-6" />
         ) : (
-          <div className="w-full h-full rounded-full flex items-center justify-center text-white font-bold text-lg">
-            <span aria-hidden="true">k.</span>
-            <span className="sr-only">Open support chat</span>
-          </div>
+          <Image
+            src="/icon.svg"
+            alt=""
+            width={30}
+            height={30}
+            className="h-8 w-8 object-contain"
+            aria-hidden="true"
+          />
         )}
       </button>
 

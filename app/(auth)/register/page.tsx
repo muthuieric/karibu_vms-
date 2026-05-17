@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,14 @@ export default function RegisterPage() {
     return (
       <AuthShell>
         <div className="text-center space-y-6">
+          <Image
+            src="/logo.svg"
+            alt="Karibu VMS logo"
+            width={140}
+            height={46}
+            className="mx-auto h-11 w-auto"
+            priority
+          />
           <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-blue-100">
             <span className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">✓</span>
           </div>
@@ -37,6 +46,14 @@ export default function RegisterPage() {
         <div className="w-full space-y-8">
           
           <div className="text-left">
+            <Image
+              src="/logo.svg"
+              alt="Karibu VMS logo"
+              width={140}
+              height={46}
+              className="mb-6 h-11 w-auto"
+              priority
+            />
             <h2 className="text-3xl font-semibold text-zinc-900 tracking-tight">Create your workspace</h2>
             <p className="text-zinc-500 mt-2 text-sm">Set up your organization so your team can manage visitor entry from one place.</p>
           </div>
@@ -52,7 +69,7 @@ export default function RegisterPage() {
                   <Input 
                     id="companyName"
                     required 
-                    placeholder="e.g. Skyline Towers" 
+                    placeholder="e.g.Luffi Tech" 
                     className="h-11 rounded-xl border-zinc-200 focus:border-blue-500 focus:ring-blue-500/20 bg-zinc-50 focus:bg-white px-4 text-zinc-900 transition-colors"
                     value={formData.companyName}
                     onChange={(e) => setFormData({...formData, companyName: e.target.value})}
