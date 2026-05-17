@@ -9,25 +9,46 @@ import PaymentHistoryCard from "@/components/dashboard/company-admin/billing/Pay
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { BadgeCheck, UsersRound, WalletCards } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { calculateMonthlyCharge } from "@/lib/billing/pricing";
 
 type Transaction = {
   id: string;
   created_at: string;
   amount: number;
   tracking_id: string;
+  provider_reference?: string | null;
+  checkout_request_id?: string | null;
+  provider?: string | null;
   status: string;
+  plan_name?: string | null;
+};
+
+type BillingSummary = {
+  periodStart: string;
+  periodEnd: string;
+  planName: string;
+  pendingPlanTier?: string | null;
+  planChangeEffectiveAt?: string | null;
+  visitorCount: number;
+  includedVisitors: number;
+  extraVisitors: number;
+  basePrice: number;
+  extraVisitorRate: number;
+  extraVisitorCharges: number;
+  totalAmount: number;
+  amountPaid: number;
+  currentBalance: number;
+  company?: { contact_phone?: string | null };
 };
 
 export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState<string | null>(null);
   
-  // Synchronized Billing States
-  const [visitorCount, setVisitorCount] = useState(0);
-  const [amountDue, setAmountDue] = useState(0);
-  const [periodStart, setPeriodStart] = useState<Date | null>(null);
+  const [summary, setSummary] = useState<BillingSummary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isPaying, setIsPaying] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   useEffect(() => {
     const fetchBillingData = async () => {
@@ -43,46 +64,23 @@ export default function BillingPage() {
       if (profile?.company_id) {
         setCompanyId(profile.company_id);
 
-        // 1. Fetch All Transactions for History Table
         const { data: txData } = await supabase
           .from("transactions")
-          .select("*")
+          .select("id, created_at, amount, tracking_id, provider_reference, checkout_request_id, provider, status, plan_name")
           .eq("company_id", profile.company_id)
           .order("created_at", { ascending: false });
 
         setTransactions(txData || []);
 
-        // 2. SYNCHRONIZED CALCULATION LOGIC
-        const { data: company } = await supabase.from("companies").select("created_at").eq("id", profile.company_id).single();
-        let countStartDate = company?.created_at || new Date(0).toISOString();
-        let displayStartDate = new Date(countStartDate);
+        const summaryResponse = await fetch(`/api/billing/current?companyId=${profile.company_id}`);
+        const billingSummary = await summaryResponse.json();
 
-        if (txData && txData.length > 0) {
-          // Find the latest successful payment
-          const lastPaid = txData.find(tx => 
-            tx.status && (tx.status.toUpperCase() === 'COMPLETED' || tx.status.toUpperCase() === 'SUCCESS' || tx.status.toUpperCase() === 'PAID')
-          );
-
-          if (lastPaid) {
-            countStartDate = lastPaid.created_at;
-            displayStartDate = new Date(lastPaid.created_at);
-          }
+        if (!summaryResponse.ok) {
+          throw new Error(billingSummary.error || "Failed to load billing summary.");
         }
-        
-        setPeriodStart(displayStartDate);
 
-        // 3. Count UNPAID visitors since the calculated reset date
-        const { count } = await supabase
-          .from("visitors")
-          .select("*", { count: "exact", head: true })
-          .eq("company_id", profile.company_id)
-          .gte("created_at", countStartDate);
-
-        const unpaidVisitors = count || 0;
-        setVisitorCount(unpaidVisitors);
-        
-        // 4. Calculate Total Due
-        setAmountDue(unpaidVisitors * 3); // 3 KES per visitor
+        setSummary(billingSummary);
+        setPhoneNumber(billingSummary.company?.contact_phone || "");
       }
       setLoading(false);
     };
@@ -95,21 +93,19 @@ export default function BillingPage() {
     setIsPaying(true);
 
     try {
-      // NOTE ON SECURITY: 
-      // Passing the amount from the frontend can be manipulated in DevTools. 
-      // Your backend (/api/payments/pesapal/initiate) MUST replicate the visitor * 3 calculation 
-      // securely and ignore the amount passed here to guarantee zero financial loss.
-      const response = await fetch("/api/payments/pesapal/initiate", {
+      const response = await fetch("/api/payhero/initiate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyId, amount: amountDue }), 
+        body: JSON.stringify({ companyId, phoneNumber }),
       });
 
       const data = await response.json();
-      if (data.redirect_url) {
-        window.location.href = data.redirect_url;
+      if (response.ok) {
+        alert(data.message || "M-Pesa prompt sent. Complete the payment on your phone.");
+        const summaryResponse = await fetch(`/api/billing/current?companyId=${companyId}`);
+        if (summaryResponse.ok) setSummary(await summaryResponse.json());
       } else {
-        alert("Payment initialization failed.");
+        alert(data.error || "Payment initialization failed.");
       }
     } catch (error) {
       console.error(error);
@@ -117,6 +113,16 @@ export default function BillingPage() {
     } finally {
       setIsPaying(false);
     }
+  };
+
+  const fallbackSummary = summary ?? {
+    periodStart: new Date().toISOString(),
+    periodEnd: new Date().toISOString(),
+    pendingPlanTier: null,
+    planChangeEffectiveAt: null,
+    amountPaid: 0,
+    currentBalance: 0,
+    ...calculateMonthlyCharge("basic", 0),
   };
 
   const formatDate = (date: Date | string) => {
@@ -135,9 +141,9 @@ export default function BillingPage() {
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { label: "Current Balance", value: `KES ${amountDue.toLocaleString()}`, icon: WalletCards, tone: amountDue > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
-              { label: "Visitor Count", value: visitorCount.toLocaleString(), icon: UsersRound, tone: "text-blue-600 bg-blue-50 border-blue-100" },
-              { label: "Account Status", value: amountDue > 0 ? "Pending payment" : "Settled", icon: BadgeCheck, tone: amountDue > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
+              { label: "Current Balance", value: `KES ${fallbackSummary.currentBalance.toLocaleString()}`, icon: WalletCards, tone: fallbackSummary.currentBalance > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
+              { label: "Visitors This Period", value: fallbackSummary.visitorCount.toLocaleString(), icon: UsersRound, tone: "text-blue-600 bg-blue-50 border-blue-100" },
+              { label: "Account Status", value: fallbackSummary.currentBalance > 0 ? "Pending payment" : "Settled", icon: BadgeCheck, tone: fallbackSummary.currentBalance > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
             ].map((item) => {
               const Icon = item.icon;
               return (
@@ -159,9 +165,9 @@ export default function BillingPage() {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div className="lg:col-span-1 space-y-6">
             <CurrentStatementCard
-              amountDue={amountDue}
-              visitorCount={visitorCount}
-              periodStart={periodStart}
+              summary={fallbackSummary}
+              phoneNumber={phoneNumber}
+              onPhoneNumberChange={setPhoneNumber}
               isPaying={isPaying}
               formatDate={formatDate}
               onPayment={handlePayment}

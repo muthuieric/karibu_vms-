@@ -301,7 +301,16 @@ export default function GuardVisitorsTable({
                       </div>
                     </div>
 
-                    <div className="pt-2">
+                    <div className="pt-2 flex flex-col gap-2">
+                      {hasExtraInfo && (
+                        <button
+                          onClick={() => onInfoClick(visitor)}
+                          className="w-full px-4 py-2.5 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors"
+                          aria-label={`View details for ${visitor.name}`}
+                        >
+                          View details
+                        </button>
+                      )}
                       {renderActions(visitor)}
                     </div>
                   </div>
@@ -357,16 +366,6 @@ export default function GuardVisitorsTable({
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold whitespace-nowrap text-slate-900">{visitor.name}</span>
-
-                                {hasExtraInfo && (
-                                  <button
-                                    onClick={() => onInfoClick(visitor)}
-                                    className="text-blue-600 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-full transition-colors shrink-0 shadow-sm border border-blue-100"
-                                    title="View Visit Info"
-                                  >
-                                    <Info className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
                               </div>
                               <p className="mt-1 text-xs font-medium text-slate-500">{visitor.host_name ? `Host: ${visitor.host_name}` : "Walk-in entry"}</p>
                             </div>
@@ -383,7 +382,18 @@ export default function GuardVisitorsTable({
                         </TableCell>
 
                         <TableCell className="text-right">
-                          {renderActions(visitor)}
+                          <div className="flex items-center justify-end gap-2">
+                            {hasExtraInfo && (
+                              <button
+                                onClick={() => onInfoClick(visitor)}
+                                className="px-3 py-1.5 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors whitespace-nowrap"
+                                aria-label={`View details for ${visitor.name}`}
+                              >
+                                View details
+                              </button>
+                            )}
+                            {renderActions(visitor)}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

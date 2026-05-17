@@ -34,6 +34,8 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   completed: { label: "Completed", variant: "success" },
   paid: { label: "Paid", variant: "success" },
   failed: { label: "Failed", variant: "error" },
+  cancelled: { label: "Cancelled", variant: "error" },
+  reversed: { label: "Reversed", variant: "error" },
   expired: { label: "Expired", variant: "error" },
   unpaid: { label: "Unpaid", variant: "error" },
   pending: { label: "Pending", variant: "pending" },

@@ -18,8 +18,11 @@ type Company = {
   name: string;
   subscription_status: "trial" | "paid" | "unpaid";
   amount_paid: number;
+  current_balance?: number | null;
   is_locked: boolean;
   subscription_ends_at: string | null;
+  plan_tier?: string | null;
+  pending_plan_tier?: string | null;
 };
 
 function getBillingStatus(company: Company) {
@@ -40,7 +43,7 @@ export default function SuperadminBillingPage() {
 
     const { data, error } = await supabase
       .from("companies")
-      .select("id, name, subscription_status, amount_paid, is_locked, created_at, subscription_ends_at")
+      .select("id, name, subscription_status, amount_paid, current_balance, is_locked, created_at, subscription_ends_at, plan_tier, pending_plan_tier")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -53,6 +56,7 @@ export default function SuperadminBillingPage() {
       ...company,
       subscription_status: (company.subscription_status?.toLowerCase() || "trial") as Company["subscription_status"],
       amount_paid: company.amount_paid || 0,
+      current_balance: company.current_balance || 0,
       is_locked: company.is_locked || false,
     }));
 
@@ -145,7 +149,9 @@ export default function SuperadminBillingPage() {
                   <TableRow>
                     <TableHead className="pl-6">Workspace</TableHead>
                     <TableHead>Valid Until</TableHead>
+                    <TableHead>Plan</TableHead>
                     <TableHead>Account Status</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
                     <TableHead className="pr-6 text-right">Total Paid</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -171,8 +177,15 @@ export default function SuperadminBillingPage() {
                             <span className="text-slate-400">No active period</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-sm font-semibold capitalize text-slate-600">
+                          {company.plan_tier || "basic"}
+                          {company.pending_plan_tier ? <span className="ml-1 text-xs text-blue-600">next: {company.pending_plan_tier}</span> : null}
+                        </TableCell>
                         <TableCell>
                           <StatusBadge status={status}>{status}</StatusBadge>
+                        </TableCell>
+                        <TableCell className="text-right text-sm font-bold text-orange-600">
+                          KES {Number(company.current_balance || 0).toLocaleString()}
                         </TableCell>
                         <TableCell className="pr-6 text-right text-sm font-bold text-emerald-600">
                           KES {company.amount_paid.toLocaleString()}
@@ -213,6 +226,10 @@ export default function SuperadminBillingPage() {
                         )}
                       </div>
                       <StatusBadge status={status}>{status}</StatusBadge>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="font-semibold capitalize text-slate-600">{company.plan_tier || "basic"}</span>
+                      <span className="font-bold text-orange-600">Balance KES {Number(company.current_balance || 0).toLocaleString()}</span>
                     </div>
                   </div>
                 );

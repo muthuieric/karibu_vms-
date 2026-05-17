@@ -9,7 +9,11 @@ type Transaction = {
   created_at: string;
   amount: number;
   tracking_id: string;
+  provider_reference?: string | null;
+  checkout_request_id?: string | null;
+  provider?: string | null;
   status: string;
+  plan_name?: string | null;
 };
 
 type PaymentHistoryCardProps = {
@@ -55,7 +59,7 @@ export default function PaymentHistoryCard({ transactions, formatDate }: Payment
                   if (statusUpper === "COMPLETED" || statusUpper === "SUCCESS" || statusUpper === "PAID") {
                     StatusIcon = CheckCircle2;
                     statusColor = "text-emerald-700 bg-emerald-50 border-emerald-200";
-                  } else if (statusUpper === "FAILED" || statusUpper === "CANCELLED") {
+                  } else if (statusUpper === "FAILED" || statusUpper === "CANCELLED" || statusUpper === "REVERSED") {
                     StatusIcon = XCircle;
                     statusColor = "text-red-700 bg-red-50 border-red-200";
                   }
@@ -71,7 +75,7 @@ export default function PaymentHistoryCard({ transactions, formatDate }: Payment
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-xs font-bold text-slate-500">
-                        {tx.tracking_id || "—"}
+                        {tx.provider_reference || tx.checkout_request_id || tx.tracking_id || "—"}
                       </TableCell>
                       <TableCell className="font-bold text-slate-900 whitespace-nowrap text-right">
                         KES {Number(tx.amount || 0).toLocaleString()}

@@ -184,11 +184,16 @@ export function useSuperadminCompanies() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companyId, planTier: newTier }),
       });
+      const result = await res.json();
       if (res.ok) {
-        setCompanies((prev) => prev.map((company) => (company.id === companyId ? { ...company, plan_tier: newTier } : company)));
-        alert(`Success! The company plan has been updated to ${newTier.toUpperCase()}.`);
+        setCompanies((prev) => prev.map((company) => (company.id === companyId ? { ...company, plan_tier: result.newTier } : company)));
+        alert(
+          result.pendingTier
+            ? `${result.pendingTier.toUpperCase()} will start on the next billing cycle. Current invoices stay on ${result.newTier.toUpperCase()}.`
+            : `Success! The company plan has been updated to ${result.newTier.toUpperCase()}.`
+        );
       } else {
-        alert("Failed to update plan");
+        alert(result.error || "Failed to update plan");
       }
     } catch (err) {
       console.error(err);

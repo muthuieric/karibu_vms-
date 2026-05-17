@@ -1,26 +1,45 @@
 "use client";
 
-import { Calendar, CheckCircle2, Loader2, Receipt, WalletCards } from "lucide-react";
+import { Calendar, CheckCircle2, Loader2, Receipt, Smartphone, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { getPlanLabel } from "@/lib/billing/pricing";
 
 type CurrentStatementCardProps = {
-  amountDue: number;
-  visitorCount: number;
-  periodStart: Date | null;
+  summary: {
+    periodStart: string;
+    periodEnd: string;
+    planName: string;
+    pendingPlanTier?: string | null;
+    planChangeEffectiveAt?: string | null;
+    visitorCount: number;
+    includedVisitors: number;
+    extraVisitors: number;
+    basePrice: number;
+    extraVisitorRate: number;
+    extraVisitorCharges: number;
+    totalAmount: number;
+    amountPaid: number;
+    currentBalance: number;
+  };
+  phoneNumber: string;
+  onPhoneNumberChange: (value: string) => void;
   isPaying: boolean;
   formatDate: (date: Date | string) => string;
   onPayment: () => void;
 };
 
 export default function CurrentStatementCard({
-  amountDue,
-  visitorCount,
-  periodStart,
+  summary,
+  phoneNumber,
+  onPhoneNumberChange,
   isPaying,
   formatDate,
   onPayment,
 }: CurrentStatementCardProps) {
+  const amountDue = summary.currentBalance;
+
   return (
     <Card className="shadow-sm border-slate-100 rounded-[1.4rem] h-fit overflow-hidden bg-white">
       <CardHeader className="pb-4 bg-white">
@@ -44,21 +63,45 @@ export default function CurrentStatementCard({
         <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex items-center justify-between text-sm">
           <div className="flex items-center gap-2 text-slate-500 font-bold">
             <Calendar className="w-4 h-4" />
-            <span>Period Start</span>
+            <span>Billing Period</span>
           </div>
           <span className="font-bold text-slate-900">
-            {periodStart ? formatDate(periodStart) : "N/A"}
+            {formatDate(summary.periodStart)} - {formatDate(new Date(new Date(summary.periodEnd).getTime() - 1))}
           </span>
         </div>
 
         <div className="space-y-4">
           <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-500 font-bold">Visitor Count</span>
-            <span className="text-slate-900 font-bold text-base">{visitorCount}</span>
+            <span className="text-slate-500 font-bold">Plan</span>
+            <span className="text-slate-900 font-bold text-base">{getPlanLabel(summary.planName)}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-500 font-bold">Visitor Rate</span>
-            <span className="text-slate-900 font-bold text-base">KES 3.00</span>
+            <span className="text-slate-500 font-bold">Included Visitors</span>
+            <span className="text-slate-900 font-bold text-base">{summary.includedVisitors.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-500 font-bold">Used Visitors</span>
+            <span className="text-slate-900 font-bold text-base">{summary.visitorCount.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-500 font-bold">Extra Visitors</span>
+            <span className="text-slate-900 font-bold text-base">{summary.extraVisitors.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-500 font-bold">Base Price</span>
+            <span className="text-slate-900 font-bold text-base">KES {summary.basePrice.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-500 font-bold">Extra Visitor Rate</span>
+            <span className="text-slate-900 font-bold text-base">KES {summary.extraVisitorRate.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-500 font-bold">Extra Visitor Charges</span>
+            <span className="text-slate-900 font-bold text-base">KES {summary.extraVisitorCharges.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-slate-500 font-bold">Paid This Period</span>
+            <span className="text-slate-900 font-bold text-base">KES {summary.amountPaid.toLocaleString()}</span>
           </div>
 
           <div className="pt-4">
@@ -71,9 +114,29 @@ export default function CurrentStatementCard({
           </div>
         </div>
 
+        {summary.pendingPlanTier && summary.planChangeEffectiveAt && (
+          <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs font-bold text-blue-700">
+            {getPlanLabel(summary.pendingPlanTier)} starts on {formatDate(summary.planChangeEffectiveAt)}.
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm font-bold text-slate-600">
+            <Smartphone className="h-4 w-4" />
+            M-Pesa Phone Number
+          </label>
+          <Input
+            value={phoneNumber}
+            onChange={(event) => onPhoneNumberChange(event.target.value)}
+            placeholder="07XXXXXXXX"
+            inputMode="tel"
+            className="h-11 rounded-xl border-slate-200 font-semibold"
+          />
+        </div>
+
         <Button
           onClick={onPayment}
-          disabled={isPaying || amountDue <= 0}
+          disabled={isPaying || amountDue <= 0 || !phoneNumber.trim()}
           className={`w-full font-bold h-12 shadow-sm rounded-xl transition-all active:scale-[0.98] ${
             amountDue > 0
               ? "bg-blue-600 hover:bg-blue-700 text-white"
@@ -85,7 +148,7 @@ export default function CurrentStatementCard({
           ) : amountDue <= 0 ? (
             <><CheckCircle2 className="w-5 h-5 mr-2" /> Account Settled</>
           ) : (
-            <><WalletCards className="w-5 h-5 mr-2" /> Pay KES {amountDue.toLocaleString()}</>
+            <><WalletCards className="w-5 h-5 mr-2" /> Pay with M-Pesa</>
           )}
         </Button>
 

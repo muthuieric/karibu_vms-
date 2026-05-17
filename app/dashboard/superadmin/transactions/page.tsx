@@ -19,6 +19,10 @@ type Transaction = {
   created_at: string;
   amount: number;
   tracking_id: string;
+  provider_reference: string | null;
+  checkout_request_id: string | null;
+  provider: string | null;
+  plan_name: string | null;
   status: string;
   companies: { name: string } | null;
 };
@@ -30,7 +34,7 @@ type TransactionRow = Omit<Transaction, "companies"> & {
 function normalizeStatus(status: string) {
   const normalized = status.toLowerCase();
   if (normalized === "completed" || normalized === "success" || normalized === "paid") return "completed";
-  if (normalized === "failed") return "failed";
+  if (normalized === "failed" || normalized === "cancelled" || normalized === "reversed") return "failed";
   if (normalized === "pending") return "pending";
   return normalized;
 }
@@ -50,7 +54,7 @@ export default function SuperadminTransactionsPage() {
     try {
       const { data: txData, error: txError } = await supabase
         .from("transactions")
-        .select("id, created_at, amount, tracking_id, status, companies(name)")
+        .select("id, created_at, amount, tracking_id, provider_reference, checkout_request_id, provider, plan_name, status, companies(name)")
         .order("created_at", { ascending: false });
 
       if (txError) throw txError;
@@ -60,6 +64,10 @@ export default function SuperadminTransactionsPage() {
         created_at: tx.created_at,
         amount: tx.amount,
         tracking_id: tx.tracking_id,
+        provider_reference: tx.provider_reference,
+        checkout_request_id: tx.checkout_request_id,
+        provider: tx.provider,
+        plan_name: tx.plan_name,
         status: tx.status,
         companies: Array.isArray(tx.companies) ? tx.companies[0] : tx.companies,
       }));
@@ -140,7 +148,7 @@ export default function SuperadminTransactionsPage() {
 
       <DataTableShell
         title="Payment History"
-        description="Real-time PesaPal receipts across the platform."
+        description="Real-time PayHero receipts across the platform."
         filters={
           <div className="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] lg:w-[42rem]">
             <SearchInput
@@ -174,7 +182,8 @@ export default function SuperadminTransactionsPage() {
                     <TableHead className="pl-6">Date & Time</TableHead>
                     <TableHead>Workspace</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Tracking ID</TableHead>
+                    <TableHead>PayHero Reference</TableHead>
+                    <TableHead>Plan</TableHead>
                     <TableHead className="pr-6">Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -197,7 +206,12 @@ export default function SuperadminTransactionsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="font-bold text-emerald-600">KES {tx.amount.toLocaleString()}</TableCell>
-                      <TableCell className="font-mono text-xs tracking-tight text-slate-500">{tx.tracking_id}</TableCell>
+                      <TableCell className="font-mono text-xs tracking-tight text-slate-500">
+                        {tx.provider_reference || tx.checkout_request_id || tx.tracking_id}
+                      </TableCell>
+                      <TableCell className="text-sm font-semibold capitalize text-slate-600">
+                        {tx.plan_name || "Legacy"}
+                      </TableCell>
                       <TableCell className="pr-6">
                         <StatusBadge status={normalizeStatus(tx.status)}>{tx.status}</StatusBadge>
                       </TableCell>
@@ -230,7 +244,9 @@ export default function SuperadminTransactionsPage() {
 
                   <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ref ID</span>
-                    <span className="font-mono text-xs tracking-tight text-slate-600">{tx.tracking_id}</span>
+                    <span className="font-mono text-xs tracking-tight text-slate-600">
+                      {tx.provider_reference || tx.checkout_request_id || tx.tracking_id}
+                    </span>
                   </div>
                 </div>
               ))}
