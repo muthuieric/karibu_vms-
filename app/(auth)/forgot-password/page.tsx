@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { Loader2, Mail, ArrowRight, ShieldCheck, Building2 } from "lucide-react";
+import { Loader2, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,8 +38,14 @@ export default function ForgotPasswordPage() {
     <AuthShell>
       <div className="w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto w-12 h-12 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-md">
-            <Building2 className="w-6 h-6 text-white" />
+          <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 p-2 shadow-md">
+            <Image
+              src="/icon.svg"
+              alt="Karibu VMS logo"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain"
+            />
           </div>
           <h2 className="text-3xl font-bold text-text-main tracking-tight">Reset Password</h2>
           <p className="text-text-muted mt-2 text-sm">Enter your admin email to receive a recovery link.</p>

@@ -1,6 +1,7 @@
 "use client";
 
-import { KeyRound, Loader2, Pencil, Trash2, UserX } from "lucide-react";
+import Image from "next/image";
+import { Loader2, Pencil, Trash2, UserX } from "lucide-react";
 import { EmptyState } from "@/components/dashboard/shared/StateBlocks";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -97,7 +98,14 @@ export default function GuardsAccountsCard({
                           className="h-8 rounded-lg px-3 text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-all"
                           title="Update password"
                         >
-                          <KeyRound className="h-4 w-4 sm:mr-1.5" />
+                          <Image
+                            src="/icon.svg"
+                            alt=""
+                            width={32}
+                            height={32}
+                            className="h-4 w-4 object-contain sm:mr-1.5"
+                            aria-hidden="true"
+                          />
                           <span className="hidden sm:inline text-xs font-bold">Update password</span>
                           <span className="sr-only sm:hidden">Update password</span>
                         </Button>

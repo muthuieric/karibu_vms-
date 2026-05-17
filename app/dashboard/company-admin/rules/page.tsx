@@ -258,8 +258,20 @@ export default function BuildingRulesPage() {
                     disabled={rules.updatingRules}
                     className="w-full h-11 rounded-xl border-blue-200 text-blue-700 font-bold hover:bg-blue-50 disabled:opacity-100"
                   >
-                    <Crosshair className="w-4 h-4 mr-2" /> Use current location
+                    <Crosshair className="w-4 h-4 mr-2" /> Use my current location
                   </Button>
+
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm text-slate-600">
+                    <p className="font-bold text-slate-900">Saved allowed location</p>
+                    <div className="mt-2 grid gap-1 text-xs font-medium sm:grid-cols-2">
+                      <p>Latitude: <span className="font-bold text-slate-800">{rules.latitude || "Not set"}</span></p>
+                      <p>Longitude: <span className="font-bold text-slate-800">{rules.longitude || "Not set"}</span></p>
+                      <p>Allowed radius: <span className="font-bold text-slate-800">{rules.radius || "200"} meters</span></p>
+                      {rules.locationAccuracy !== null && (
+                        <p>Device accuracy: <span className="font-bold text-slate-800">~{Math.round(rules.locationAccuracy)} meters</span></p>
+                      )}
+                    </div>
+                  </div>
 
                   <div className="space-y-1.5 pt-2">
                     <Label htmlFor="allowed-radius" className="font-bold text-slate-700 text-xs uppercase tracking-wider">Allowed radius (Meters)</Label>

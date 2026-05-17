@@ -26,6 +26,7 @@ export function useBuildingRules() {
   const [latitude, setLatitude] = useState<string>("");
   const [longitude, setLongitude] = useState<string>("");
   const [radius, setRadius] = useState<string>("200");
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchRules = async () => {
@@ -134,13 +135,18 @@ export function useBuildingRules() {
       (position) => {
         setLatitude(position.coords.latitude.toString());
         setLongitude(position.coords.longitude.toString());
-        setMessage({ type: "success", text: "Location coordinates updated! Remember to save." });
+        setLocationAccuracy(position.coords.accuracy);
+        setMessage({ type: "success", text: "Location coordinates updated from this device. Review them below, then save." });
       },
       (error) => {
         console.error("Error getting location:", error);
-        setMessage({ type: "error", text: "Failed to get location. Please allow location access in your browser." });
+        if (error.code === error.PERMISSION_DENIED) {
+          setMessage({ type: "error", text: "Please allow location access to continue." });
+        } else {
+          setMessage({ type: "error", text: "Failed to get location. Move near the entrance, enable precise location, then try again." });
+        }
       },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -148,14 +154,31 @@ export function useBuildingRules() {
     if (!companyId) return;
     setMessage(null);
     setUpdatingRules(true);
+    const parsedLatitude = latitude ? parseFloat(latitude) : null;
+    const parsedLongitude = longitude ? parseFloat(longitude) : null;
+    const parsedRadius = radius ? parseInt(radius, 10) : 200;
+
+    if (
+      enableGeofence &&
+      (
+        parsedLatitude === null ||
+        parsedLongitude === null ||
+        Number.isNaN(parsedLatitude) ||
+        Number.isNaN(parsedLongitude)
+      )
+    ) {
+      setMessage({ type: "error", text: "Add valid latitude and longitude before enabling location verification." });
+      setUpdatingRules(false);
+      return;
+    }
 
     const { error } = await supabase
       .from("companies")
       .update({
         enable_geofence: enableGeofence,
-        lat: latitude ? parseFloat(latitude) : null,
-        lng: longitude ? parseFloat(longitude) : null,
-        geofence_radius: radius ? parseInt(radius) : 200
+        lat: parsedLatitude,
+        lng: parsedLongitude,
+        geofence_radius: Number.isNaN(parsedRadius) ? 200 : parsedRadius
       })
       .eq("id", companyId);
 
@@ -192,6 +215,7 @@ export function useBuildingRules() {
     latitude, setLatitude,
     longitude, setLongitude,
     radius, setRadius,
+    locationAccuracy,
     handleFetchLocation,
     handleSaveGeofence
   };

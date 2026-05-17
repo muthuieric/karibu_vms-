@@ -192,6 +192,8 @@ export function usePublicGateCheckIn() {
         setCustomFields((company.custom_fields as CustomField[]).filter((field) => field.active));
       }
 
+      let resolvedGateId: string | null = null;
+
       try {
         if (urlGateId) {
           const gatesRes = await fetch(`/api/gates?company_id=${companyId}`);
@@ -199,9 +201,16 @@ export function usePublicGateCheckIn() {
             const gatesJson = await gatesRes.json();
             const gate = (gatesJson.data || []).find((item: { id: string; name: string }) => item.id === urlGateId);
             if (gate) {
+              resolvedGateId = gate.id;
               setVerifiedGateId(gate.id);
               setGateName(gate.name);
             } else {
+              if (process.env.NODE_ENV === "development") {
+                console.warn("Geofence debug: QR gateId was not found for company", {
+                  gateId: urlGateId,
+                  companyId,
+                });
+              }
               setVerifiedGateId(null);
               setGateName(null);
             }
@@ -226,7 +235,7 @@ export function usePublicGateCheckIn() {
         console.error("Error fetching hosts/departments", err);
       }
 
-      if (company.enable_geofence && company.plan_tier !== "basic" && company.lat && company.lng) {
+      if (company.enable_geofence && company.plan_tier !== "basic" && company.lat !== null && company.lng !== null) {
         if (!navigator.geolocation) {
           setGeofenceError("Geolocation is not supported by your browser. Please register manually with the guard.");
           setLoading(false);
@@ -235,17 +244,43 @@ export function usePublicGateCheckIn() {
 
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            const dist = getDistanceInMeters(pos.coords.latitude, pos.coords.longitude, company.lat!, company.lng!);
-            const maxRadius = company.geofence_radius || 200;
+            const currentLat = pos.coords.latitude;
+            const currentLng = pos.coords.longitude;
+            const allowedLat = Number(company.lat);
+            const allowedLng = Number(company.lng);
+            const accuracyMeters = pos.coords.accuracy;
+            const radiusMeters = company.geofence_radius || 200;
+            const distanceMeters = getDistanceInMeters(currentLat, currentLng, allowedLat, allowedLng);
+            const gateId = resolvedGateId || urlGateId || null;
 
-            if (dist > maxRadius) {
-              setGeofenceError(`You are too far from the building to register. Please move closer to the gate. (Currently ~${Math.round(dist)}m away, limit is ${maxRadius}m)`);
+            if (process.env.NODE_ENV === "development") {
+              console.log("Geofence debug", {
+                currentLat,
+                currentLng,
+                allowedLat,
+                allowedLng,
+                accuracyMeters,
+                radiusMeters,
+                distanceMeters,
+                gateId,
+                companyId
+              });
+            }
+
+            if (accuracyMeters > radiusMeters) {
+              setGeofenceError("Your device location is not accurate enough. Move near the entrance, enable precise location, then try again.");
+            } else if (distanceMeters > radiusMeters) {
+              setGeofenceError("You appear to be outside the allowed check-in area.");
             }
             setLoading(false);
           },
           (err) => {
             console.error("Geolocation error:", err);
-            setGeofenceError("Location access is required to check in. Please allow GPS access when prompted, or see the guard.");
+            if (err.code === err.PERMISSION_DENIED) {
+              setGeofenceError("Please allow location access to continue.");
+            } else {
+              setGeofenceError("We could not confirm your location. Move near the entrance, enable precise location, then try again.");
+            }
             setLoading(false);
           },
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
