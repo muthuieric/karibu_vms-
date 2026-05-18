@@ -25,6 +25,9 @@ function CheckInFormContent() {
     return (
       <GateGeofenceErrorState
         message={gate.geofenceError}
+        distanceMeters={gate.geofenceFailureDetails?.distanceMeters}
+        radiusMeters={gate.geofenceFailureDetails?.radiusMeters}
+        accuracyMeters={gate.geofenceFailureDetails?.accuracyMeters}
         debugDetails={gate.geofenceDebugDetails}
         onRetry={() => window.location.reload()}
       />

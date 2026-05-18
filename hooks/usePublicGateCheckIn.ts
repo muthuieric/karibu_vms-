@@ -22,6 +22,7 @@ export type GeofenceDebugDetails = {
   gateId: string | null;
   companyName: string;
 };
+type GeofenceFailureDetails = Pick<GeofenceDebugDetails, "distanceMeters" | "radiusMeters" | "accuracyMeters">;
 type VisitorFormData = {
   name: string;
   phone: string;
@@ -123,6 +124,7 @@ export function usePublicGateCheckIn() {
   const [isQrExpired, setIsQrExpired] = useState(false);
   const [geofenceError, setGeofenceError] = useState<string | null>(null);
   const [geofenceDebugDetails, setGeofenceDebugDetails] = useState<GeofenceDebugDetails | null>(null);
+  const [geofenceFailureDetails, setGeofenceFailureDetails] = useState<GeofenceFailureDetails | null>(null);
   const [rules, setRules] = useState({
     requirePhoto: false,
     askPhone: true,
@@ -181,6 +183,7 @@ export function usePublicGateCheckIn() {
       }
 
       setGeofenceDebugDetails(null);
+      setGeofenceFailureDetails(null);
 
       const companyResponse = await fetch(`/api/public/company?company_id=${companyId}`, {
         cache: "no-store",
@@ -293,9 +296,11 @@ export function usePublicGateCheckIn() {
 
             if (accuracyMeters > radiusMeters) {
               setGeofenceDebugDetails(geofenceDebug);
+              setGeofenceFailureDetails({ distanceMeters, radiusMeters, accuracyMeters });
               setGeofenceError("Your device location is not accurate enough. Move near the entrance, enable precise location, then try again.");
             } else if (distanceMeters > radiusMeters) {
               setGeofenceDebugDetails(geofenceDebug);
+              setGeofenceFailureDetails({ distanceMeters, radiusMeters, accuracyMeters });
               setGeofenceError("You appear to be outside the allowed check-in area.");
             }
             setLoading(false);
@@ -494,6 +499,7 @@ export function usePublicGateCheckIn() {
     submitted,
     isQrExpired,
     geofenceError,
+    geofenceFailureDetails,
     geofenceDebugDetails,
     rules,
     customFields,

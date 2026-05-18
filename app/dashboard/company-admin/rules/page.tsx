@@ -221,6 +221,9 @@ export default function BuildingRulesPage() {
                 </div>
 
                 <div className={`space-y-5 ${!rules.enableGeofence ? 'pointer-events-none' : ''}`}>
+                  <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm font-medium text-blue-900">
+                    For best accuracy, set this location using a mobile phone while standing at the actual entrance/gate. Laptop browser location may be inaccurate.
+                  </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -267,9 +270,7 @@ export default function BuildingRulesPage() {
                       <p>Latitude: <span className="font-bold text-slate-800">{rules.latitude || "Not set"}</span></p>
                       <p>Longitude: <span className="font-bold text-slate-800">{rules.longitude || "Not set"}</span></p>
                       <p>Allowed radius: <span className="font-bold text-slate-800">{rules.radius || "200"} meters</span></p>
-                      {rules.locationAccuracy !== null && (
-                        <p>Device accuracy: <span className="font-bold text-slate-800">~{Math.round(rules.locationAccuracy)} meters</span></p>
-                      )}
+                      <p>Device accuracy: <span className="font-bold text-slate-800">{rules.locationAccuracy !== null ? `~${Math.round(rules.locationAccuracy)} meters` : "Not captured this session"}</span></p>
                     </div>
                   </div>
 

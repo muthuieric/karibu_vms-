@@ -8,14 +8,31 @@ import type { GeofenceDebugDetails } from "@/hooks/usePublicGateCheckIn";
 type GateGeofenceErrorStateProps = {
   message: string;
   onRetry: () => void;
+  distanceMeters?: number | null;
+  radiusMeters?: number | null;
+  accuracyMeters?: number | null;
   debugDetails?: GeofenceDebugDetails | null;
 };
+
+function formatDistance(meters: number) {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}
 
 export default function GateGeofenceErrorState({
   message,
   onRetry,
+  distanceMeters,
+  radiusMeters,
+  accuracyMeters,
   debugDetails,
 }: GateGeofenceErrorStateProps) {
+  const hasSafeLocationSummary =
+    typeof distanceMeters === "number" &&
+    typeof radiusMeters === "number" &&
+    typeof accuracyMeters === "number";
+  const isAccuracyTooLow = hasSafeLocationSummary && accuracyMeters > radiusMeters;
+
   return (
     <div className="w-full max-w-md mx-auto relative z-10 px-4">
       <Card className="border-destructive/15 text-center p-8">
@@ -28,6 +45,20 @@ export default function GateGeofenceErrorState({
         <p className="text-text-muted font-medium leading-relaxed mb-8">
           {message}
         </p>
+        {hasSafeLocationSummary && (
+          <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
+            <div className="grid gap-2 text-sm font-medium text-slate-700">
+              {isAccuracyTooLow ? (
+                <p className="font-bold text-red-700">
+                  Your device location is not accurate enough. Enable precise location and try again.
+                </p>
+              ) : null}
+              <p>Estimated distance from allowed location: <span className="font-bold text-slate-950">{formatDistance(distanceMeters)}</span></p>
+              <p>Allowed radius: <span className="font-bold text-slate-950">{Math.round(radiusMeters)} m</span></p>
+              <p>Location accuracy: <span className="font-bold text-slate-950">±{Math.round(accuracyMeters)} m</span></p>
+            </div>
+          </div>
+        )}
         <Button onClick={onRetry} className="w-full font-bold h-12">
           Try Again
         </Button>
