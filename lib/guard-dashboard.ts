@@ -37,13 +37,25 @@ export function getDynamicGateQrUrl(
   return `${origin}/${companyId}/gate?${queryParams.toString()}`;
 }
 
+export function getStaticGateQrUrl(
+  origin: string,
+  companyId: string | null,
+  guardGateId: string | null,
+) {
+  if (!companyId) return "";
+  const queryParams = new URLSearchParams();
+  if (guardGateId) queryParams.append("gateId", guardGateId);
+  const query = queryParams.toString();
+  return `${origin}/${companyId}/gate${query ? `?${query}` : ""}`;
+}
+
 export function printGateQrPoster(
   origin: string,
   companyId: string | null,
   guardGateId: string | null,
   guardGateName: string,
 ) {
-  const url = `${origin}/${companyId}/gate${guardGateId ? `?gateId=${guardGateId}` : ""}`;
+  const url = getStaticGateQrUrl(origin, companyId, guardGateId);
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(url)}`;
   const printWindow = window.open("", "", "width=800,height=800");
 

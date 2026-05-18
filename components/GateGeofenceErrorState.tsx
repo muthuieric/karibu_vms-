@@ -3,15 +3,18 @@
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import type { GeofenceDebugDetails } from "@/hooks/usePublicGateCheckIn";
 
 type GateGeofenceErrorStateProps = {
   message: string;
   onRetry: () => void;
+  debugDetails?: GeofenceDebugDetails | null;
 };
 
 export default function GateGeofenceErrorState({
   message,
   onRetry,
+  debugDetails,
 }: GateGeofenceErrorStateProps) {
   return (
     <div className="w-full max-w-md mx-auto relative z-10 px-4">
@@ -28,6 +31,23 @@ export default function GateGeofenceErrorState({
         <Button onClick={onRetry} className="w-full font-bold h-12">
           Try Again
         </Button>
+        {process.env.NODE_ENV === "development" && debugDetails && (
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+              Geofence debug
+            </p>
+            <dl className="grid grid-cols-1 gap-2 text-xs text-slate-700">
+              {Object.entries(debugDetails).map(([key, value]) => (
+                <div key={key} className="flex items-start justify-between gap-3">
+                  <dt className="font-semibold text-slate-500">{key}</dt>
+                  <dd className="max-w-[11rem] break-words text-right font-mono text-slate-900">
+                    {value ?? "null"}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
       </Card>
     </div>
   );

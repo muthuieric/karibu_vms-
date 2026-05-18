@@ -22,7 +22,13 @@ function CheckInFormContent() {
   }
 
   if (gate.geofenceError) {
-    return <GateGeofenceErrorState message={gate.geofenceError} onRetry={() => window.location.reload()} />;
+    return (
+      <GateGeofenceErrorState
+        message={gate.geofenceError}
+        debugDetails={gate.geofenceDebugDetails}
+        onRetry={() => window.location.reload()}
+      />
+    );
   }
 
   if (gate.accessDenied) {

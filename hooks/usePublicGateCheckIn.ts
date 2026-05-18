@@ -10,6 +10,18 @@ type CustomField = { id: string; label: string; active: boolean };
 type Department = { id: string; name: string };
 type Host = { id: string; name: string; phone: string; email: string; department_id: string };
 type RedFlag = { id_number?: string | null; phone?: string | null; name?: string | null; reason?: string | null };
+export type GeofenceDebugDetails = {
+  currentLat: number;
+  currentLng: number;
+  allowedLat: number;
+  allowedLng: number;
+  accuracyMeters: number;
+  radiusMeters: number;
+  distanceMeters: number;
+  companyId: string;
+  gateId: string | null;
+  companyName: string;
+};
 type VisitorFormData = {
   name: string;
   phone: string;
@@ -110,6 +122,7 @@ export function usePublicGateCheckIn() {
   const [submitted, setSubmitted] = useState(false);
   const [isQrExpired, setIsQrExpired] = useState(false);
   const [geofenceError, setGeofenceError] = useState<string | null>(null);
+  const [geofenceDebugDetails, setGeofenceDebugDetails] = useState<GeofenceDebugDetails | null>(null);
   const [rules, setRules] = useState({
     requirePhoto: false,
     askPhone: true,
@@ -167,7 +180,11 @@ export function usePublicGateCheckIn() {
         }
       }
 
-      const companyResponse = await fetch(`/api/public/company?company_id=${companyId}`);
+      setGeofenceDebugDetails(null);
+
+      const companyResponse = await fetch(`/api/public/company?company_id=${companyId}`, {
+        cache: "no-store",
+      });
       const companyJson = await companyResponse.json();
       const company = companyJson.data;
 
@@ -176,6 +193,13 @@ export function usePublicGateCheckIn() {
         setLoading(false);
         return;
       }
+
+      console.log("Public gate company debug", {
+        companyIdFromUrl: companyId,
+        gateIdFromUrl: urlGateId,
+        apiCompanyId: company.id,
+        apiCompanyName: company.name,
+      });
 
       setCompanyName(company.name);
       setPlanTier(company.plan_tier || "basic");
@@ -252,24 +276,26 @@ export function usePublicGateCheckIn() {
             const radiusMeters = company.geofence_radius || 200;
             const distanceMeters = getDistanceInMeters(currentLat, currentLng, allowedLat, allowedLng);
             const gateId = resolvedGateId || urlGateId || null;
+            const geofenceDebug = {
+              currentLat,
+              currentLng,
+              allowedLat,
+              allowedLng,
+              accuracyMeters,
+              radiusMeters,
+              distanceMeters,
+              companyId,
+              gateId,
+              companyName: company.name,
+            };
 
-            if (process.env.NODE_ENV === "development") {
-              console.log("Geofence debug", {
-                currentLat,
-                currentLng,
-                allowedLat,
-                allowedLng,
-                accuracyMeters,
-                radiusMeters,
-                distanceMeters,
-                gateId,
-                companyId
-              });
-            }
+            console.log("Geofence debug", geofenceDebug);
 
             if (accuracyMeters > radiusMeters) {
+              setGeofenceDebugDetails(geofenceDebug);
               setGeofenceError("Your device location is not accurate enough. Move near the entrance, enable precise location, then try again.");
             } else if (distanceMeters > radiusMeters) {
+              setGeofenceDebugDetails(geofenceDebug);
               setGeofenceError("You appear to be outside the allowed check-in area.");
             }
             setLoading(false);
@@ -468,6 +494,7 @@ export function usePublicGateCheckIn() {
     submitted,
     isQrExpired,
     geofenceError,
+    geofenceDebugDetails,
     rules,
     customFields,
     customAnswers,

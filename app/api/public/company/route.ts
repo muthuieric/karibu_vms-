@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+
 const PUBLIC_COMPANY_FIELDS = [
+  "id",
   "name",
   "is_locked",
   "subscription_ends_at",
@@ -20,6 +23,7 @@ const PUBLIC_COMPANY_FIELDS = [
 ].join(", ");
 
 type PublicCompany = {
+  id: string;
   name: string;
   is_locked: boolean | null;
   subscription_ends_at: string | null;
@@ -43,7 +47,10 @@ export async function GET(request: Request) {
     const companyId = searchParams.get("company_id");
 
     if (!companyId) {
-      return NextResponse.json({ error: "Missing company_id" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing company_id" },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
+      );
     }
 
     const supabaseAdmin = createClient(
@@ -59,16 +66,28 @@ export async function GET(request: Request) {
     const company = data as PublicCompany | null;
 
     if (error || !company) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Company not found" },
+        { status: 404, headers: { "Cache-Control": "no-store" } }
+      );
     }
 
     if (company.is_locked) {
-      return NextResponse.json({ error: "Company unavailable" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Company unavailable" },
+        { status: 403, headers: { "Cache-Control": "no-store" } }
+      );
     }
 
-    return NextResponse.json({ data: company });
+    return NextResponse.json(
+      { data: company },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (error: unknown) {
     console.error("Public company lookup failed:", error);
-    return NextResponse.json({ error: "Failed to load company" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to load company" },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
+    );
   }
 }
