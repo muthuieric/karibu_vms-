@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { compressImage } from "@/lib/image-compression";
 import { getDistanceInMeters } from "@/lib/geo";
 import { getSupabaseErrorMessage } from "@/lib/supabase-error";
+import { getBasePlan } from "@/lib/billing/pricing";
 
 type CustomField = { id: string; label: string; active: boolean };
 type Department = { id: string; name: string };
@@ -204,10 +205,11 @@ export function usePublicGateCheckIn() {
         apiCompanyName: company.name,
       });
 
+      const basePlanTier = getBasePlan(company.plan_tier);
       setCompanyName(company.name);
-      setPlanTier(company.plan_tier || "basic");
+      setPlanTier(basePlanTier);
       setRules({
-        requirePhoto: company.plan_tier === "basic" ? false : company.require_photo || false,
+        requirePhoto: basePlanTier === "basic" ? false : company.require_photo || false,
         askPhone: company.ask_phone !== false,
         askId: company.ask_id !== false,
         askHost: company.ask_host || false,
@@ -262,7 +264,7 @@ export function usePublicGateCheckIn() {
         console.error("Error fetching hosts/departments", err);
       }
 
-      if (company.enable_geofence && company.plan_tier !== "basic" && company.lat !== null && company.lng !== null) {
+      if (company.enable_geofence && basePlanTier !== "basic" && company.lat !== null && company.lng !== null) {
         if (!navigator.geolocation) {
           setGeofenceError("Geolocation is not supported by your browser. Please register manually with the guard.");
           setLoading(false);

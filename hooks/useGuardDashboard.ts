@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { filterGuardVisitors, getDynamicGateQrUrl, printGateQrPoster } from "@/lib/guard-dashboard";
+import { getBasePlan } from "@/lib/billing/pricing";
 import type { CustomField, Visitor } from "@/types/guard";
 
 function addVisitorOnce(visitors: Visitor[], visitor: Visitor) {
@@ -84,7 +85,7 @@ export function useGuardDashboard() {
 
       if (companyData) {
         setCompanyName(companyData.name || "");
-        setPlanTier(companyData.plan_tier || "basic");
+        setPlanTier(getBasePlan(companyData.plan_tier));
         setRequirePhoto(companyData.require_photo || false);
         setAskPhone(companyData.ask_phone !== false);
         setAskId(companyData.ask_id !== false);

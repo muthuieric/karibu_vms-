@@ -15,11 +15,12 @@ import {
 } from "lucide-react";
 
 import { DataTableShell } from "@/components/dashboard/shared/DataTableShell";
-import { SearchInput, SelectField } from "@/components/dashboard/shared/Fields";
+import { SearchInput } from "@/components/dashboard/shared/Fields";
 import { EmptyState, LoadingState } from "@/components/dashboard/shared/StateBlocks";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Company = {
@@ -36,6 +37,7 @@ type Company = {
   hard_lock_reason?: string | null;
   hard_locked_at?: string | null;
   plan_tier?: string;
+  current_balance?: number | null;
 };
 
 type CompaniesDirectoryCardProps = {
@@ -53,15 +55,15 @@ type CompaniesDirectoryCardProps = {
 };
 
 function workspaceStatus(company: Company) {
-  if (company.hard_locked) return "locked";
-  if (company.is_locked) return "locked";
-  if (company.subscription_status === "pending_approval") return "pending";
-  return company.subscription_status || "trial";
+  if (company.hard_locked || company.is_locked) return "locked";
+  if (company.subscription_status === "trial" || company.plan_tier === "trial_basic" || company.plan_tier === "trial_premium") return "trial";
+  if (Number(company.current_balance || 0) > 0) return "unpaid";
+  return "paid";
 }
 
 function WorkspaceStatusBadge({ company }: { company: Company }) {
   const status = workspaceStatus(company);
-  const label = company.subscription_status === "pending_approval" ? "Pending approval" : status;
+  const label = status === "locked" ? "Hard Locked" : status === "trial" ? "Trial" : status === "unpaid" ? "Unpaid" : "Paid";
 
   return <StatusBadge status={status}>{label}</StatusBadge>;
 }
@@ -165,15 +167,21 @@ export default function CompaniesDirectoryCard({
                     </TableCell>
 
                     <TableCell>
-                      <SelectField
+                      <Select
                         value={company.plan_tier || "basic"}
-                        onChange={(event) => onChangePlanTier(company.id, event.target.value)}
-                        className="min-h-8 w-32 py-1 text-xs uppercase tracking-wider"
+                        onValueChange={(newValue) => onChangePlanTier(company.id, newValue)}
                       >
-                        <option value="basic">Basic</option>
-                        <option value="premium">Premium</option>
-                        <option value="custom">Custom</option>
-                      </SelectField>
+                        <SelectTrigger className="min-h-8 w-32 py-1 text-xs uppercase tracking-wider">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="basic">Basic</SelectItem>
+                          <SelectItem value="premium">Premium</SelectItem>
+                          <SelectItem value="custom">Custom</SelectItem>
+                          <SelectItem value="trial_basic">Trial (Basic)</SelectItem>
+                          <SelectItem value="trial_premium">Trial (Premium)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
 
                     <TableCell>
@@ -273,15 +281,21 @@ export default function CompaniesDirectoryCard({
                     <CalendarDays className="h-3.5 w-3.5" />
                     {new Date(company.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                   </div>
-                  <SelectField
+                  <Select
                     value={company.plan_tier || "basic"}
-                    onChange={(event) => onChangePlanTier(company.id, event.target.value)}
-                    className="min-h-8 py-1 text-xs uppercase tracking-wider"
+                    onValueChange={(newValue) => onChangePlanTier(company.id, newValue)}
                   >
-                    <option value="basic">Basic</option>
-                    <option value="premium">Premium</option>
-                    <option value="custom">Custom</option>
-                  </SelectField>
+                    <SelectTrigger className="min-h-8 py-1 text-xs uppercase tracking-wider">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Basic</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                      <SelectItem value="trial_basic">Trial (Basic)</SelectItem>
+                      <SelectItem value="trial_premium">Trial (Premium)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex flex-wrap gap-2">

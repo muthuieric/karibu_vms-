@@ -48,7 +48,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-zinc-900">Email support</p>
-                      <p className="text-sm text-zinc-600">hello@karibuvms.com</p>
+                      <p className="text-sm text-zinc-600">karibuvms@gmail.com</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 rounded-2xl bg-white border border-zinc-100 p-5 shadow-sm">

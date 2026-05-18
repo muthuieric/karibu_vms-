@@ -22,6 +22,9 @@ type CurrentStatementCardProps = {
     totalAmount: number;
     amountPaid: number;
     currentBalance: number;
+    isTrial?: boolean;
+    trialEndsAt?: string | null;
+    planLabel?: string;
   };
   phoneNumber: string;
   onPhoneNumberChange: (value: string) => void;
@@ -39,6 +42,7 @@ export default function CurrentStatementCard({
   onPayment,
 }: CurrentStatementCardProps) {
   const amountDue = summary.currentBalance;
+  const isTrial = summary.isTrial === true;
 
   return (
     <Card className="shadow-sm border-slate-100 rounded-[1.4rem] h-fit overflow-hidden bg-white">
@@ -48,7 +52,11 @@ export default function CurrentStatementCard({
             <Receipt className="w-5 h-5 text-slate-500" />
             Payment Summary
           </CardTitle>
-          {amountDue > 0 ? (
+          {isTrial ? (
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+              Trial
+            </span>
+          ) : amountDue > 0 ? (
             <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
               Action Required
             </span>
@@ -73,8 +81,13 @@ export default function CurrentStatementCard({
         <div className="space-y-4">
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Plan</span>
-            <span className="text-slate-900 font-bold text-base">{getPlanLabel(summary.planName)}</span>
+            <span className="text-slate-900 font-bold text-base">{summary.planLabel || getPlanLabel(summary.planName)}</span>
           </div>
+          {isTrial && summary.trialEndsAt && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm font-bold text-blue-700">
+              Trial active until {formatDate(summary.trialEndsAt)}
+            </div>
+          )}
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Included Visitors</span>
             <span className="text-slate-900 font-bold text-base">{summary.includedVisitors.toLocaleString()}</span>
@@ -136,7 +149,7 @@ export default function CurrentStatementCard({
 
         <Button
           onClick={onPayment}
-          disabled={isPaying || amountDue <= 0 || !phoneNumber.trim()}
+          disabled={isPaying || isTrial || amountDue <= 0 || !phoneNumber.trim()}
           className={`w-full font-bold h-12 shadow-sm rounded-xl transition-all active:scale-[0.98] ${
             amountDue > 0
               ? "bg-blue-600 hover:bg-blue-700 text-white"
@@ -145,6 +158,8 @@ export default function CurrentStatementCard({
         >
           {isPaying ? (
             <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</>
+          ) : isTrial ? (
+            <><CheckCircle2 className="w-5 h-5 mr-2" /> Trial Active</>
           ) : amountDue <= 0 ? (
             <><CheckCircle2 className="w-5 h-5 mr-2" /> Account Settled</>
           ) : (
@@ -152,7 +167,7 @@ export default function CurrentStatementCard({
           )}
         </Button>
 
-        {amountDue <= 0 && (
+        {amountDue <= 0 && !isTrial && (
           <div className="text-center">
             <p className="text-sm text-emerald-600 font-bold mt-2">
               Your account is fully active!

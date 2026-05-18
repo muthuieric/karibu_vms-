@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getBillingPeriod, normalizePlan } from "@/lib/billing/pricing";
+import { addOneMonth, calculateMonthlyCharge, isTrialPlan, normalizePlan } from "@/lib/billing/pricing";
 
 function isMissingColumnError(error: unknown) {
   if (!error || typeof error !== "object") return false;
@@ -21,17 +21,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const newPlan = normalizePlan(planTier);
+    const allowedPlans = ["basic", "premium", "custom", "trial_basic", "trial_premium"];
+    const requestedPlan = String(planTier || "").toLowerCase().trim();
+    if (!allowedPlans.includes(requestedPlan)) {
+      return NextResponse.json({ error: "Invalid plan tier." }, { status: 400 });
+    }
+    const newPlan = normalizePlan(requestedPlan);
+
     let companyResult = await supabaseAdmin
       .from("companies")
-      .select("plan_tier, pending_plan_tier, pending_plan_effective_at, billing_period_end")
+      .select("created_at, plan_tier, pending_plan_tier, pending_plan_effective_at, billing_period_start, billing_period_end, current_balance, is_locked, hard_locked")
       .eq("id", companyId)
       .single();
 
     if (isMissingColumnError(companyResult.error)) {
       companyResult = await supabaseAdmin
         .from("companies")
-        .select("plan_tier, billing_period_end")
+        .select("created_at, plan_tier, billing_period_start, billing_period_end, current_balance, is_locked")
         .eq("id", companyId)
         .single();
     }
@@ -40,30 +46,81 @@ export async function POST(request: Request) {
 
     if (fetchError) throw fetchError;
 
-    const currentPlan = normalizePlan(company?.plan_tier);
-    const isDowngrade = currentPlan === "premium" && newPlan === "basic";
-    const { periodEnd: currentPeriodEnd } = getBillingPeriod();
-    const periodEnd = company?.billing_period_end || currentPeriodEnd;
-    const updatePayload = isDowngrade
-      ? { pending_plan_tier: newPlan, pending_plan_effective_at: periodEnd }
-      : { plan_tier: newPlan, pending_plan_tier: null, pending_plan_effective_at: null };
+    const now = new Date();
+    const periodStart = company?.billing_period_start || now.toISOString();
+    const periodEnd = company?.billing_period_end || addOneMonth(new Date(periodStart)).toISOString();
+    const trialEnd = addOneMonth(now).toISOString();
+    let currentBalance = Number(company?.current_balance || 0);
+    let subscriptionStatus = "active";
+    let isLocked = Boolean(company?.is_locked);
+    let hardLocked = Boolean(company?.hard_locked);
 
-    const { error: updateError } = await supabaseAdmin.from("companies").update(updatePayload).eq("id", companyId);
+    const updatePayload: Record<string, unknown> = {
+      plan_tier: newPlan,
+      pending_plan_tier: null,
+      pending_plan_effective_at: null,
+      billing_period_start: isTrialPlan(newPlan) ? now.toISOString() : periodStart,
+      billing_period_end: isTrialPlan(newPlan) ? trialEnd : periodEnd,
+    };
+
+    if (isTrialPlan(newPlan)) {
+      currentBalance = 0;
+      subscriptionStatus = "trial";
+      isLocked = false;
+      hardLocked = false;
+      updatePayload.subscription_status = subscriptionStatus;
+      updatePayload.current_balance = currentBalance;
+      updatePayload.is_locked = false;
+      updatePayload.hard_locked = false;
+      updatePayload.subscription_ends_at = trialEnd;
+      updatePayload.subscription_expires_at = trialEnd;
+    } else if (newPlan === "custom") {
+      currentBalance = 0;
+      subscriptionStatus = "active";
+      isLocked = false;
+      hardLocked = Boolean(company?.hard_locked);
+      updatePayload.subscription_status = subscriptionStatus;
+      updatePayload.current_balance = currentBalance;
+      updatePayload.is_locked = false;
+      updatePayload.subscription_ends_at = null;
+      updatePayload.subscription_expires_at = null;
+    } else {
+      const { count, error: visitorsError } = await supabaseAdmin
+        .from("visitors")
+        .select("id", { count: "exact", head: true })
+        .eq("company_id", companyId)
+        .gte("created_at", periodStart)
+        .lt("created_at", periodEnd);
+
+      if (visitorsError) throw visitorsError;
+
+      currentBalance = calculateMonthlyCharge(newPlan, count || 0).totalAmount;
+      subscriptionStatus = currentBalance > 0 ? "unpaid" : "active";
+      updatePayload.subscription_status = subscriptionStatus;
+      updatePayload.current_balance = currentBalance;
+      updatePayload.is_locked = isLocked;
+      updatePayload.subscription_ends_at = null;
+      updatePayload.subscription_expires_at = null;
+    }
+
+    let { error: updateError } = await supabaseAdmin.from("companies").update(updatePayload).eq("id", companyId);
+    if (isMissingColumnError(updateError)) {
+      delete updatePayload.hard_locked;
+      const retry = await supabaseAdmin.from("companies").update(updatePayload).eq("id", companyId);
+      updateError = retry.error;
+    }
 
     if (updateError) throw updateError;
 
-    // Ensure all guards are unlocked regardless of plan
-    await supabaseAdmin
-      .from("profiles")
-      .update({ is_locked: false })
-      .eq("company_id", companyId)
-      .eq("role", "guard");
-
     return NextResponse.json({
       success: true,
-      newTier: isDowngrade ? currentPlan : newPlan,
-      pendingTier: isDowngrade ? newPlan : null,
-      effectiveAt: isDowngrade ? periodEnd : null,
+      newTier: newPlan,
+      pendingTier: null,
+      effectiveAt: null,
+      subscriptionStatus,
+      currentBalance,
+      isLocked,
+      hardLocked,
     });
 
   } catch (error: unknown) {

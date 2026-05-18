@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getBasePlan } from "@/lib/billing/pricing";
 import { getDistanceInMeters } from "@/lib/geo";
 import { supabase } from "@/lib/supabase";
 
@@ -66,7 +67,7 @@ export function useBuildingRules() {
         .single();
 
       if (company) {
-        setPlanTier(company.plan_tier || "basic");
+        setPlanTier(getBasePlan(company.plan_tier));
         setRequirePhoto(company.require_photo || false);
         setAskHost(company.ask_host || false);
         setAskPurpose(company.ask_purpose || false);

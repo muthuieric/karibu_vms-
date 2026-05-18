@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdmin, reconcileCompanyBilling } from "@/lib/billing/server";
+import { createSupabaseAdmin, markCompanyPaymentSuccessful, reconcileCompanyBilling } from "@/lib/billing/server";
 import { getPayHeroExternalReference, getPayHeroReference, normalizePayHeroStatus } from "@/lib/payhero";
 
 function getPayloadValue(payload: Record<string, unknown>, keys: string[]) {
@@ -60,6 +60,8 @@ export async function POST(req: Request) {
     const amount = Number(getPayloadValue(payload, ["Amount", "amount"]) || existing?.amount || 0);
     const paidAt = status === "paid" ? new Date().toISOString() : existing?.paid_at || null;
     const reversedAt = status === "reversed" ? new Date().toISOString() : existing?.reversed_at || null;
+    const wasAlreadyPaid = String(existing?.status || "").toLowerCase() === "paid";
+    const paidPeriod = status === "paid" && paidAt && !wasAlreadyPaid ? await markCompanyPaymentSuccessful(companyId, paidAt, amount) : null;
     const updatePayload = {
       company_id: companyId,
       amount,
@@ -76,6 +78,14 @@ export async function POST(req: Request) {
       updated_at: new Date().toISOString(),
       paid_at: paidAt,
       reversed_at: reversedAt,
+      ...(paidPeriod
+        ? {
+            billing_period_key: paidPeriod.periodKey,
+            billing_period_start: paidPeriod.periodStart,
+            billing_period_end: paidPeriod.periodEnd,
+            current_balance: 0,
+          }
+        : {}),
     };
 
     if (existing) {
@@ -84,7 +94,9 @@ export async function POST(req: Request) {
       await supabaseAdmin.from("transactions").insert(updatePayload);
     }
 
-    await reconcileCompanyBilling(companyId);
+    if (status !== "paid") {
+      await reconcileCompanyBilling(companyId);
+    }
 
     return NextResponse.json({ success: true, status });
   } catch (error) {

@@ -38,7 +38,11 @@ type BillingSummary = {
   totalAmount: number;
   amountPaid: number;
   currentBalance: number;
-  company?: { contact_phone?: string | null };
+  subscriptionStatus?: string | null;
+  accountStatus?: string | null;
+  isTrial?: boolean;
+  trialEndsAt?: string | null;
+  planLabel?: string;
 };
 
 export default function BillingPage() {
@@ -80,7 +84,6 @@ export default function BillingPage() {
         }
 
         setSummary(billingSummary);
-        setPhoneNumber(billingSummary.company?.contact_phone || "");
       }
       setLoading(false);
     };
@@ -123,7 +126,22 @@ export default function BillingPage() {
     amountPaid: 0,
     currentBalance: 0,
     ...calculateMonthlyCharge("basic", 0),
+    subscriptionStatus: "active",
+    accountStatus: "settled",
+    isTrial: false,
+    trialEndsAt: null,
   };
+
+  const accountStatusLabel =
+    fallbackSummary.accountStatus === "trial" || fallbackSummary.isTrial
+      ? "Trial"
+      : fallbackSummary.accountStatus === "locked"
+        ? "Locked"
+        : fallbackSummary.accountStatus === "active"
+          ? "Active"
+          : fallbackSummary.accountStatus === "pending_payment" || fallbackSummary.currentBalance > 0
+            ? "Pending payment"
+            : "Settled";
 
   const formatDate = (date: Date | string) => {
     return new Intl.DateTimeFormat('en-GB', {
@@ -143,7 +161,7 @@ export default function BillingPage() {
             {[
               { label: "Current Balance", value: `KES ${fallbackSummary.currentBalance.toLocaleString()}`, icon: WalletCards, tone: fallbackSummary.currentBalance > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
               { label: "Visitors This Period", value: fallbackSummary.visitorCount.toLocaleString(), icon: UsersRound, tone: "text-blue-600 bg-blue-50 border-blue-100" },
-              { label: "Account Status", value: fallbackSummary.currentBalance > 0 ? "Pending payment" : "Settled", icon: BadgeCheck, tone: fallbackSummary.currentBalance > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
+              { label: "Account Status", value: accountStatusLabel, icon: BadgeCheck, tone: fallbackSummary.currentBalance > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : fallbackSummary.isTrial ? "text-blue-600 bg-blue-50 border-blue-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
             ].map((item) => {
               const Icon = item.icon;
               return (

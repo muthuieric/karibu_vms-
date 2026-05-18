@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 type PlatformStats = {
   totalCompanies: number;
-  activeCompanies: number;
+  goodStandingCompanies: number;
+  accountsOwing: number;
   totalRevenue: number;
   totalVisitors: number;
   todayVisitors: number;

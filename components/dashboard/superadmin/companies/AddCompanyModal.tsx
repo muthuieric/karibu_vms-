@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { FormField, SelectField } from "@/components/dashboard/shared/Fields";
 import { ModalShell } from "@/components/dashboard/shared/ModalShell";
 
-type PlanType = "none" | "trial_1" | "trial_2";
+type PlanType = "basic" | "premium" | "custom" | "trial_basic" | "trial_premium";
 
 type AddCompanyModalProps = {
   newCompanyName: string;
@@ -55,9 +55,11 @@ export default function AddCompanyModal({
             value={planType}
             onChange={(e) => onPlanTypeChange(e.target.value as PlanType)}
           >
-            <option value="trial_1">1 Month Free Trial</option>
-            <option value="trial_2">2 Months Free Trial</option>
-            <option value="none">No Trial (Starts Unpaid & Locked)</option>
+            <option value="basic">Basic</option>
+            <option value="premium">Premium</option>
+            <option value="custom">Custom</option>
+            <option value="trial_basic">Trial (Basic)</option>
+            <option value="trial_premium">Trial (Premium)</option>
           </SelectField>
         </FormField>
       </form>

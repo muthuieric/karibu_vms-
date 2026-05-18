@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { calculateMonthlyCharge } from "@/lib/billing/pricing";
 
 export type Company = {
   id: string;
@@ -17,16 +18,19 @@ export type Company = {
   hard_lock_reason?: string | null;
   hard_locked_at?: string | null;
   plan_tier?: string;
+  current_balance?: number | null;
 };
 
-export type PlanType = "none" | "trial_1" | "trial_2";
+export type PlanType = "basic" | "premium" | "custom" | "trial_basic" | "trial_premium";
+export type FilterStatus = "all" | "paid" | "unpaid" | "trial" | "locked";
 
 export function useSuperadminCompanies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
   const [newCompanyName, setNewCompanyName] = useState("");
-  const [planType, setPlanType] = useState<PlanType>("trial_1");
+  const [planType, setPlanType] = useState<PlanType>("trial_basic");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [adminForm, setAdminForm] = useState({ fullName: "", email: "", password: "" });
@@ -34,18 +38,34 @@ export function useSuperadminCompanies() {
   const [visitorStats, setVisitorStats] = useState({ total: 0, inside: 0, departed: 0, pending: 0 });
   const [loadingVisitors, setLoadingVisitors] = useState(false);
   const [viewingCompanyName, setViewingCompanyName] = useState("");
+  const [totalGuards, setTotalGuards] = useState(0);
 
   const fetchCompanies = async () => {
     setLoading(true);
-    const { data } = await supabase.from("companies").select("*").order("created_at", { ascending: false });
-    setCompanies(
-      ((data || []) as Company[]).map((company) => ({
-        ...company,
-        subscription_status: company.subscription_status || "trial",
-        is_locked: company.is_locked || false,
-        hard_locked: company.hard_locked || false,
-      }))
-    );
+    try {
+      const [companiesRes, guardsRes] = await Promise.all([
+        supabase.from("companies").select("*").order("created_at", { ascending: false }),
+        fetch("/api/superadmin/guards-count"),
+      ]);
+
+      const guardsPayload = guardsRes.ok ? await guardsRes.json() : { count: 0 };
+
+      if (!guardsRes.ok) console.error("Error fetching guards:", guardsPayload);
+
+      setCompanies(
+        ((companiesRes.data || []) as Company[]).map((company) => ({
+          ...company,
+          subscription_status: company.subscription_status || "trial",
+          is_locked: company.is_locked || false,
+          hard_locked: company.hard_locked || false,
+          current_balance: company.current_balance || 0,
+        }))
+      );
+      
+      setTotalGuards(Number(guardsPayload.count) || 0);
+    } catch (error) {
+      console.error("Error fetching admin data:", error);
+    }
     setLoading(false);
   };
 
@@ -58,33 +78,40 @@ export function useSuperadminCompanies() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    let status = "unpaid";
-    let endsAt = null;
-    let startLocked = true;
+    const startsAt = new Date();
+    const endsAt = new Date(startsAt);
+    endsAt.setMonth(endsAt.getMonth() + 1);
+    const isTrial = planType === "trial_basic" || planType === "trial_premium";
+    const isCustom = planType === "custom";
+    const status = isTrial ? "trial" : isCustom ? "active" : "unpaid";
+    const startLocked = false;
+    const currentBalance = isTrial || isCustom ? 0 : calculateMonthlyCharge(planType, 0).totalAmount;
 
-    if (planType === "trial_1" || planType === "trial_2") {
-      status = "trial";
-      startLocked = false;
-      const expiryDate = new Date();
-      expiryDate.setMonth(expiryDate.getMonth() + (planType === "trial_1" ? 1 : 2));
-      endsAt = expiryDate.toISOString();
-    }
-
-    const { error } = await supabase.from("companies").insert([
-      {
-        name: newCompanyName,
-        subscription_status: status,
-        subscription_ends_at: endsAt,
-        is_locked: startLocked,
-        amount_paid: 0,
-      },
-    ]);
+    const { error } = await supabase
+      .from("companies")
+      .insert([
+        {
+          name: newCompanyName,
+          subscription_status: status,
+          subscription_ends_at: isTrial ? endsAt.toISOString() : null,
+          subscription_expires_at: isTrial ? endsAt.toISOString() : null,
+          plan_tier: planType,
+          is_locked: startLocked,
+          hard_locked: false,
+          current_balance: currentBalance,
+          amount_paid: 0,
+          billing_period_start: startsAt.toISOString(),
+          billing_period_end: endsAt.toISOString(),
+        },
+      ])
+      .select("id")
+      .single();
 
     if (error) {
       alert(`Failed to create company: ${error.message}`);
     } else {
       setNewCompanyName("");
-      setPlanType("trial_1");
+      setPlanType("trial_basic");
       onSuccess?.();
       fetchCompanies();
     }
@@ -217,7 +244,20 @@ export function useSuperadminCompanies() {
       });
       const result = await res.json();
       if (res.ok) {
-        setCompanies((prev) => prev.map((company) => (company.id === companyId ? { ...company, plan_tier: result.newTier } : company)));
+        setCompanies((prev) =>
+          prev.map((company) =>
+            company.id === companyId
+              ? {
+                  ...company,
+                  plan_tier: result.newTier,
+                  subscription_status: result.subscriptionStatus || company.subscription_status,
+                  current_balance: result.currentBalance ?? company.current_balance,
+                  is_locked: result.isLocked ?? company.is_locked,
+                  hard_locked: result.hardLocked ?? company.hard_locked,
+                }
+              : company
+          )
+        );
         alert(
           result.pendingTier
             ? `${result.pendingTier.toUpperCase()} will start on the next billing cycle. Current invoices stay on ${result.newTier.toUpperCase()}.`
@@ -232,21 +272,44 @@ export function useSuperadminCompanies() {
     }
   };
 
-  const filteredCompanies = useMemo(
-    () =>
-      companies.filter(
-        (company) =>
-          company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (company.contact_email && company.contact_email.toLowerCase().includes(searchTerm.toLowerCase()))
-      ),
-    [companies, searchTerm]
-  );
+  const filteredCompanies = useMemo(() => {
+    return companies.filter((company) => {
+      const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (company.contact_email && company.contact_email.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      if (!matchesSearch) return false;
+
+      const balance = company.current_balance || 0;
+      const isHardLocked = company.hard_locked === true;
+      const isSoftLocked = company.is_locked === true;
+      const isTrial = company.subscription_status === "trial";
+
+      switch (statusFilter) {
+        case "paid":
+          return balance <= 0 && !isHardLocked && !isSoftLocked;
+        case "unpaid":
+          return balance > 0 && !isHardLocked;
+        case "trial":
+          return isTrial && !isHardLocked;
+        case "locked":
+          return isHardLocked || isSoftLocked;
+        case "all":
+        default:
+          return true;
+      }
+    });
+  }, [companies, searchTerm, statusFilter]);
+
+  // Derived KPIs for PlatformKpiGrid
+  const accountsGoodStanding = companies.filter(c => !c.hard_locked && !c.is_locked && ((c.current_balance || 0) <= 0 || c.subscription_status === "trial")).length;
+  const accountsOwing = companies.filter(c => !c.hard_locked && !c.is_locked && (c.current_balance || 0) > 0).length;
 
   return {
     companies,
     filteredCompanies,
     loading,
     searchTerm,
+    statusFilter,
     newCompanyName,
     planType,
     isSubmitting,
@@ -255,6 +318,10 @@ export function useSuperadminCompanies() {
     visitorStats,
     loadingVisitors,
     viewingCompanyName,
+    totalGuards,
+    accountsGoodStanding,
+    accountsOwing,
+    setStatusFilter,
     setSearchTerm,
     setNewCompanyName,
     setPlanType,

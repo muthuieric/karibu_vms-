@@ -1,5 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
-import { calculateMonthlyCharge, getBillingPeriod, normalizePlan } from "@/lib/billing/pricing";
+import {
+  addOneMonth,
+  calculateMonthlyCharge,
+  getBasePlan,
+  getBillingPeriod,
+  getPlanLabel,
+  isTrialPlan,
+  normalizePlan,
+} from "@/lib/billing/pricing";
 import type { BillingPlan } from "@/lib/billing/pricing";
 
 export function createSupabaseAdmin() {
@@ -18,10 +26,21 @@ function isPaidStatus(status?: string | null) {
 }
 
 type CompanyBillingFields = {
+  id?: string;
+  created_at?: string | null;
   plan_tier?: string | null;
   pending_plan_tier?: string | null;
   pending_plan_effective_at?: string | null;
   plan_change_effective_at?: string | null;
+  subscription_status?: string | null;
+  subscription_ends_at?: string | null;
+  subscription_expires_at?: string | null;
+  billing_period_start?: string | null;
+  billing_period_end?: string | null;
+  current_balance?: number | null;
+  amount_paid?: number | null;
+  is_locked?: boolean | null;
+  hard_locked?: boolean | null;
 };
 
 function getPendingPlanEffectiveAt(company: CompanyBillingFields) {
@@ -61,20 +80,75 @@ async function applyPendingPlanIfDue(
   return pendingPlan;
 }
 
+function getStoredBillingPeriod(company: CompanyBillingFields) {
+  const startValue = company.billing_period_start || company.created_at || new Date().toISOString();
+  const periodStartDate = new Date(startValue);
+  const safeStart = Number.isNaN(periodStartDate.getTime()) ? new Date() : periodStartDate;
+  const endValue = company.billing_period_end;
+  const periodEndDate = endValue ? new Date(endValue) : addOneMonth(safeStart);
+  const safeEnd = Number.isNaN(periodEndDate.getTime()) ? addOneMonth(safeStart) : periodEndDate;
+
+  return {
+    periodStart: safeStart.toISOString(),
+    periodEnd: safeEnd.toISOString(),
+    periodKey: `${safeStart.getUTCFullYear()}-${String(safeStart.getUTCMonth() + 1).padStart(2, "0")}-${String(safeStart.getUTCDate()).padStart(2, "0")}`,
+  };
+}
+
+async function updateCompanyWithOptionalHardLock(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
+  companyId: string,
+  payload: Record<string, unknown>
+) {
+  const { error } = await supabaseAdmin.from("companies").update(payload).eq("id", companyId);
+  if (!isMissingColumnError(error)) {
+    if (error) throw error;
+    return;
+  }
+
+  const { hard_locked: _hardLocked, ...withoutHardLock } = payload;
+  const retry = await supabaseAdmin.from("companies").update(withoutHardLock).eq("id", companyId);
+  if (retry.error) throw retry.error;
+}
+
+export async function markCompanyPaymentSuccessful(companyId: string, paidAt: string, amount: number) {
+  const supabaseAdmin = createSupabaseAdmin();
+  const paidDate = new Date(paidAt);
+  const safePaidAt = Number.isNaN(paidDate.getTime()) ? new Date().toISOString() : paidDate.toISOString();
+  const period = getBillingPeriod(new Date(safePaidAt));
+
+  const { data: company } = await supabaseAdmin
+    .from("companies")
+    .select("amount_paid")
+    .eq("id", companyId)
+    .single();
+
+  await updateCompanyWithOptionalHardLock(supabaseAdmin, companyId, {
+    billing_period_start: period.periodStart,
+    billing_period_end: period.periodEnd,
+    subscription_status: "active",
+    current_balance: 0,
+    amount_paid: Number(company?.amount_paid || 0) + Number(amount || 0),
+    is_locked: false,
+    hard_locked: false,
+  });
+
+  return period;
+}
+
 export async function getCurrentBillingSummary(companyId: string) {
   const supabaseAdmin = createSupabaseAdmin();
-  const { periodStart, periodEnd, periodKey } = getBillingPeriod();
 
   let companyResult = await supabaseAdmin
     .from("companies")
-    .select("id, name, created_at, contact_phone, plan_tier, pending_plan_tier, pending_plan_effective_at, is_locked")
+    .select("id, name, created_at, plan_tier, pending_plan_tier, pending_plan_effective_at, subscription_status, subscription_ends_at, subscription_expires_at, billing_period_start, billing_period_end, current_balance, amount_paid, is_locked, hard_locked")
     .eq("id", companyId)
     .single();
 
   if (isMissingColumnError(companyResult.error)) {
     companyResult = await supabaseAdmin
       .from("companies")
-      .select("id, name, created_at, contact_phone, plan_tier, pending_plan_tier, plan_change_effective_at, is_locked")
+      .select("id, name, created_at, plan_tier, pending_plan_tier, plan_change_effective_at, subscription_status, subscription_ends_at, billing_period_start, billing_period_end, current_balance, amount_paid, is_locked")
       .eq("id", companyId)
       .single();
   }
@@ -82,7 +156,7 @@ export async function getCurrentBillingSummary(companyId: string) {
   if (isMissingColumnError(companyResult.error)) {
     companyResult = await supabaseAdmin
       .from("companies")
-      .select("id, name, created_at, contact_phone, is_locked")
+      .select("id, name, created_at, is_locked")
       .eq("id", companyId)
       .single();
   }
@@ -98,8 +172,54 @@ export async function getCurrentBillingSummary(companyId: string) {
     pending_plan_tier?: string | null;
     pending_plan_effective_at?: string | null;
     plan_change_effective_at?: string | null;
+    subscription_status?: string | null;
+    subscription_ends_at?: string | null;
+    subscription_expires_at?: string | null;
+    billing_period_start?: string | null;
+    billing_period_end?: string | null;
+    current_balance?: number | null;
+    amount_paid?: number | null;
+    is_locked?: boolean | null;
+    hard_locked?: boolean | null;
   };
-  const activePlan = await applyPendingPlanIfDue(supabaseAdmin, companyId, companyWithBilling);
+  let activePlan = await applyPendingPlanIfDue(supabaseAdmin, companyId, companyWithBilling);
+  let subscriptionStatus = companyWithBilling.subscription_status || "active";
+  let { periodStart, periodEnd, periodKey } = getStoredBillingPeriod(companyWithBilling);
+
+  const now = new Date();
+  const trialEndValue = companyWithBilling.subscription_ends_at || companyWithBilling.subscription_expires_at || null;
+  const trialEnd = trialEndValue ? new Date(trialEndValue) : null;
+  const isActiveTrial = isTrialPlan(activePlan) && !!trialEnd && !Number.isNaN(trialEnd.getTime()) && now < trialEnd;
+  let convertedExpiredTrial = false;
+
+  if (isActiveTrial) {
+    periodStart = companyWithBilling.billing_period_start || companyWithBilling.created_at || periodStart;
+    periodEnd = trialEnd!.toISOString();
+    periodKey = getBillingPeriod(new Date(periodStart)).periodKey;
+  } else if (isTrialPlan(activePlan)) {
+    const basePlan = getBasePlan(activePlan);
+    const trialEndedAt = trialEnd && !Number.isNaN(trialEnd.getTime()) ? trialEnd : now;
+    const expiredPeriod = getBillingPeriod(trialEndedAt);
+    periodStart = expiredPeriod.periodStart;
+    periodEnd = expiredPeriod.periodEnd;
+    periodKey = expiredPeriod.periodKey;
+    subscriptionStatus = "unpaid";
+
+    await updateCompanyWithOptionalHardLock(supabaseAdmin, companyId, {
+      plan_tier: basePlan,
+      subscription_status: "unpaid",
+      billing_period_start: periodStart,
+      billing_period_end: periodEnd,
+    });
+
+    activePlan = basePlan;
+    convertedExpiredTrial = true;
+  } else if (!companyWithBilling.billing_period_start || !companyWithBilling.billing_period_end) {
+    await updateCompanyWithOptionalHardLock(supabaseAdmin, companyId, {
+      billing_period_start: periodStart,
+      billing_period_end: periodEnd,
+    });
+  }
 
   const { count, error: visitorsError } = await supabaseAdmin
     .from("visitors")
@@ -112,7 +232,7 @@ export async function getCurrentBillingSummary(companyId: string) {
     throw new Error("Failed to calculate monthly visitor usage.");
   }
 
-  const calculation = calculateMonthlyCharge(activePlan, count || 0);
+  const calculation = calculateMonthlyCharge(activePlan, count || 0, { isTrialActive: isActiveTrial });
 
   let transactionsResult = await supabaseAdmin
     .from("transactions")
@@ -137,20 +257,47 @@ export async function getCurrentBillingSummary(companyId: string) {
     return isPaidStatus(transaction.status) ? sum + Number(transaction.amount || 0) : sum;
   }, 0);
 
-  const currentBalance = Math.max(0, calculation.totalAmount - paidAmount);
+  const currentBalance = isActiveTrial ? 0 : Math.max(0, calculation.totalAmount - paidAmount);
+  if (convertedExpiredTrial) {
+    await updateCompanyWithOptionalHardLock(supabaseAdmin, companyId, {
+      current_balance: currentBalance,
+      subscription_status: "unpaid",
+    });
+  }
+  const accountStatus = companyWithBilling.hard_locked || companyWithBilling.is_locked
+    ? "locked"
+    : isActiveTrial
+      ? "trial"
+      : subscriptionStatus === "active" || subscriptionStatus === "paid"
+        ? currentBalance > 0 ? "pending_payment" : "active"
+        : currentBalance > 0
+          ? "pending_payment"
+          : "settled";
 
   return {
-    company,
+    ...calculation,
+    company: {
+      id: company.id,
+      name: company.name,
+      created_at: company.created_at,
+      is_locked: companyWithBilling.is_locked,
+      hard_locked: companyWithBilling.hard_locked,
+    },
     periodStart,
     periodEnd,
     periodKey,
     currentPlanTier: activePlan,
+    planName: activePlan,
+    planLabel: getPlanLabel(activePlan),
+    subscriptionStatus,
+    accountStatus,
+    isTrial: isActiveTrial,
+    trialEndsAt: isActiveTrial ? periodEnd : null,
     pendingPlanTier: companyWithBilling.pending_plan_tier || null,
     pendingPlanEffectiveAt: getPendingPlanEffectiveAt(companyWithBilling),
     planChangeEffectiveAt: getPendingPlanEffectiveAt(companyWithBilling),
     amountPaid: paidAmount,
     currentBalance,
-    ...calculation,
   };
 }
 
@@ -165,18 +312,15 @@ export async function reconcileCompanyBilling(companyId: string) {
 
   const amountPaid = (allPaidTransactions || []).reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
 
-  await supabaseAdmin
-    .from("companies")
-    .update({
+  await updateCompanyWithOptionalHardLock(supabaseAdmin, companyId, {
       amount_paid: amountPaid,
       current_balance: summary.currentBalance,
       billing_period_start: summary.periodStart,
       billing_period_end: summary.periodEnd,
-      subscription_status: summary.currentBalance > 0 ? "unpaid" : "paid",
+      subscription_status: summary.isTrial ? "trial" : summary.currentBalance > 0 ? "unpaid" : "paid",
       // Hard lock is controlled by superadmin unless payment auto-unlock is enabled.
       is_locked: summary.currentBalance > 0 ? summary.company.is_locked : false,
-    })
-    .eq("id", companyId);
+    });
 
   return summary;
 }

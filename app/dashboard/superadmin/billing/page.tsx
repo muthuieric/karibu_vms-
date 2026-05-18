@@ -11,6 +11,7 @@ import { EmptyState, LoadingState } from "@/components/dashboard/shared/StateBlo
 import { StatCard } from "@/components/dashboard/shared/StatCard";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getPlanLabel } from "@/lib/billing/pricing";
 import { supabase } from "@/lib/supabase";
 
 type Company = {
@@ -20,16 +21,17 @@ type Company = {
   amount_paid: number;
   current_balance?: number | null;
   is_locked: boolean;
+  hard_locked?: boolean | null;
   subscription_ends_at: string | null;
   plan_tier?: string | null;
   pending_plan_tier?: string | null;
 };
 
 function getBillingStatus(company: Company) {
-  const isExpired = company.subscription_ends_at ? new Date(company.subscription_ends_at) < new Date() : true;
-  if (company.is_locked) return "locked";
-  if (isExpired) return "expired";
-  return company.subscription_status || "trial";
+  if (company.hard_locked || company.is_locked) return "locked";
+  if (company.subscription_status === "trial" || company.plan_tier === "trial_basic" || company.plan_tier === "trial_premium") return "trial";
+  if (Number(company.current_balance || 0) > 0) return "unpaid";
+  return "paid";
 }
 
 export default function SuperadminBillingPage() {
@@ -43,7 +45,7 @@ export default function SuperadminBillingPage() {
 
     const { data, error } = await supabase
       .from("companies")
-      .select("id, name, subscription_status, amount_paid, current_balance, is_locked, created_at, subscription_ends_at, plan_tier, pending_plan_tier")
+      .select("id, name, subscription_status, amount_paid, current_balance, is_locked, hard_locked, created_at, subscription_ends_at, plan_tier, pending_plan_tier")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -58,6 +60,7 @@ export default function SuperadminBillingPage() {
       amount_paid: company.amount_paid || 0,
       current_balance: company.current_balance || 0,
       is_locked: company.is_locked || false,
+      hard_locked: company.hard_locked || false,
     }));
 
     setCompanies(formattedCompanies);
@@ -83,15 +86,21 @@ export default function SuperadminBillingPage() {
 
   const filteredCompanies = companies.filter((company) => {
     const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const status = getBillingStatus(company);
-    const matchesStatus = statusFilter === "all" || status === statusFilter || (statusFilter === "active" && (status === "paid" || status === "trial"));
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "paid" && Number(company.current_balance || 0) <= 0 && !company.hard_locked && !company.is_locked) ||
+      (statusFilter === "unpaid" && Number(company.current_balance || 0) > 0 && !company.hard_locked) ||
+      (statusFilter === "trial" && getBillingStatus(company) === "trial") ||
+      (statusFilter === "locked" && (company.hard_locked || company.is_locked));
 
     return matchesSearch && matchesStatus;
   });
 
   const totalRevenue = companies.reduce((sum, company) => sum + (Number(company.amount_paid) || 0), 0);
-  const activeCompanies = companies.filter((company) => ["paid", "trial"].includes(getBillingStatus(company))).length;
-  const lockedCompanies = companies.filter((company) => getBillingStatus(company) === "locked").length;
+  const goodStandingCompanies = companies.filter(
+    (company) => !company.is_locked && (Number(company.current_balance || 0) <= 0 || company.subscription_status === "trial")
+  ).length;
+  const accountsOwing = companies.filter((company) => Number(company.current_balance || 0) > 0 && !company.is_locked).length;
 
   return (
     <PageContainer className="max-w-6xl">
@@ -104,8 +113,8 @@ export default function SuperadminBillingPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Revenue" value={`KES ${totalRevenue.toLocaleString()}`} description="Total paid by workspaces" icon={WalletCards} tone="success" />
-        <StatCard label="Active accounts" value={activeCompanies.toLocaleString()} description="Paid or trial workspaces" icon={Building2} tone="primary" />
-        <StatCard label="Locked accounts" value={lockedCompanies.toLocaleString()} description="Restricted billing profiles" icon={Lock} tone={lockedCompanies > 0 ? "danger" : "neutral"} />
+        <StatCard label="Accounts in Good Standing" value={goodStandingCompanies.toLocaleString()} description="Paid or trial workspaces" icon={Building2} tone="primary" />
+        <StatCard label="Accounts Owing" value={accountsOwing.toLocaleString()} description="Workspaces with outstanding balances" icon={Lock} tone={accountsOwing > 0 ? "danger" : "neutral"} />
       </div>
 
       <DataTableShell
@@ -120,11 +129,10 @@ export default function SuperadminBillingPage() {
             />
             <SelectField value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
               <option value="all">All Statuses</option>
-              <option value="active">Active</option>
               <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid (Soft Lock)</option>
               <option value="trial">Trial</option>
-              <option value="expired">Expired</option>
-              <option value="locked">Locked</option>
+              <option value="locked">Hard Locked</option>
             </SelectField>
           </div>
         }
@@ -165,12 +173,12 @@ export default function SuperadminBillingPage() {
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
                             <span className="max-w-[250px] truncate">{company.name}</span>
-                            {(company.is_locked || status === "expired") && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
+                            {(company.hard_locked || company.is_locked) && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
                           </div>
                         </TableCell>
                         <TableCell>
                           {company.subscription_ends_at ? (
-                            <span className={status === "expired" ? "font-bold text-red-600" : "font-medium text-slate-600"}>
+                            <span className={company.hard_locked || company.is_locked ? "font-bold text-red-600" : "font-medium text-slate-600"}>
                               {new Date(company.subscription_ends_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                             </span>
                           ) : (
@@ -178,11 +186,11 @@ export default function SuperadminBillingPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm font-semibold capitalize text-slate-600">
-                          {company.plan_tier || "basic"}
+                          {getPlanLabel(company.plan_tier)}
                           {company.pending_plan_tier ? <span className="ml-1 text-xs text-blue-600">next: {company.pending_plan_tier}</span> : null}
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={status}>{status}</StatusBadge>
+                          <StatusBadge status={status}>{status === "locked" ? "Hard Locked" : status === "trial" ? "Trial" : status === "unpaid" ? "Unpaid" : "Paid"}</StatusBadge>
                         </TableCell>
                         <TableCell className="text-right text-sm font-bold text-orange-600">
                           KES {Number(company.current_balance || 0).toLocaleString()}
@@ -207,7 +215,7 @@ export default function SuperadminBillingPage() {
                       <div className="flex min-w-0 items-start gap-2 font-semibold text-slate-900">
                         <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
                         <span className="line-clamp-2">{company.name}</span>
-                        {(company.is_locked || status === "expired") && <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />}
+                        {(company.hard_locked || company.is_locked) && <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />}
                       </div>
                       <div className="whitespace-nowrap text-right font-bold text-emerald-600">
                         KES {company.amount_paid.toLocaleString()}
@@ -218,17 +226,17 @@ export default function SuperadminBillingPage() {
                       <div className="flex items-center gap-1.5 text-slate-500">
                         <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                         {company.subscription_ends_at ? (
-                          <span className={status === "expired" ? "font-bold text-red-600" : "font-medium text-slate-600"}>
+                          <span className={company.hard_locked || company.is_locked ? "font-bold text-red-600" : "font-medium text-slate-600"}>
                             {new Date(company.subscription_ends_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                           </span>
                         ) : (
                           <span className="text-slate-400">No active period</span>
                         )}
                       </div>
-                      <StatusBadge status={status}>{status}</StatusBadge>
+                      <StatusBadge status={status}>{status === "locked" ? "Hard Locked" : status === "trial" ? "Trial" : status === "unpaid" ? "Unpaid" : "Paid"}</StatusBadge>
                     </div>
                     <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="font-semibold capitalize text-slate-600">{company.plan_tier || "basic"}</span>
+                      <span className="font-semibold text-slate-600">{getPlanLabel(company.plan_tier)}</span>
                       <span className="font-bold text-orange-600">Balance KES {Number(company.current_balance || 0).toLocaleString()}</span>
                     </div>
                   </div>
