@@ -13,8 +13,17 @@ import { EmptyState } from "@/components/dashboard/shared/StateBlocks";
 import { ToggleCard } from "@/components/dashboard/shared/ToggleCard";
 import { Label } from "@/components/ui/label";
 
+function formatDistance(meters: number) {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
 export default function BuildingRulesPage() {
   const rules = useBuildingRules();
+  const parsedRadius = rules.radius ? parseInt(rules.radius, 10) : 200;
+  const allowedRadius = Number.isNaN(parsedRadius) ? 200 : parsedRadius;
+  const isCurrentDeviceOutsideSavedLocation =
+    Boolean(rules.distanceTest) && rules.distanceTest!.distanceMeters > allowedRadius;
 
   return (
     <PageContainer className="max-w-6xl">
@@ -221,9 +230,14 @@ export default function BuildingRulesPage() {
                 </div>
 
                 <div className={`space-y-5 ${!rules.enableGeofence ? 'pointer-events-none' : ''}`}>
-                  <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm font-medium text-blue-900">
-                    For best accuracy, set this location using a mobile phone while standing at the actual entrance/gate. Laptop browser location may be inaccurate.
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-950">
+                    For accurate geofencing, set this location using a mobile phone while standing at the actual entrance/gate. Laptop or desktop browser location may be inaccurate.
                   </div>
+                  {rules.isLikelyDesktop && (
+                    <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-sm font-bold text-red-800">
+                      Desktop location may be unreliable. We recommend using a phone to save this location.
+                    </div>
+                  )}
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -264,6 +278,17 @@ export default function BuildingRulesPage() {
                     <Crosshair className="w-4 h-4 mr-2" /> Use my current location
                   </Button>
 
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={rules.handleTestDistance}
+                    disabled={rules.updatingRules || rules.testingDistance}
+                    className="w-full h-11 rounded-xl border-slate-200 text-slate-800 font-bold hover:bg-slate-50 disabled:opacity-100"
+                  >
+                    {rules.testingDistance ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Crosshair className="w-4 h-4 mr-2" />}
+                    Test my current distance
+                  </Button>
+
                   <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm text-slate-600">
                     <p className="font-bold text-slate-900">Saved allowed location</p>
                     <div className="mt-2 grid gap-1 text-xs font-medium sm:grid-cols-2">
@@ -273,6 +298,25 @@ export default function BuildingRulesPage() {
                       <p>Device accuracy: <span className="font-bold text-slate-800">{rules.locationAccuracy !== null ? `~${Math.round(rules.locationAccuracy)} meters` : "Not captured this session"}</span></p>
                     </div>
                   </div>
+
+                  {rules.distanceTest && (
+                    <div className={`rounded-xl border p-3 text-sm ${isCurrentDeviceOutsideSavedLocation ? "border-red-100 bg-red-50 text-red-800" : "border-emerald-100 bg-emerald-50 text-emerald-800"}`}>
+                      <p className="font-bold text-slate-900">Current distance test</p>
+                      <div className="mt-2 grid gap-1 text-xs font-medium sm:grid-cols-2">
+                        <p>Current latitude: <span className="font-bold">{rules.distanceTest.currentLat}</span></p>
+                        <p>Current longitude: <span className="font-bold">{rules.distanceTest.currentLng}</span></p>
+                        <p>Saved latitude: <span className="font-bold">{rules.distanceTest.savedLat}</span></p>
+                        <p>Saved longitude: <span className="font-bold">{rules.distanceTest.savedLng}</span></p>
+                        <p>Estimated distance: <span className="font-bold">{formatDistance(rules.distanceTest.distanceMeters)}</span></p>
+                        <p>Accuracy: <span className="font-bold">~{Math.round(rules.distanceTest.accuracyMeters)} meters</span></p>
+                      </div>
+                      {isCurrentDeviceOutsideSavedLocation && (
+                        <p className="mt-3 text-sm font-bold">
+                          This device is currently outside the saved allowed location. If you are physically at the gate, save the location again using a mobile phone.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-1.5 pt-2">
                     <Label htmlFor="allowed-radius" className="font-bold text-slate-700 text-xs uppercase tracking-wider">Allowed radius (Meters)</Label>
@@ -291,6 +335,9 @@ export default function BuildingRulesPage() {
                 </div>
 
                 <div className="pt-2">
+                  <p className="mb-3 text-xs font-bold text-slate-500">
+                    Recommended setup: open this admin page on your phone, stand at the gate, then tap Use my current location.
+                  </p>
                   <Button 
                     onClick={rules.handleSaveGeofence} 
                     disabled={rules.updatingRules} 

@@ -1,12 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getDistanceInMeters } from "@/lib/geo";
 import { supabase } from "@/lib/supabase";
 
 export type CustomField = {
   id: string;
   label: string;
   active: boolean;
+};
+
+export type GeofenceDistanceTest = {
+  currentLat: number;
+  currentLng: number;
+  savedLat: number;
+  savedLng: number;
+  distanceMeters: number;
+  accuracyMeters: number;
 };
 
 export function useBuildingRules() {
@@ -27,6 +37,12 @@ export function useBuildingRules() {
   const [longitude, setLongitude] = useState<string>("");
   const [radius, setRadius] = useState<string>("200");
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [isLikelyDesktop] = useState(() => {
+    if (typeof navigator === "undefined") return false;
+    return !/android|iphone|ipad|ipod|mobile/.test(navigator.userAgent.toLowerCase());
+  });
+  const [testingDistance, setTestingDistance] = useState(false);
+  const [distanceTest, setDistanceTest] = useState<GeofenceDistanceTest | null>(null);
 
   useEffect(() => {
     const fetchRules = async () => {
@@ -136,6 +152,7 @@ export function useBuildingRules() {
         setLatitude(position.coords.latitude.toString());
         setLongitude(position.coords.longitude.toString());
         setLocationAccuracy(position.coords.accuracy);
+        setDistanceTest(null);
         setMessage({ type: "success", text: "Location coordinates updated from this device. Review them below, then save." });
       },
       (error) => {
@@ -145,6 +162,57 @@ export function useBuildingRules() {
         } else {
           setMessage({ type: "error", text: "Failed to get location. Move near the entrance, enable precise location, then try again." });
         }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+
+  const handleTestDistance = () => {
+    const savedLat = latitude ? parseFloat(latitude) : null;
+    const savedLng = longitude ? parseFloat(longitude) : null;
+
+    if (
+      savedLat === null ||
+      savedLng === null ||
+      Number.isNaN(savedLat) ||
+      Number.isNaN(savedLng)
+    ) {
+      setMessage({ type: "error", text: "Add saved latitude and longitude before testing your current distance." });
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setMessage({ type: "error", text: "Geolocation is not supported by your browser." });
+      return;
+    }
+
+    setMessage(null);
+    setTestingDistance(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const currentLat = position.coords.latitude;
+        const currentLng = position.coords.longitude;
+        const accuracyMeters = position.coords.accuracy;
+        const distanceMeters = getDistanceInMeters(currentLat, currentLng, savedLat, savedLng);
+
+        setDistanceTest({
+          currentLat,
+          currentLng,
+          savedLat,
+          savedLng,
+          distanceMeters,
+          accuracyMeters,
+        });
+        setTestingDistance(false);
+      },
+      (error) => {
+        console.error("Error testing current distance:", error);
+        if (error.code === error.PERMISSION_DENIED) {
+          setMessage({ type: "error", text: "Please allow location access to test your current distance." });
+        } else {
+          setMessage({ type: "error", text: "Failed to test current distance. Enable precise location, then try again." });
+        }
+        setTestingDistance(false);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
@@ -216,7 +284,11 @@ export function useBuildingRules() {
     longitude, setLongitude,
     radius, setRadius,
     locationAccuracy,
+    isLikelyDesktop,
+    testingDistance,
+    distanceTest,
     handleFetchLocation,
+    handleTestDistance,
     handleSaveGeofence
   };
 }
