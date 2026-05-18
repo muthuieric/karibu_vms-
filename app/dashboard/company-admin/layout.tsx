@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AlertOctagon, LayoutDashboard, SquareCode, ContactRound, ClipboardList, Landmark, OctagonX, WalletCards, MessageCircleQuestion, SlidersHorizontal } from "lucide-react";
 
 import { DashboardSidebar, type DashboardNavItem } from "@/components/dashboard/shared/DashboardSidebar";
+import { HardLockedScreen } from "@/components/dashboard/shared/HardLockedScreen";
 import { LockedAccountBanner } from "@/components/dashboard/shared/LockedAccountBanner";
 import { LoadingState } from "@/components/dashboard/shared/StateBlocks";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export default function CompanyAdminLayout({ children }: { children: React.React
   const router = useRouter();
 
   const [isLocked, setIsLocked] = useState<boolean>(false);
+  const [isHardLocked, setIsHardLocked] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [visitorCount, setVisitorCount] = useState(0);
   const [amountDue, setAmountDue] = useState(0);
@@ -55,9 +57,17 @@ export default function CompanyAdminLayout({ children }: { children: React.React
           if (profile?.company_id) {
             const { data: company } = await supabase
               .from("companies")
-              .select("is_locked, created_at")
+              .select("is_locked, hard_locked, created_at")
               .eq("id", profile.company_id)
               .single();
+
+            const role = (profile.role || "").trim().toLowerCase();
+            const isCompanyUser = role === "admin" || role === "company_admin" || role === "company-admin";
+            if (isCompanyUser && company?.hard_locked === true) {
+              setIsHardLocked(true);
+              setLoading(false);
+              return;
+            }
 
             let countStartDate = company?.created_at || new Date().toISOString();
 
@@ -112,6 +122,10 @@ export default function CompanyAdminLayout({ children }: { children: React.React
         <LoadingState label="Verifying admin access..." />
       </div>
     );
+  }
+
+  if (isHardLocked) {
+    return <HardLockedScreen onBackToLogin={handleLogout} />;
   }
 
   const safePathname = pathname || "";

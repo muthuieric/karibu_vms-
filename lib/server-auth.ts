@@ -11,12 +11,16 @@ export async function verifyCompanyAccess(supabaseAdmin: SupabaseClient, company
 
   const { data: company, error } = await supabaseAdmin
     .from("companies")
-    .select("is_locked, subscription_ends_at")
+    .select("is_locked, hard_locked, subscription_ends_at")
     .eq("id", companyId)
     .single();
 
   if (error || !company) {
     return { allowed: false, error: "Company not found", status: 404 };
+  }
+
+  if (company.hard_locked) {
+    return { allowed: false, error: "Workspace access is locked by the platform administrator.", status: 403 };
   }
 
   if (company.is_locked) {

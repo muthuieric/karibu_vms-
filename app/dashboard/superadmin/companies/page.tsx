@@ -24,9 +24,9 @@ export default function ManageCompaniesPage() {
   const [lockTarget, setLockTarget] = useState<{ companyId: string; isLocked: boolean } | null>(null);
 
   const activeWorkspaces = companiesPage.companies.filter(
-    (company) => !company.is_locked && company.subscription_status !== "pending_approval"
+    (company) => !company.is_locked && !company.hard_locked && company.subscription_status !== "pending_approval"
   ).length;
-  const lockedWorkspaces = companiesPage.companies.filter((company) => company.is_locked).length;
+  const lockedWorkspaces = companiesPage.companies.filter((company) => company.is_locked || company.hard_locked).length;
   const recentWorkspaces = companiesPage.companies.filter((company) => {
     const createdAt = new Date(company.created_at).getTime();
     return createdAt >= RECENT_WORKSPACE_CUTOFF;
@@ -58,6 +58,7 @@ export default function ManageCompaniesPage() {
           companiesPage.viewCompanyVisitors(companyId, companyName);
         }}
         onToggleCompanyLock={(companyId, currentLockStatus) => setLockTarget({ companyId, isLocked: currentLockStatus })}
+        onToggleCompanyHardLock={companiesPage.toggleCompanyHardLock}
         onApproveCompany={companiesPage.approveCompany}
         onChangePlanTier={companiesPage.handleChangePlanTier}
       />
@@ -95,11 +96,11 @@ export default function ManageCompaniesPage() {
 
       {lockTarget && (
         <ModalShell
-          title={lockTarget.isLocked ? "Unlock workspace?" : "Lock workspace?"}
+          title={lockTarget.isLocked ? "Remove soft lock?" : "Soft lock workspace?"}
           description={
             lockTarget.isLocked
-              ? "This will restore dashboard access for the selected workspace."
-              : "This will restrict dashboard access for the selected workspace."
+              ? "This will remove the existing soft lock from the selected workspace."
+              : "This will apply the existing soft lock behavior to the selected workspace."
           }
           onClose={() => setLockTarget(null)}
           footer={
@@ -107,13 +108,18 @@ export default function ManageCompaniesPage() {
               <Button type="button" variant="ghost" onClick={() => setLockTarget(null)}>Cancel</Button>
               <Button
                 type="button"
-                variant={lockTarget.isLocked ? "default" : "destructive"}
+                variant="outline"
+                className={
+                  lockTarget.isLocked
+                    ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+                    : "border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                }
                 onClick={() => {
                   companiesPage.toggleCompanyLock(lockTarget.companyId, lockTarget.isLocked, true);
                   setLockTarget(null);
                 }}
               >
-                {lockTarget.isLocked ? <><PlusCircle className="h-4 w-4" /> Unlock Workspace</> : <><Lock className="h-4 w-4" /> Lock Workspace</>}
+                {lockTarget.isLocked ? <><PlusCircle className="h-4 w-4" /> Remove Soft Lock</> : <><Lock className="h-4 w-4" /> Soft Lock</>}
               </Button>
             </div>
           }

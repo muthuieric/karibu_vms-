@@ -13,6 +13,9 @@ export type Company = {
   created_at: string;
   subscription_status: string;
   is_locked: boolean;
+  hard_locked?: boolean;
+  hard_lock_reason?: string | null;
+  hard_locked_at?: string | null;
   plan_tier?: string;
 };
 
@@ -40,6 +43,7 @@ export function useSuperadminCompanies() {
         ...company,
         subscription_status: company.subscription_status || "trial",
         is_locked: company.is_locked || false,
+        hard_locked: company.hard_locked || false,
       }))
     );
     setLoading(false);
@@ -143,12 +147,39 @@ export function useSuperadminCompanies() {
   };
 
   const toggleCompanyLock = async (companyId: string, currentLockStatus: boolean, skipConfirm = false) => {
-    const action = currentLockStatus ? "Unlock" : "Lock";
-    if (!skipConfirm && !window.confirm(`Are you sure you want to ${action} this company's account?`)) return;
+    const action = currentLockStatus ? "Remove Soft Lock" : "Soft Lock";
+    if (!skipConfirm && !window.confirm(`Are you sure you want to ${action.toLowerCase()} this company's account?`)) return;
 
     const { error } = await supabase.from("companies").update({ is_locked: !currentLockStatus }).eq("id", companyId);
     if (error) {
       alert(`Failed to update lock status: ${error.message}`);
+    } else {
+      fetchCompanies();
+    }
+  };
+
+  const toggleCompanyHardLock = async (companyId: string, currentHardLockStatus: boolean) => {
+    const confirmed = currentHardLockStatus
+      ? window.confirm("Remove hard lock and restore access?")
+      : window.confirm("Hard lock this workspace? Company admins and guards will not be able to access the system until unlocked.");
+
+    if (!confirmed) return;
+
+    const updatePayload = currentHardLockStatus
+      ? {
+          hard_locked: false,
+          hard_locked_at: null,
+          hard_lock_reason: null,
+        }
+      : {
+          hard_locked: true,
+          hard_locked_at: new Date().toISOString(),
+          hard_lock_reason: "Payment required",
+        };
+
+    const { error } = await supabase.from("companies").update(updatePayload).eq("id", companyId);
+    if (error) {
+      alert(`Failed to update hard lock status: ${error.message}`);
     } else {
       fetchCompanies();
     }
@@ -233,6 +264,7 @@ export function useSuperadminCompanies() {
     handleCreateAdmin,
     viewCompanyVisitors,
     toggleCompanyLock,
+    toggleCompanyHardLock,
     approveCompany,
     handleChangePlanTier,
   };

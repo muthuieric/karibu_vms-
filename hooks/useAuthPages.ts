@@ -23,7 +23,7 @@ export function useLoginPage() {
       if (authData.user) {
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, company_id")
           .eq("id", authData.user.id)
           .maybeSingle();
 
@@ -35,9 +35,23 @@ export function useLoginPage() {
 
         if (userRole === "super_admin" || userRole === "superadmin") {
           window.location.href = "/dashboard/superadmin";
-        } else if (userRole === "admin" || userRole === "company_admin") {
+        } else if (userRole === "admin" || userRole === "company_admin" || userRole === "company-admin") {
+          if (profile.company_id) {
+            const { data: company } = await supabase.from("companies").select("hard_locked").eq("id", profile.company_id).maybeSingle();
+            if (company?.hard_locked) {
+              window.location.href = "/dashboard/company-admin";
+              return;
+            }
+          }
           window.location.href = "/dashboard/company-admin";
         } else if (userRole === "guard") {
+          if (profile.company_id) {
+            const { data: company } = await supabase.from("companies").select("hard_locked").eq("id", profile.company_id).maybeSingle();
+            if (company?.hard_locked) {
+              window.location.href = "/dashboard/guard";
+              return;
+            }
+          }
           window.location.href = "/dashboard/guard";
         } else {
           setError(`Your account has an unknown role: "${rawRole}"`);

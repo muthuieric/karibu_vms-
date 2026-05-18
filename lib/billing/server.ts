@@ -173,6 +173,7 @@ export async function reconcileCompanyBilling(companyId: string) {
       billing_period_start: summary.periodStart,
       billing_period_end: summary.periodEnd,
       subscription_status: summary.currentBalance > 0 ? "unpaid" : "paid",
+      // Hard lock is controlled by superadmin unless payment auto-unlock is enabled.
       is_locked: summary.currentBalance > 0 ? summary.company.is_locked : false,
     })
     .eq("id", companyId);

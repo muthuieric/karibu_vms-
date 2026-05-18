@@ -18,6 +18,7 @@ import { DataTableShell } from "@/components/dashboard/shared/DataTableShell";
 import { SearchInput, SelectField } from "@/components/dashboard/shared/Fields";
 import { EmptyState, LoadingState } from "@/components/dashboard/shared/StateBlocks";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -31,6 +32,9 @@ type Company = {
   created_at: string;
   subscription_status: string;
   is_locked: boolean;
+  hard_locked?: boolean;
+  hard_lock_reason?: string | null;
+  hard_locked_at?: string | null;
   plan_tier?: string;
 };
 
@@ -43,11 +47,13 @@ type CompaniesDirectoryCardProps = {
   onOpenAdminModal: (companyId: string) => void;
   onViewCompanyVisitors: (companyId: string, companyName: string) => void;
   onToggleCompanyLock: (companyId: string, currentLockStatus: boolean) => void;
+  onToggleCompanyHardLock: (companyId: string, currentHardLockStatus: boolean) => void;
   onApproveCompany: (companyId: string) => void;
   onChangePlanTier: (companyId: string, newTier: string) => void;
 };
 
 function workspaceStatus(company: Company) {
+  if (company.hard_locked) return "locked";
   if (company.is_locked) return "locked";
   if (company.subscription_status === "pending_approval") return "pending";
   return company.subscription_status || "trial";
@@ -69,6 +75,7 @@ export default function CompaniesDirectoryCard({
   onOpenAdminModal,
   onViewCompanyVisitors,
   onToggleCompanyLock,
+  onToggleCompanyHardLock,
   onApproveCompany,
   onChangePlanTier,
 }: CompaniesDirectoryCardProps) {
@@ -123,8 +130,15 @@ export default function CompaniesDirectoryCard({
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 font-bold text-slate-900">
                             <span className="max-w-[220px] truncate">{company.name}</span>
-                            {company.is_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
+                            {company.hard_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
+                            {company.is_locked && !company.hard_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
                           </div>
+                          {(company.is_locked || company.hard_locked) && (
+                            <div className="mt-1 flex flex-wrap gap-1.5">
+                              {company.is_locked && <Badge variant="pending">Soft locked</Badge>}
+                              {company.hard_locked && <Badge variant="error">Hard locked</Badge>}
+                            </div>
+                          )}
                           <div className="mt-0.5 flex max-w-[240px] items-center gap-1 truncate text-xs text-slate-500">
                             <MapPin className="h-3 w-3 shrink-0" />
                             {company.address || "No address provided"}
@@ -186,10 +200,23 @@ export default function CompaniesDirectoryCard({
                             </Button>
                             <Button
                               size="sm"
-                              variant={company.is_locked ? "default" : "destructive"}
+                              variant="outline"
+                              className={
+                                company.is_locked
+                                  ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+                                  : "border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                              }
                               onClick={() => onToggleCompanyLock(company.id, company.is_locked)}
                             >
-                              {company.is_locked ? <><Unlock className="h-4 w-4" /> Unlock</> : <><Lock className="h-4 w-4" /> Lock</>}
+                              {company.is_locked ? <><Unlock className="h-4 w-4" /> Remove Soft Lock</> : <><Lock className="h-4 w-4" /> Soft Lock</>}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={company.hard_locked ? "outline" : "destructive"}
+                              className={company.hard_locked ? "border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800" : undefined}
+                              onClick={() => onToggleCompanyHardLock(company.id, company.hard_locked || false)}
+                            >
+                              {company.hard_locked ? <><Unlock className="h-4 w-4" /> Remove Hard Lock</> : <><Lock className="h-4 w-4" /> Hard Lock</>}
                             </Button>
                           </>
                         )}
@@ -209,8 +236,15 @@ export default function CompaniesDirectoryCard({
                     <div className="flex items-center gap-2 font-bold text-slate-900">
                       <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
                       <span className="truncate">{company.name}</span>
-                      {company.is_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
+                      {company.hard_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
+                      {company.is_locked && !company.hard_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
                     </div>
+                    {(company.is_locked || company.hard_locked) && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {company.is_locked && <Badge variant="pending">Soft locked</Badge>}
+                        {company.hard_locked && <Badge variant="error">Hard locked</Badge>}
+                      </div>
+                    )}
                     <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
                       <MapPin className="h-3 w-3" />
                       <span className="truncate">{company.address || "No address provided"}</span>
@@ -265,11 +299,23 @@ export default function CompaniesDirectoryCard({
                       </Button>
                       <Button
                         size="sm"
-                        variant={company.is_locked ? "default" : "destructive"}
-                        className="w-full"
+                        variant="outline"
+                        className={
+                          company.is_locked
+                            ? "w-full border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+                            : "w-full border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                        }
                         onClick={() => onToggleCompanyLock(company.id, company.is_locked)}
                       >
-                        {company.is_locked ? <><Unlock className="h-4 w-4" /> Unlock Workspace</> : <><Lock className="h-4 w-4" /> Lock Workspace</>}
+                        {company.is_locked ? <><Unlock className="h-4 w-4" /> Remove Soft Lock</> : <><Lock className="h-4 w-4" /> Soft Lock</>}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={company.hard_locked ? "outline" : "destructive"}
+                        className={company.hard_locked ? "w-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800" : "w-full"}
+                        onClick={() => onToggleCompanyHardLock(company.id, company.hard_locked || false)}
+                      >
+                        {company.hard_locked ? <><Unlock className="h-4 w-4" /> Remove Hard Lock</> : <><Lock className="h-4 w-4" /> Hard Lock</>}
                       </Button>
                     </>
                   )}
