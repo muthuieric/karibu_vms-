@@ -227,6 +227,8 @@ export function useGuardDashboard() {
     setSendingOtpId(id);
 
     try {
+      if (!companyId) throw new Error("Company context is missing.");
+
       let code = "";
       let isUnique = false;
       while (!isUnique) {
@@ -237,18 +239,26 @@ export function useGuardDashboard() {
         if (!data || data.length === 0) isUnique = true;
       }
 
-      await supabase.from("visitors").update({ otp_code: code }).eq("id", id);
-      setVerifyingId(id);
-      setOtpInput("");
+      const { error: updateError } = await supabase.from("visitors").update({ otp_code: code }).eq("id", id);
+      if (updateError) throw updateError;
 
-      await fetch("/api/sms", {
+      const smsRes = await fetch("/api/sms", {
         method: "POST",
         headers: await getAuthHeaders(true),
         body: JSON.stringify({ phone, companyId, message: `Your building entry code is: ${code}` }),
       });
+
+      const smsData = await smsRes.json().catch(() => ({}));
+      if (!smsRes.ok) {
+        await supabase.from("visitors").update({ otp_code: null }).eq("id", id);
+        throw new Error(smsData.error || "OTP was not sent.");
+      }
+
+      setVerifyingId(id);
+      setOtpInput("");
     } catch (err) {
       console.error(err);
-      alert("[SMS API Error] Could not send message. Please try again.");
+      alert("OTP was not sent. Please check Africa’s Talking setup or SMS credits.");
     } finally {
       setSendingOtpId(null);
     }
