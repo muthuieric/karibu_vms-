@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     const confirmLink = `${origin}/${companyId}/host-confirm`;
 
     const { data, error } = await resend.emails.send({
-      from: 'karibu-vms Security <onboarding@resend.dev>', 
+      from: process.env.RESEND_FROM_EMAIL || 'Karibu VMS <notifications@send.karibuvms.com>',
       to: [hostEmail],
       subject: `Arrival Alert: ${visitorName} is here to see you`,
       html: `
