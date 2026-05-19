@@ -65,8 +65,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const enableVercelInsights = Boolean(process.env.VERCEL);
-
   return (
     <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
       <body
@@ -84,12 +82,8 @@ export default function RootLayout({
         />
         {children}
         <InstallPrompt />
-        {enableVercelInsights && (
-          <>
-            <Analytics />
-            <SpeedInsights />
-          </>
-        )}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
