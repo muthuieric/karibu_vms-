@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import InstallPrompt from "@/components/InstallPrompt";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/site";
 import "./globals.css";
@@ -84,6 +85,11 @@ export default function RootLayout({
         />
         {children}
         <InstallPrompt />
+
+        {process.env.NEXT_PUBLIC_GA_ID ? (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        ) : null}
+
         {enableVercelInsights && (
           <>
             <Analytics />
