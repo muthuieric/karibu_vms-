@@ -3,6 +3,29 @@ import { createSupabaseAdmin, markCompanyPaymentSuccessful, reconcileCompanyBill
 import { getPayHeroTransactionStatus, normalizePayHeroStatus } from "@/lib/payhero";
 import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 
+function getStatusValue(data: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = data[key];
+    if (value !== undefined && value !== null) return String(value).trim();
+  }
+  return "";
+}
+
+function getConservativeStatus(statusData: Record<string, unknown>) {
+  const rawStatus = getStatusValue(statusData, ["Status", "status"]);
+  const rawResultCode = statusData.ResultCode || statusData.result_code || statusData.resultCode;
+  const description = getStatusValue(statusData, ["ResultDesc", "ResultDescription", "ResponseDescription", "description", "message"]);
+  const combinedText = `${rawStatus} ${description}`.toLowerCase();
+
+  if (/revers|refund/.test(combinedText)) return "reversed";
+  if (/failed|invalid|unable to process|insufficient/.test(combinedText)) return "failed";
+
+  return normalizePayHeroStatus(
+    rawStatus || null,
+    typeof rawResultCode === "string" || typeof rawResultCode === "number" ? rawResultCode : null
+  );
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -29,42 +52,36 @@ export async function GET(req: Request) {
     assertCompanyAccess(profile, existing.company_id);
 
     const statusData = await getPayHeroTransactionStatus(reference);
-    const rawStatus = statusData.Status || statusData.status;
-    const rawResultCode = statusData.ResultCode || statusData.result_code;
-    const normalizedStatus = normalizePayHeroStatus(
-      typeof rawStatus === "string" ? rawStatus : null,
-      typeof rawResultCode === "string" || typeof rawResultCode === "number" ? rawResultCode : null
-    );
-    {
-      const paidAt = normalizedStatus === "paid" ? new Date().toISOString() : existing.paid_at;
-      const wasAlreadyPaid = String(existing.status || "").toLowerCase() === "paid";
-      const paidPeriod =
-        normalizedStatus === "paid" && paidAt && !wasAlreadyPaid
-          ? await markCompanyPaymentSuccessful(existing.company_id, paidAt, Number(existing.amount || 0))
-          : null;
+    const normalizedStatus = getConservativeStatus(statusData);
 
-      await supabaseAdmin
-        .from("transactions")
-        .update({
-          status: normalizedStatus,
-          raw_callback_payload: statusData,
-          updated_at: new Date().toISOString(),
-          paid_at: paidAt,
-          reversed_at: normalizedStatus === "reversed" ? new Date().toISOString() : existing.reversed_at,
-          ...(paidPeriod
-            ? {
-                billing_period_key: paidPeriod.periodKey,
-                billing_period_start: paidPeriod.periodStart,
-                billing_period_end: paidPeriod.periodEnd,
-                current_balance: 0,
-              }
-            : {}),
-        })
-        .eq("id", existing.id);
+    const paidAt = normalizedStatus === "paid" ? existing.paid_at || new Date().toISOString() : existing.paid_at;
+    const wasAlreadyPaid = String(existing.status || "").toLowerCase() === "paid";
+    const paidPeriod =
+      normalizedStatus === "paid" && paidAt && !wasAlreadyPaid
+        ? await markCompanyPaymentSuccessful(existing.company_id, paidAt, Number(existing.amount || 0))
+        : null;
 
-      if (normalizedStatus !== "paid") {
-        await reconcileCompanyBilling(existing.company_id);
-      }
+    await supabaseAdmin
+      .from("transactions")
+      .update({
+        status: normalizedStatus,
+        raw_callback_payload: statusData,
+        updated_at: new Date().toISOString(),
+        paid_at: paidAt,
+        reversed_at: normalizedStatus === "reversed" ? new Date().toISOString() : existing.reversed_at,
+        ...(paidPeriod
+          ? {
+              billing_period_key: paidPeriod.periodKey,
+              billing_period_start: paidPeriod.periodStart,
+              billing_period_end: paidPeriod.periodEnd,
+              current_balance: 0,
+            }
+          : {}),
+      })
+      .eq("id", existing.id);
+
+    if (normalizedStatus !== "paid") {
+      await reconcileCompanyBilling(existing.company_id);
     }
 
     return NextResponse.json({ success: true, status: normalizedStatus });
