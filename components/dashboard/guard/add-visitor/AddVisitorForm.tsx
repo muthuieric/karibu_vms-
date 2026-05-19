@@ -13,7 +13,7 @@ type CustomField = {
   active: boolean;
 };
 
-type Host = { id: string; name: string; phone: string; email: string; department_id: string };
+type Host = { id: string; name: string; department_id: string };
 type DepartmentWithHosts = { id: string; name: string; hosts: Host[] };
 
 type VisitorFormData = {

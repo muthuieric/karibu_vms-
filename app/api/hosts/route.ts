@@ -48,10 +48,14 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get("authorization");
 
     let supabaseAdmin;
+    let selectFields = "id, department_id, name";
     if (authHeader) {
       const auth = await requireRole(request, ["company_admin", "guard", "superadmin"]);
       supabaseAdmin = auth.supabaseAdmin;
       assertCompanyAccess(auth.profile, companyId);
+      if (auth.profile.role === "company_admin" || auth.profile.role === "superadmin") {
+        selectFields = "id, company_id, department_id, name, phone, email, created_at";
+      }
     } else {
       const { createSupabaseAdmin } = await import("@/lib/billing/server");
       supabaseAdmin = createSupabaseAdmin();
@@ -59,7 +63,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabaseAdmin
       .from("hosts")
-      .select("id, department_id, name, phone, email")
+      .select(selectFields)
       .eq("company_id", companyId)
       .order("name", { ascending: true });
 

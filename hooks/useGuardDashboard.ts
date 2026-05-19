@@ -16,7 +16,6 @@ export function useGuardDashboard() {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState("");
   const [planTier, setPlanTier] = useState("basic");
   const [guardGateId, setGuardGateId] = useState<string | null>(null);
   const [guardGateName, setGuardGateName] = useState("All Gates");
@@ -85,7 +84,6 @@ export function useGuardDashboard() {
         .single();
 
       if (companyData) {
-        setCompanyName(companyData.name || "");
         setPlanTier(getBasePlan(companyData.plan_tier));
         setRequirePhoto(companyData.require_photo || false);
         setAskPhone(companyData.ask_phone !== false);
@@ -198,26 +196,17 @@ export function useGuardDashboard() {
       .eq("id", visitor.id);
 
     if (visitor.host_id && planTier !== "basic") {
-      const { data: host } = await supabase.from("hosts").select("email, name").eq("id", visitor.host_id).single();
-      if (host?.email) {
-        try {
-          await fetch("/api/notify-host", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              hostEmail: host.email,
-              hostName: host.name,
-              visitorName: visitor.name,
-              visitorPhone: visitor.phone || "Not provided",
-              companyName,
-              purpose: visitor.purpose || "Not stated",
-              visitorPhoto: visitor.photo_url || null,
-              companyId,
-            }),
-          });
-        } catch (notifyError) {
-          console.error("Failed to trigger host notification:", notifyError);
-        }
+      try {
+        await fetch("/api/notify-host", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            visitorId: visitor.id,
+            companyId,
+          }),
+        });
+      } catch (notifyError) {
+        console.error("Failed to trigger host notification:", notifyError);
       }
     }
   };

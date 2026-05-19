@@ -16,7 +16,7 @@ type CustomField = {
 };
 
 type Department = { id: string; name: string };
-type Host = { id: string; name: string; phone: string; email: string; department_id: string };
+type Host = { id: string; name: string; department_id: string };
 type RedFlag = {
   id_number?: string | null;
   phone?: string | null;
@@ -73,7 +73,6 @@ export default function AddVisitorModal({
   // NEW: Terms and Conditions State
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const [companyName, setCompanyName] = useState("");
   const [planTier, setPlanTier] = useState("basic");
 
   useEffect(() => {
@@ -96,7 +95,6 @@ export default function AddVisitorModal({
         .single();
 
       if (data) {
-        setCompanyName(data.name || "");
         setPlanTier(data.plan_tier || "basic");
         if (data.custom_fields) {
           const activeFields = (data.custom_fields as CustomField[]).filter(f => f.active);
@@ -250,7 +248,9 @@ export default function AddVisitorModal({
       if (error) {
         console.error("Supabase visitor insert failed:", {
           error,
-          payload: insertPayload,
+          companyId,
+          gateId: finalGateId,
+          hostId: insertPayload.host_id,
         });
         throw new Error(getSupabaseErrorMessage(error, "Failed to add visitor."));
       }
@@ -259,28 +259,18 @@ export default function AddVisitorModal({
         onVisitorAdded?.(createdVisitor as Visitor);
       }
 
-      if (askHost && newVisitor.host_id && planTier !== "basic") {
-        const selectedHost = hosts.find((h) => h.id === newVisitor.host_id);
-
-        if (selectedHost && selectedHost.email) {
-          try {
-            await fetch('/api/notify-host', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                hostEmail: selectedHost.email,
-                hostName: selectedHost.name,
-                visitorName: newVisitor.name,
-                visitorPhone: finalPhone || 'Not provided',
-                companyName: companyName,
-                purpose: newVisitor.purpose || 'Not stated',
-                visitorPhoto: uploadedPhotoUrl,
-                companyId: companyId
-              })
-            });
-          } catch (notifyError) {
-            console.error("Failed to trigger host notification:", notifyError);
-          }
+      if (askHost && newVisitor.host_id && planTier !== "basic" && createdVisitor?.id && companyId) {
+        try {
+          await fetch("/api/notify-host", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              visitorId: createdVisitor.id,
+              companyId,
+            }),
+          });
+        } catch (notifyError) {
+          console.error("Failed to trigger host notification:", notifyError);
         }
       }
 

@@ -68,7 +68,7 @@ export default function RootLayout({
   const enableVercelInsights = Boolean(process.env.VERCEL);
 
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
       <body
         className={`${inter.variable} ${geistMono.variable} bg-background text-text-main antialiased`}
       >

@@ -133,7 +133,9 @@ export async function POST(request: Request) {
     if (error) {
       console.error("Public visitor insert failed:", {
         error,
-        payload: insertPayload,
+        companyId,
+        gateId: safeGateId,
+        hostId: safeHostId,
       });
       return NextResponse.json({ error: getSupabaseErrorMessage(error, "Failed to register visitor") }, { status: 400 });
     }

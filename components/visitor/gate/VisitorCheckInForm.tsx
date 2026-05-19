@@ -29,8 +29,6 @@ type CustomField = {
 type Host = {
   id: string;
   name: string;
-  phone: string;
-  email: string;
   department_id: string;
 };
 

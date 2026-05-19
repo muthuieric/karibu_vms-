@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin, markCompanyPaymentSuccessful, reconcileCompanyBilling } from "@/lib/billing/server";
-import { getPayHeroExternalReference, getPayHeroReference, normalizePayHeroStatus } from "@/lib/payhero";
+import { getPayHeroExternalReference, getPayHeroReference, normalizePayHeroProviderStatus } from "@/lib/payhero";
 import { getSafeErrorResponse } from "@/lib/api-auth";
 import { safeNumber } from "@/lib/validation";
 
@@ -11,25 +11,13 @@ function getPayloadValue(payload: Record<string, unknown>, keys: string[]) {
   return null;
 }
 
-function getPayloadText(payload: Record<string, unknown>, keys: string[]) {
-  return String(getPayloadValue(payload, keys) || "").trim();
-}
-
 function companyIdFromExternalReference(reference: string) {
   const match = reference.match(/^KRB-([0-9a-f-]{36})-/i);
   return match?.[1] || null;
 }
 
 function getCallbackStatus(payload: Record<string, unknown>) {
-  const rawStatus = getPayloadText(payload, ["Status", "status"]);
-  const resultCode = getPayloadValue(payload, ["ResultCode", "result_code", "resultCode"]);
-  const description = getPayloadText(payload, ["ResultDesc", "ResultDescription", "ResponseDescription", "description", "message"]);
-  const combinedText = `${rawStatus} ${description}`.toLowerCase();
-
-  if (/revers|refund/.test(combinedText)) return "reversed";
-  if (/failed|invalid|unable to process|insufficient/.test(combinedText)) return "failed";
-
-  return normalizePayHeroStatus(rawStatus, resultCode as string | number | null);
+  return normalizePayHeroProviderStatus(payload);
 }
 
 export async function POST(req: Request) {

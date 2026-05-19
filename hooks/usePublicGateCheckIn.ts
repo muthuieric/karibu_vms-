@@ -9,7 +9,7 @@ import { getBasePlan } from "@/lib/billing/pricing";
 
 type CustomField = { id: string; label: string; active: boolean };
 type Department = { id: string; name: string };
-type Host = { id: string; name: string; phone: string; email: string; department_id: string };
+type Host = { id: string; name: string; department_id: string };
 export type GeofenceDebugDetails = {
   currentLat: number;
   currentLng: number;
@@ -197,12 +197,14 @@ export function usePublicGateCheckIn() {
         return;
       }
 
-      console.log("Public gate company debug", {
-        companyIdFromUrl: companyId,
-        gateIdFromUrl: urlGateId,
-        apiCompanyId: company.id,
-        apiCompanyName: company.name,
-      });
+      if (process.env.NODE_ENV === "development") {
+        console.log("Public gate company debug", {
+          companyIdFromUrl: companyId,
+          gateIdFromUrl: urlGateId,
+          apiCompanyId: company.id,
+          apiCompanyName: company.name,
+        });
+      }
 
       const basePlanTier = getBasePlan(company.plan_tier);
       setCompanyName(company.name);
@@ -293,7 +295,9 @@ export function usePublicGateCheckIn() {
               companyName: company.name,
             };
 
-            console.log("Geofence debug", geofenceDebug);
+            if (process.env.NODE_ENV === "development") {
+              console.log("Geofence debug", geofenceDebug);
+            }
 
             if (accuracyMeters > radiusMeters) {
               setGeofenceDebugDetails(geofenceDebug);
@@ -397,27 +401,18 @@ export function usePublicGateCheckIn() {
         throw new Error(registerData.error || "Failed to submit registration.");
       }
 
-      if (rules.askHost && newVisitor.host_id && planTier !== "basic") {
-        const selectedHost = hosts.find((host) => host.id === newVisitor.host_id);
-        if (selectedHost?.email) {
-          try {
-            await fetch("/api/notify-host", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                hostEmail: selectedHost.email,
-                hostName: selectedHost.name,
-                visitorName: newVisitor.name,
-                visitorPhone: finalPhone || "Not provided",
-                companyName,
-                purpose: newVisitor.purpose || "Not stated",
-                visitorPhoto: uploadedPhotoUrl,
-                companyId,
-              }),
-            });
-          } catch (notifyError) {
-            console.error("Failed to trigger host notification:", notifyError);
-          }
+      if (rules.askHost && newVisitor.host_id && planTier !== "basic" && registerData.data?.id) {
+        try {
+          await fetch("/api/notify-host", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              visitorId: registerData.data.id,
+              companyId,
+            }),
+          });
+        } catch (notifyError) {
+          console.error("Failed to trigger host notification:", notifyError);
         }
       }
 

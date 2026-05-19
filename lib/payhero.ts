@@ -21,6 +21,9 @@ type PayHeroRequestPayload = {
 
 type ParsedPayHeroBody = Record<string, unknown> | string | null;
 
+const REVERSAL_STATUS_PATTERN = /revers|refund|chargeback|dispute/;
+const FAILED_STATUS_PATTERN = /failed|invalid|unable to process|insufficient/;
+
 export class PayHeroRequestError extends Error {
   status: number;
   responseBody: string;
@@ -128,7 +131,9 @@ async function parsePayHeroResponse(response: Response, endpointUrl: string, pay
       status: response.status,
       endpointUrl,
       responseBody: JSON.stringify(data, null, 2),
-      payload: JSON.stringify(payload, null, 2),
+      payload: payload
+        ? JSON.stringify({ ...payload, phone_number: "[redacted]" }, null, 2)
+        : null,
     });
 
     throw new PayHeroRequestError(getPayHeroErrorMessage(response.status, data), response.status, data, endpointUrl, payload);
@@ -181,10 +186,39 @@ export function normalizePayHeroStatus(status?: string | null, resultCode?: stri
   if (normalized === "SUCCESS" || normalized === "SUCCESSFUL" || normalized === "PAID" || code === 0) return "paid";
   if (normalized === "QUEUED" || normalized === "PENDING" || normalized === "PROCESSING") return "pending";
   if (normalized === "CANCELLED" || normalized === "CANCELED") return "cancelled";
-  if (normalized === "REVERSED" || normalized === "REFUNDED") return "reversed";
+  if (normalized === "REVERSED" || normalized === "REFUNDED" || normalized === "CHARGEBACK") return "reversed";
   if (normalized === "FAILED" || (code !== undefined && code !== 0)) return "failed";
 
   return "pending";
+}
+
+function getStatusValue(data: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = data[key];
+    if (value !== undefined && value !== null) return String(value).trim();
+  }
+  return "";
+}
+
+export function normalizePayHeroProviderStatus(statusData: Record<string, unknown>): NormalizedPaymentStatus {
+  const rawStatus = getStatusValue(statusData, ["Status", "status"]);
+  const rawResultCode = statusData.ResultCode || statusData.result_code || statusData.resultCode;
+  const description = getStatusValue(statusData, [
+    "ResultDesc",
+    "ResultDescription",
+    "ResponseDescription",
+    "description",
+    "message",
+  ]);
+  const combinedText = `${rawStatus} ${description}`.toLowerCase();
+
+  if (REVERSAL_STATUS_PATTERN.test(combinedText)) return "reversed";
+  if (FAILED_STATUS_PATTERN.test(combinedText)) return "failed";
+
+  return normalizePayHeroStatus(
+    rawStatus || null,
+    typeof rawResultCode === "string" || typeof rawResultCode === "number" ? rawResultCode : null
+  );
 }
 
 export function getPayHeroReference(payload: Record<string, unknown>) {
