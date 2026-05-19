@@ -11,9 +11,25 @@ function getPayloadValue(payload: Record<string, unknown>, keys: string[]) {
   return null;
 }
 
+function getPayloadText(payload: Record<string, unknown>, keys: string[]) {
+  return String(getPayloadValue(payload, keys) || "").trim();
+}
+
 function companyIdFromExternalReference(reference: string) {
   const match = reference.match(/^KRB-([0-9a-f-]{36})-/i);
   return match?.[1] || null;
+}
+
+function getCallbackStatus(payload: Record<string, unknown>) {
+  const rawStatus = getPayloadText(payload, ["Status", "status"]);
+  const resultCode = getPayloadValue(payload, ["ResultCode", "result_code", "resultCode"]);
+  const description = getPayloadText(payload, ["ResultDesc", "ResultDescription", "ResponseDescription", "description", "message"]);
+  const combinedText = `${rawStatus} ${description}`.toLowerCase();
+
+  if (/revers|refund/.test(combinedText)) return "reversed";
+  if (/failed|invalid|unable to process|insufficient/.test(combinedText)) return "failed";
+
+  return normalizePayHeroStatus(rawStatus, resultCode as string | number | null);
 }
 
 export async function POST(req: Request) {
@@ -22,9 +38,7 @@ export async function POST(req: Request) {
     const payload = (body.response && typeof body.response === "object" ? body.response : body) as Record<string, unknown>;
     const providerReference = getPayHeroReference(payload);
     const externalReference = getPayHeroExternalReference(payload);
-    const rawStatus = getPayloadValue(payload, ["Status", "status"]);
-    const resultCode = getPayloadValue(payload, ["ResultCode", "result_code", "resultCode"]);
-    const status = normalizePayHeroStatus(String(rawStatus || ""), resultCode as string | number | null);
+    const status = getCallbackStatus(payload);
 
     if (!providerReference && !externalReference) {
       return NextResponse.json({ error: "Missing PayHero transaction reference." }, { status: 400 });
@@ -74,11 +88,12 @@ export async function POST(req: Request) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", existing.id);
+      await reconcileCompanyBilling(companyId);
       return NextResponse.json({ error: "Payment amount mismatch." }, { status: 400 });
     }
 
     const amount = expectedAmount;
-    const paidAt = status === "paid" ? new Date().toISOString() : existing?.paid_at || null;
+    const paidAt = status === "paid" ? existing?.paid_at || new Date().toISOString() : existing?.paid_at || null;
     const reversedAt = status === "reversed" ? new Date().toISOString() : existing?.reversed_at || null;
     const wasAlreadyPaid = String(existing?.status || "").toLowerCase() === "paid";
     const paidPeriod = status === "paid" && paidAt && !wasAlreadyPaid ? await markCompanyPaymentSuccessful(companyId, paidAt, amount) : null;
@@ -92,7 +107,7 @@ export async function POST(req: Request) {
       external_reference: externalReference || existing?.external_reference || null,
       tracking_id: providerReference || existing?.tracking_id || externalReference,
       phone_number: String(getPayloadValue(payload, ["Phone", "phone", "phone_number", "PhoneNumber"]) || existing?.phone_number || ""),
-      mpesa_receipt_number: String(getPayloadValue(payload, ["MpesaReceiptNumber", "mpesa_receipt_number"]) || existing?.mpesa_receipt_number || ""),
+      mpesa_receipt_number: String(getPayloadValue(payload, ["MpesaReceiptNumber", "TransactionReceipt", "mpesa_receipt_number"]) || existing?.mpesa_receipt_number || ""),
       status,
       raw_callback_payload: body,
       updated_at: new Date().toISOString(),
