@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin, markCompanyPaymentSuccessful, reconcileCompanyBilling } from "@/lib/billing/server";
 import { getPayHeroTransactionStatus, normalizePayHeroProviderStatus } from "@/lib/payhero";
+import { getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
-
-function isAuthorized(request: Request) {
-  const cronSecret = process.env.CRON_SECRET;
-
-  // CRON_SECRET is optional. If it is not set, allow Vercel Cron to run without an extra env variable.
-  // If a secret is added later, the route automatically requires the matching bearer token.
-  if (!cronSecret) return true;
-
-  return request.headers.get("authorization") === `Bearer ${cronSecret}`;
-}
 
 function getStatusReference(transaction: {
   checkout_request_id?: string | null;
@@ -112,12 +103,14 @@ async function recheckRecentPayHeroTransactions() {
 }
 
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized request." }, { status: 401 });
+  try {
+    await requireRole(request, ["superadmin"]);
+    const results = await recheckRecentPayHeroTransactions();
+    return NextResponse.json({ success: true, ...results });
+  } catch (error) {
+    const safeError = getSafeErrorResponse(error, "PayHero recheck failed.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
-
-  const results = await recheckRecentPayHeroTransactions();
-  return NextResponse.json({ success: true, ...results });
 }
 
 export async function POST(request: Request) {
