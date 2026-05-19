@@ -6,7 +6,11 @@ export const dynamic = "force-dynamic";
 
 function isAuthorized(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) return false;
+
+  // CRON_SECRET is optional. If it is not set, allow Vercel Cron to run without an extra env variable.
+  // If a secret is added later, the route automatically requires the matching bearer token.
+  if (!cronSecret) return true;
+
   return request.headers.get("authorization") === `Bearer ${cronSecret}`;
 }
 
