@@ -18,14 +18,15 @@ Use `.env.example` as the template. Keep real secrets in Vercel Project Settings
 
 Required groups:
 
-- `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_APP_URL`: public HTTPS domain, for example `https://example.com`.
+- `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_APP_URL`: public HTTPS domain, for example `https://karibuvms.com`.
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
 - PayHero: `PAYHERO_API_USERNAME`, `PAYHERO_API_PASSWORD`, `PAYHERO_CHANNEL_ID`, and `PAYHERO_CALLBACK_URL`.
 - Resend: `RESEND_API_KEY` and `RESEND_FROM_EMAIL`. `RESEND_FROM_EMAIL` must be a verified sender/domain in Resend.
-- Africa's Talking: `AFRICASTALKING_USERNAME` and `AFRICASTALKING_API_KEY`.
-- Cloudflare R2: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and `R2_PUBLIC_URL`.
-- `CRON_SECRET`: long random token used by Vercel Cron to authorize PayHero rechecks.
-- Sentry: `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_AUTH_TOKEN` when release upload is enabled.
+- Africa's Talking: `AFRICASTALKING_USERNAME`, `AFRICASTALKING_API_KEY`, and optional `AFRICASTALKING_SENDER_ID`.
+- Cloudflare R2: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and `R2_PUBLIC_URL` if image uploads use R2.
+- Sentry: `SENTRY_ORG`, `SENTRY_PROJECT`, and `SENTRY_AUTH_TOKEN` only when release upload is enabled.
+
+Never prefix backend secrets with `NEXT_PUBLIC_`. PayHero, Resend, Africa's Talking, R2 secret keys, Sentry auth token, and Supabase service role key must stay server-only.
 
 ## Supabase Setup
 
@@ -39,21 +40,20 @@ Required groups:
 1. Import the repository into Vercel.
 2. Add every variable from `.env.example` using production values.
 3. Set `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL`, and `PAYHERO_CALLBACK_URL` to the production HTTPS domain.
-4. Keep `vercel.json` enabled. It runs `/api/payhero/recheck` every 30 minutes so recent PayHero transactions are rechecked for reversals.
-5. Set `CRON_SECRET`; Vercel Cron includes it as a bearer token when invoking the cron route.
+4. Deploy after adding or changing environment variables.
 
 ## PayHero Setup
 
 - Use the production channel ID in `PAYHERO_CHANNEL_ID`.
 - Set the PayHero callback URL to `https://your-domain.example/api/payhero/callback`.
 - Confirm the callback reaches the live Vercel domain, not a preview deployment.
-- The app also rechecks PayHero `pending`, `paid`, `success`, and `completed` transactions from the previous 48 hours through `/api/payhero/recheck`.
-- Reversed, refunded, or chargeback statuses are marked `reversed`, billing is reconciled, the balance due is restored, and revenue excludes the transaction.
+- Confirm the PayHero/M-Pesa prompt displays the correct expected merchant or collection name before accepting customer payments.
+- PayHero callback/status handling marks reversed, refunded, or chargeback statuses as `reversed`, reconciles billing, restores the balance due, and excludes the transaction from revenue.
 
 ## Resend Setup
 
 - Verify the sending domain in Resend before launch.
-- Set `RESEND_FROM_EMAIL` to the verified sender, for example `Karibu VMS <notifications@example.com>`.
+- Set `RESEND_FROM_EMAIL` to the verified sender, for example `Karibu VMS <notifications@send.karibuvms.com>`.
 - Host notification requests must send only `visitorId` and `companyId`; the API fetches visitor, host, and company details server-side.
 
 ## Africa's Talking Setup
@@ -76,7 +76,7 @@ Manual checks before launch:
 - Public visitor registration creates a pending visitor.
 - Public host list returns only `id`, `name`, and `department_id`.
 - Host notification email sends from `RESEND_FROM_EMAIL`.
-- Guard OTP send and confirmation still work.
+- Guard OTP send and confirmation still works.
 - PayHero live-domain callback updates transactions.
 - Reversed PayHero payments restore balances and prevent accounts from remaining active.
 - Superadmin revenue excludes failed, reversed, and cancelled payments.
