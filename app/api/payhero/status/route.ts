@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin, markCompanyPaymentSuccessful, reconcileCompanyBilling } from "@/lib/billing/server";
 import { getPayHeroTransactionStatus, normalizePayHeroStatus } from "@/lib/payhero";
+import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 
 export async function GET(req: Request) {
   try {
@@ -11,15 +12,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Missing transaction reference." }, { status: 400 });
     }
 
-    const statusData = await getPayHeroTransactionStatus(reference);
-    const rawStatus = statusData.Status || statusData.status;
-    const rawResultCode = statusData.ResultCode || statusData.result_code;
-    const normalizedStatus = normalizePayHeroStatus(
-      typeof rawStatus === "string" ? rawStatus : null,
-      typeof rawResultCode === "string" || typeof rawResultCode === "number" ? rawResultCode : null
-    );
     const supabaseAdmin = createSupabaseAdmin();
-
     const { data: existingRows } = await supabaseAdmin
       .from("transactions")
       .select("id, company_id, amount, status, paid_at, reversed_at")
@@ -28,7 +21,21 @@ export async function GET(req: Request) {
       .limit(1);
 
     const existing = existingRows?.[0];
-    if (existing) {
+    if (!existing) {
+      return NextResponse.json({ error: "Transaction not found." }, { status: 404 });
+    }
+
+    const { profile } = await requireRole(req, ["company_admin", "superadmin"]);
+    assertCompanyAccess(profile, existing.company_id);
+
+    const statusData = await getPayHeroTransactionStatus(reference);
+    const rawStatus = statusData.Status || statusData.status;
+    const rawResultCode = statusData.ResultCode || statusData.result_code;
+    const normalizedStatus = normalizePayHeroStatus(
+      typeof rawStatus === "string" ? rawStatus : null,
+      typeof rawResultCode === "string" || typeof rawResultCode === "number" ? rawResultCode : null
+    );
+    {
       const paidAt = normalizedStatus === "paid" ? new Date().toISOString() : existing.paid_at;
       const wasAlreadyPaid = String(existing.status || "").toLowerCase() === "paid";
       const paidPeriod =
@@ -60,9 +67,10 @@ export async function GET(req: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, status: normalizedStatus, providerStatus: statusData });
+    return NextResponse.json({ success: true, status: normalizedStatus });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to check PayHero status.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("PayHero status error:", error);
+    const safeError = getSafeErrorResponse(error, "Payment status could not be checked.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

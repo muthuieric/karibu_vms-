@@ -5,13 +5,14 @@ import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
 import { BILLING_PLANS } from "@/lib/billing/pricing";
+import { publicMetadata } from "@/lib/seo/site";
 import { BadgeCheck, Building2, CheckCircle2, CreditCard, ShieldCheck, XCircle } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicMetadata({
   title: "Karibu VMS Pricing | Visitor Management Plans",
   description: "Compare Karibu VMS pricing plans for digital visitor management, guard workflows, QR entry, checkout tracking, billing, and premium controls.",
-  alternates: { canonical: "/pricing" },
-};
+  path: "/pricing",
+});
 
 const planDetails = [
   {
@@ -74,7 +75,7 @@ export default function PricingPage() {
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden flex flex-col">
       <PublicNavbar />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="py-28 bg-zinc-50 border-b border-zinc-100">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="text-center max-w-3xl mx-auto">

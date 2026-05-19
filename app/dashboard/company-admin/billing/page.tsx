@@ -10,14 +10,14 @@ import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { BadgeCheck, UsersRound, WalletCards } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { calculateMonthlyCharge } from "@/lib/billing/pricing";
+import { formatCurrency, formatDate, getAccountStatusLabel, formatNumber } from "@/lib/formatters";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 type Transaction = {
   id: string;
   created_at: string;
   amount: number;
   tracking_id: string;
-  provider_reference?: string | null;
-  checkout_request_id?: string | null;
   provider?: string | null;
   status: string;
   plan_name?: string | null;
@@ -67,16 +67,19 @@ export default function BillingPage() {
 
       if (profile?.company_id) {
         setCompanyId(profile.company_id);
+        const authHeaders = await getAuthHeaders();
 
         const { data: txData } = await supabase
           .from("transactions")
-          .select("id, created_at, amount, tracking_id, provider_reference, checkout_request_id, provider, status, plan_name")
+          .select("id, created_at, amount, tracking_id, provider, status, plan_name")
           .eq("company_id", profile.company_id)
           .order("created_at", { ascending: false });
 
         setTransactions(txData || []);
 
-        const summaryResponse = await fetch(`/api/billing/current?companyId=${profile.company_id}`);
+        const summaryResponse = await fetch(`/api/billing/current?companyId=${profile.company_id}`, {
+          headers: authHeaders,
+        });
         const billingSummary = await summaryResponse.json();
 
         if (!summaryResponse.ok) {
@@ -98,14 +101,16 @@ export default function BillingPage() {
     try {
       const response = await fetch("/api/payhero/initiate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ companyId, phoneNumber }),
       });
 
       const data = await response.json();
       if (response.ok) {
         alert(data.message || "M-Pesa prompt sent. Complete the payment on your phone.");
-        const summaryResponse = await fetch(`/api/billing/current?companyId=${companyId}`);
+        const summaryResponse = await fetch(`/api/billing/current?companyId=${companyId}`, {
+          headers: await getAuthHeaders(),
+        });
         if (summaryResponse.ok) setSummary(await summaryResponse.json());
       } else {
         alert(data.error || "Payment initialization failed.");
@@ -132,22 +137,9 @@ export default function BillingPage() {
     trialEndsAt: null,
   };
 
-  const accountStatusLabel =
-    fallbackSummary.accountStatus === "trial" || fallbackSummary.isTrial
-      ? "Trial"
-      : fallbackSummary.accountStatus === "locked"
-        ? "Locked"
-        : fallbackSummary.accountStatus === "active"
-          ? "Active"
-          : fallbackSummary.accountStatus === "pending_payment" || fallbackSummary.currentBalance > 0
-            ? "Pending payment"
-            : "Settled";
-
-  const formatDate = (date: Date | string) => {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: 'numeric', month: 'short', year: 'numeric'
-    }).format(new Date(date));
-  };
+  const accountStatusLabel = getAccountStatusLabel(
+    fallbackSummary.isTrial ? "trial" : fallbackSummary.currentBalance > 0 ? "pending_payment" : fallbackSummary.accountStatus
+  );
 
   return (
     <PageContainer className="max-w-6xl space-y-8">
@@ -159,8 +151,8 @@ export default function BillingPage() {
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { label: "Current Balance", value: `KES ${fallbackSummary.currentBalance.toLocaleString()}`, icon: WalletCards, tone: fallbackSummary.currentBalance > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
-              { label: "Visitors This Period", value: fallbackSummary.visitorCount.toLocaleString(), icon: UsersRound, tone: "text-blue-600 bg-blue-50 border-blue-100" },
+              { label: "Current Balance", value: formatCurrency(fallbackSummary.currentBalance), icon: WalletCards, tone: fallbackSummary.currentBalance > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
+              { label: "Visitors This Period", value: formatNumber(fallbackSummary.visitorCount), icon: UsersRound, tone: "text-blue-600 bg-blue-50 border-blue-100" },
               { label: "Account Status", value: accountStatusLabel, icon: BadgeCheck, tone: fallbackSummary.currentBalance > 0 ? "text-orange-600 bg-orange-50 border-orange-100" : fallbackSummary.isTrial ? "text-blue-600 bg-blue-50 border-blue-100" : "text-emerald-600 bg-emerald-50 border-emerald-100" },
             ].map((item) => {
               const Icon = item.icon;

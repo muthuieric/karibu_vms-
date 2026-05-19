@@ -1,12 +1,30 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
+import { requireUuid, requireText } from "@/lib/validation";
 
 // The Service Role is powerful, so we keep it secured behind strict checks below
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+async function validateGateForCompany(gateId: unknown, companyId: string) {
+  if (!gateId) return null;
+  const safeGateId = requireUuid(gateId, "gateId");
+  const { data: gate } = await supabaseAdmin
+    .from("gates")
+    .select("id")
+    .eq("id", safeGateId)
+    .eq("company_id", companyId)
+    .maybeSingle();
+
+  if (!gate) {
+    throw Object.assign(new Error("Invalid gate assignment."), { status: 400 });
+  }
+
+  return safeGateId;
+}
 
 /**
  * SECURITY HELPER: Verifies the caller is a company admin and belongs to the correct company
@@ -53,6 +71,8 @@ export async function POST(request: Request) {
   try {
     // --- GATE FIX 1: Extract gateId from the incoming request ---
     const { email, password, fullName, companyId, gateId } = await request.json();
+    const safeCompanyId = requireUuid(companyId, "companyId");
+    const safeFullName = requireText(fullName, "Full name", 120);
     const normalizedEmail = typeof email === "string" ? email.toLowerCase() : "";
 
     if (!email || !password || !fullName || !companyId) {
@@ -64,10 +84,11 @@ export async function POST(request: Request) {
     }
 
     // --- SECURITY FIX: Prevent IDOR (Creating guards for other companies) ---
-    const authCheck = await verifyAdminCaller(request, companyId);
+    const authCheck = await verifyAdminCaller(request, safeCompanyId);
     if (authCheck.error) {
       return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
     }
+    const safeGateId = await validateGateForCompany(gateId, safeCompanyId);
     // ------------------------------------------------------------------------
 
     // 1. Create the user in the Supabase Auth system
@@ -84,12 +105,12 @@ export async function POST(request: Request) {
       .from("profiles")
       .insert({
         id: authData.user.id,
-        company_id: companyId,
+        company_id: safeCompanyId,
         role: "guard",
-        full_name: fullName,
+        full_name: safeFullName,
         email: normalizedEmail,
         // --- GATE FIX 2: Save the assigned gate to the database ---
-        gate_id: gateId || null, 
+        gate_id: safeGateId, 
       });
 
     if (profileError) {
@@ -158,6 +179,7 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { id, fullName, gateId } = body;
+    const safeFullName = requireText(fullName, "Full name", 120);
 
     if (!id || !fullName) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -179,13 +201,14 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: authCheck.error }, { status: authCheck.status });
     }
     // ------------------------------------------------------------------------
+    const safeGateId = await validateGateForCompany(gateId, guardProfile.company_id);
 
     // Update the guard's profile record
     const { error } = await supabaseAdmin
       .from("profiles")
       .update({ 
-        full_name: fullName, 
-        gate_id: gateId || null 
+        full_name: safeFullName, 
+        gate_id: safeGateId 
       })
       .eq("id", id);
 

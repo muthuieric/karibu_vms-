@@ -1,115 +1,114 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from "next/server";
+import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
+import { assertResourceCompanyAccess } from "@/lib/api-resources";
+import { optionalText, requireText, requireUuid } from "@/lib/validation";
 
-export async function POST(request: Request) {
-  try {
-    // 1. Check for keys INSIDE the handler to prevent compiler crashes
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+async function assertDepartmentBelongsToCompany(supabaseAdmin: Awaited<ReturnType<typeof requireRole>>["supabaseAdmin"], departmentId: string, companyId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("departments")
+    .select("id")
+    .eq("id", departmentId)
+    .eq("company_id", companyId)
+    .single();
 
-    if (!supabaseUrl || !supabaseKey) {
-      console.error("Missing Supabase URL or Service Role Key");
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-
-    // 2. Initialize the admin client safely
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-
-    const body = await request.json();
-    const { company_id, department_id, name, phone, email } = body;
-
-    if (!company_id || !department_id || !name) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from('hosts')
-      .insert([{ company_id, department_id, name, phone, email }])
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ data });
-  } catch (error: unknown) {
-    console.error("API Route Error:", error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  if (error || !data) {
+    throw Object.assign(new Error("Invalid department."), { status: 400 });
   }
 }
 
-// ADD THIS NEW GET FUNCTION
+export async function POST(request: Request) {
+  try {
+    const { company_id, department_id, name, phone, email } = await request.json();
+    const companyId = requireUuid(company_id, "company_id");
+    const departmentId = requireUuid(department_id, "department_id");
+    const hostName = requireText(name, "Host name", 120);
+    const { profile, supabaseAdmin } = await requireRole(request, ["company_admin", "superadmin"]);
+    assertCompanyAccess(profile, companyId);
+    await assertDepartmentBelongsToCompany(supabaseAdmin, departmentId, companyId);
+
+    const { data, error } = await supabaseAdmin
+      .from("hosts")
+      .insert([{ company_id: companyId, department_id: departmentId, name: hostName, phone: optionalText(phone, 30), email: optionalText(email, 160) }])
+      .select("id, company_id, department_id, name, phone, email, created_at")
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json({ data });
+  } catch (error) {
+    console.error("Host create error:", error);
+    const safeError = getSafeErrorResponse(error, "Host could not be created.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
+  }
+}
+
 export async function GET(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-
     const { searchParams } = new URL(request.url);
-    const company_id = searchParams.get('company_id');
+    const companyId = requireUuid(searchParams.get("company_id"), "company_id");
+    const authHeader = request.headers.get("authorization");
 
-    if (!company_id) {
-      return NextResponse.json({ error: 'Missing company_id' }, { status: 400 });
+    let supabaseAdmin;
+    if (authHeader) {
+      const auth = await requireRole(request, ["company_admin", "guard", "superadmin"]);
+      supabaseAdmin = auth.supabaseAdmin;
+      assertCompanyAccess(auth.profile, companyId);
+    } else {
+      const { createSupabaseAdmin } = await import("@/lib/billing/server");
+      supabaseAdmin = createSupabaseAdmin();
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-    const { data, error } = await supabaseAdmin.from('hosts').select('*').eq('company_id', company_id);
+    const { data, error } = await supabaseAdmin
+      .from("hosts")
+      .select("id, department_id, name, phone, email")
+      .eq("company_id", companyId)
+      .order("name", { ascending: true });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    
+    if (error) throw error;
     return NextResponse.json({ data });
-  } catch {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error) {
+    console.error("Host list error:", error);
+    const safeError = getSafeErrorResponse(error, "Hosts could not be loaded.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }
 
 export async function PUT(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
     const { id, name, phone, email } = await request.json();
-    
-    if (!id || !name) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    const hostId = requireUuid(id, "hostId");
+    const hostName = requireText(name, "Host name", 120);
+    const { profile, supabaseAdmin } = await requireRole(request, ["company_admin", "superadmin"]);
+    await assertResourceCompanyAccess(supabaseAdmin, profile, "hosts", hostId);
 
-    const { data, error } = await supabaseAdmin.from('hosts').update({ name, phone, email }).eq('id', id).select().single();
-    
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    const { data, error } = await supabaseAdmin
+      .from("hosts")
+      .update({ name: hostName, phone: optionalText(phone, 30), email: optionalText(email, 160) })
+      .eq("id", hostId)
+      .select("id, company_id, department_id, name, phone, email, created_at")
+      .single();
+
+    if (error) throw error;
     return NextResponse.json({ data });
-  } catch { 
-    return NextResponse.json({ error: 'Server Error' }, { status: 500 }); 
+  } catch (error) {
+    console.error("Host update error:", error);
+    const safeError = getSafeErrorResponse(error, "Host could not be updated.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }
 
 export async function DELETE(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
-    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+    const hostId = requireUuid(searchParams.get("id"), "hostId");
+    const { profile, supabaseAdmin } = await requireRole(request, ["company_admin", "superadmin"]);
+    await assertResourceCompanyAccess(supabaseAdmin, profile, "hosts", hostId);
 
-    const { error } = await supabaseAdmin.from('hosts').delete().eq('id', id);
-    
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    const { error } = await supabaseAdmin.from("hosts").delete().eq("id", hostId);
+    if (error) throw error;
     return NextResponse.json({ success: true });
-  } catch { 
-    return NextResponse.json({ error: 'Server Error' }, { status: 500 }); 
+  } catch (error) {
+    console.error("Host delete error:", error);
+    const safeError = getSafeErrorResponse(error, "Host could not be deleted.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

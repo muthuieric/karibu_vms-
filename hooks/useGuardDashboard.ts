@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 import { filterGuardVisitors, getDynamicGateQrUrl, printGateQrPoster } from "@/lib/guard-dashboard";
 import { getBasePlan } from "@/lib/billing/pricing";
 import type { CustomField, Visitor } from "@/types/guard";
@@ -242,8 +243,8 @@ export function useGuardDashboard() {
 
       await fetch("/api/sms", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, message: `Your building entry code is: ${code}` }),
+        headers: await getAuthHeaders(true),
+        body: JSON.stringify({ phone, companyId, message: `Your building entry code is: ${code}` }),
       });
     } catch (err) {
       console.error(err);

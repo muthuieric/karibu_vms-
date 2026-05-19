@@ -17,7 +17,7 @@ export function AuthShell({ children, wide = false }: AuthShellProps) {
         </Link>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 mt-12 sm:mt-0">
+      <main id="main-content" className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 mt-12 sm:mt-0">
         <div className={`w-full max-w-[1000px] bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden flex flex-col lg:flex-row ${wide ? 'lg:max-w-[1100px]' : 'max-w-md'}`}>
           
           <div className="flex-1 flex items-center justify-center p-6 sm:p-10 lg:p-14">
@@ -54,7 +54,7 @@ export function AuthShell({ children, wide = false }: AuthShellProps) {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

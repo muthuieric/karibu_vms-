@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 export type Department = { id: string; name: string };
 export type Host = { id: string; name: string; phone: string; email: string; department_id: string };
@@ -24,13 +25,14 @@ export function useCompanyDepartments() {
 
   const loadDepartmentsAndHosts = async (compId: string) => {
     try {
-      const deptsRes = await fetch(`/api/departments?company_id=${compId}`);
+      const headers = await getAuthHeaders();
+      const deptsRes = await fetch(`/api/departments?company_id=${compId}`, { headers });
       if (deptsRes.ok) {
         const deptsJson = await deptsRes.json();
         if (deptsJson.data) setDepartments(deptsJson.data);
       }
 
-      const hostsRes = await fetch(`/api/hosts?company_id=${compId}`);
+      const hostsRes = await fetch(`/api/hosts?company_id=${compId}`, { headers });
       if (hostsRes.ok) {
         const hostsJson = await hostsRes.json();
         if (hostsJson.data) setHosts(hostsJson.data);
@@ -85,7 +87,7 @@ export function useCompanyDepartments() {
     try {
       const response = await fetch("/api/departments", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ company_id: companyId, name: newDeptName }),
       });
       const result = await response.json();
@@ -109,7 +111,7 @@ export function useCompanyDepartments() {
     try {
       const response = await fetch("/api/departments", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ id: editingDeptId, name: editingDeptName }),
       });
       const result = await response.json();
@@ -129,7 +131,7 @@ export function useCompanyDepartments() {
     if (!window.confirm(`Are you sure you want to delete the "${name}" department?\n\nAny hosts inside this department will also be removed.`)) return;
 
     try {
-      const response = await fetch(`/api/departments?id=${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/departments?id=${id}`, { method: "DELETE", headers: await getAuthHeaders() });
       const result = await response.json();
       if (!response.ok) return alert(`Failed to delete: ${result.error}`);
 
@@ -148,7 +150,7 @@ export function useCompanyDepartments() {
     try {
       const response = await fetch("/api/hosts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({
           company_id: companyId,
           department_id: selectedDeptId,
@@ -178,7 +180,7 @@ export function useCompanyDepartments() {
     try {
       const response = await fetch("/api/hosts", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ id: hostId, ...editingHostData }),
       });
       const result = await response.json();
@@ -198,7 +200,7 @@ export function useCompanyDepartments() {
     if (!window.confirm(`Are you sure you want to delete the host "${name}"?`)) return;
 
     try {
-      const response = await fetch(`/api/hosts?id=${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/hosts?id=${id}`, { method: "DELETE", headers: await getAuthHeaders() });
       const result = await response.json();
       if (!response.ok) return alert(`Failed to delete: ${result.error}`);
 

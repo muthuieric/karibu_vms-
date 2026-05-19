@@ -106,7 +106,9 @@ async function updateCompanyWithOptionalHardLock(
     return;
   }
 
-  const { hard_locked: _hardLocked, ...withoutHardLock } = payload;
+  // Some older deployments do not have the hard_locked column yet.
+  const withoutHardLock = { ...payload };
+  delete withoutHardLock.hard_locked;
   const retry = await supabaseAdmin.from("companies").update(withoutHardLock).eq("id", companyId);
   if (retry.error) throw retry.error;
 }

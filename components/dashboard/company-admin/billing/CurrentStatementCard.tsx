@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getPlanLabel } from "@/lib/billing/pricing";
+import { formatCurrency, formatNumber } from "@/lib/formatters";
 
 type CurrentStatementCardProps = {
   summary: {
@@ -90,38 +91,38 @@ export default function CurrentStatementCard({
           )}
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Included Visitors</span>
-            <span className="text-slate-900 font-bold text-base">{summary.includedVisitors.toLocaleString()}</span>
+            <span className="text-slate-900 font-bold text-base">{formatNumber(summary.includedVisitors)}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Used Visitors</span>
-            <span className="text-slate-900 font-bold text-base">{summary.visitorCount.toLocaleString()}</span>
+            <span className="text-slate-900 font-bold text-base">{formatNumber(summary.visitorCount)}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Extra Visitors</span>
-            <span className="text-slate-900 font-bold text-base">{summary.extraVisitors.toLocaleString()}</span>
+            <span className="text-slate-900 font-bold text-base">{formatNumber(summary.extraVisitors)}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Base Price</span>
-            <span className="text-slate-900 font-bold text-base">KES {summary.basePrice.toLocaleString()}</span>
+            <span className="text-slate-900 font-bold text-base">{formatCurrency(summary.basePrice)}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Extra Visitor Rate</span>
-            <span className="text-slate-900 font-bold text-base">KES {summary.extraVisitorRate.toLocaleString()}</span>
+            <span className="text-slate-900 font-bold text-base">{formatCurrency(summary.extraVisitorRate)}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Extra Visitor Charges</span>
-            <span className="text-slate-900 font-bold text-base">KES {summary.extraVisitorCharges.toLocaleString()}</span>
+            <span className="text-slate-900 font-bold text-base">{formatCurrency(summary.extraVisitorCharges)}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Paid This Period</span>
-            <span className="text-slate-900 font-bold text-base">KES {summary.amountPaid.toLocaleString()}</span>
+            <span className="text-slate-900 font-bold text-base">{formatCurrency(summary.amountPaid)}</span>
           </div>
 
           <div className="pt-4">
             <div className="flex justify-between items-end">
               <span className="text-slate-900 font-bold">Current Balance</span>
               <span className={`text-3xl font-black tracking-tight ${amountDue > 0 ? "text-orange-600" : "text-emerald-600"}`}>
-                KES {amountDue.toLocaleString()}
+                {formatCurrency(amountDue)}
               </span>
             </div>
           </div>
@@ -134,11 +135,12 @@ export default function CurrentStatementCard({
         )}
 
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm font-bold text-slate-600">
+          <label htmlFor="mpesa-phone-number" className="flex items-center gap-2 text-sm font-bold text-slate-600">
             <Smartphone className="h-4 w-4" />
             M-Pesa Phone Number
           </label>
           <Input
+            id="mpesa-phone-number"
             value={phoneNumber}
             onChange={(event) => onPhoneNumberChange(event.target.value)}
             placeholder="07XXXXXXXX"

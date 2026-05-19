@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 export type RedFlag = {
   id: string;
@@ -33,7 +34,7 @@ export function useCompanyBlacklist() {
         setCompanyId(profileData.company_id);
 
         try {
-          const res = await fetch(`/api/red-flags?company_id=${profileData.company_id}`);
+          const res = await fetch(`/api/red-flags?company_id=${profileData.company_id}`, { headers: await getAuthHeaders() });
           if (res.ok) {
             const json = await res.json();
             if (json.data) setRedFlags(json.data);
@@ -60,7 +61,7 @@ export function useCompanyBlacklist() {
       const finalPhone = newRedFlag.phone && !newRedFlag.phone.startsWith("+") ? `+${newRedFlag.phone}` : newRedFlag.phone;
       const response = await fetch("/api/red-flags", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ company_id: companyId, ...newRedFlag, phone: finalPhone }),
       });
       const result = await response.json();
@@ -82,7 +83,7 @@ export function useCompanyBlacklist() {
     if (!window.confirm(`Are you sure you want to remove the red flag for ${name}? They will be allowed to enter the building again.`)) return;
 
     try {
-      const response = await fetch(`/api/red-flags?id=${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/red-flags?id=${id}`, { method: "DELETE", headers: await getAuthHeaders() });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
 

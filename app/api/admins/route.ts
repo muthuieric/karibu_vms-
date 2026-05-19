@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
-
-// Use the Service Role Key to bypass RLS and create accounts securely
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSafeErrorResponse, requireRole } from "@/lib/api-auth";
+import { requireUuid } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
     const { email, password, fullName, companyId } = await request.json();
+    const safeCompanyId = requireUuid(companyId, "companyId");
+    const { supabaseAdmin } = await requireRole(request, ["superadmin"]);
 
     if (!email || !password || !fullName || !companyId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -34,9 +31,10 @@ export async function POST(request: Request) {
       .from("profiles")
       .insert({
         id: authData.user.id,
-        company_id: companyId,
+        company_id: safeCompanyId,
         role: "company_admin",
         full_name: fullName,
+        email,
       });
 
     if (profileError) {
@@ -48,11 +46,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, message: "Company Admin account created successfully." });
 
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to create admin account";
-    console.error("Admin Creation Error:", message);
+    console.error("Admin Creation Error:", error);
+    const safeError = getSafeErrorResponse(error, "Admin account could not be created.");
     return NextResponse.json(
-      { error: message },
-      { status: 500 }
+      { error: safeError.message },
+      { status: safeError.status }
     );
   }
 }

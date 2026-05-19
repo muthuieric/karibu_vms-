@@ -1,14 +1,12 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@/lib/seo/site";
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://karibuvms.com");
-
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/dashboard", "/api", "/(visitor)", "/*/gate"],
+      disallow: ["/dashboard/", "/api/", "/admin/", "/superadmin/", "/monitoring"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
   };

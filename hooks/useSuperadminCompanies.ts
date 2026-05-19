@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { calculateMonthlyCharge } from "@/lib/billing/pricing";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 export type Company = {
   id: string;
@@ -45,7 +46,7 @@ export function useSuperadminCompanies() {
     try {
       const [companiesRes, guardsRes] = await Promise.all([
         supabase.from("companies").select("*").order("created_at", { ascending: false }),
-        fetch("/api/superadmin/guards-count"),
+        fetch("/api/superadmin/guards-count", { headers: await getAuthHeaders() }),
       ]);
 
       const guardsPayload = guardsRes.ok ? await guardsRes.json() : { count: 0 };
@@ -130,7 +131,7 @@ export function useSuperadminCompanies() {
     try {
       const response = await fetch("/api/admins", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ ...adminForm, companyId: selectedCompanyId }),
       });
 
@@ -218,7 +219,7 @@ export function useSuperadminCompanies() {
     try {
       const response = await fetch("/api/companies/approve", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ companyId }),
       });
       const data = await response.json();
@@ -239,7 +240,7 @@ export function useSuperadminCompanies() {
     try {
       const res = await fetch("/api/companies/update-plan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ companyId, planTier: newTier }),
       });
       const result = await res.json();

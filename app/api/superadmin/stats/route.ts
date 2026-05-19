@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/billing/server";
+import { getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    await requireRole(request, ["superadmin"]);
     const supabaseAdmin = createSupabaseAdmin();
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
@@ -85,8 +87,8 @@ export async function GET() {
       topCompanies,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load superadmin stats.";
     console.error("Superadmin stats error:", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const safeError = getSafeErrorResponse(error, "Superadmin stats could not be loaded.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

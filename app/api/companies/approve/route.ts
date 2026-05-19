@@ -1,22 +1,21 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { getSafeErrorResponse, requireRole } from "@/lib/api-auth";
+import { requireUuid } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const { supabaseAdmin } = await requireRole(request, ["superadmin"]);
     const resend = new Resend(process.env.RESEND_API_KEY!);
 
     const { companyId } = await request.json();
+    const safeCompanyId = requireUuid(companyId, "companyId");
 
     // 1. Get the company details so we know who to email (Now querying plan_tier too)
     const { data: company, error: fetchError } = await supabaseAdmin
       .from("companies")
       .select("name, contact_email, contact_name, plan_tier")
-      .eq("id", companyId)
+      .eq("id", safeCompanyId)
       .single();
 
     if (fetchError || !company) throw new Error("Company not found");
@@ -33,7 +32,7 @@ export async function POST(request: Request) {
         is_locked: false, 
         subscription_ends_at: expiryDate.toISOString() 
       })
-      .eq("id", companyId);
+      .eq("id", safeCompanyId);
 
     if (updateError) throw updateError;
 
@@ -66,8 +65,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
 
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Approval failed";
     console.error("Approval Error:", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const safeError = getSafeErrorResponse(error, "Company approval could not be completed.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

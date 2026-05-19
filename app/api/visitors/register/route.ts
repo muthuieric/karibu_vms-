@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseErrorMessage } from "@/lib/supabase-error";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { optionalText, requireText, requireUuid } from "@/lib/validation";
 
 type VisitorRegistrationPayload = {
   company_id?: string;
@@ -19,6 +21,9 @@ type VisitorRegistrationPayload = {
 
 export async function POST(request: Request) {
   try {
+    const rateLimited = checkRateLimit(request, { keyPrefix: "visitor-register", limit: 10, windowMs: 60_000 });
+    if (rateLimited) return rateLimited;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -27,17 +32,18 @@ export async function POST(request: Request) {
     }
 
     const payload = (await request.json()) as VisitorRegistrationPayload;
+    const companyId = requireUuid(payload.company_id, "company_id");
+    const visitorName = requireText(payload.name, "Visitor name", 120);
 
-    if (!payload.company_id || !payload.name?.trim()) {
-      return NextResponse.json({ error: "Missing required visitor details" }, { status: 400 });
-    }
+    const normalizedPhone = optionalText(payload.phone, 40) || "";
+    const normalizedIdNumber = optionalText(payload.id_number, 60);
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     const { data: company, error: companyError } = await supabaseAdmin
       .from("companies")
       .select("id, is_locked")
-      .eq("id", payload.company_id)
+      .eq("id", companyId)
       .single();
 
     if (companyError || !company) {
@@ -54,7 +60,7 @@ export async function POST(request: Request) {
         .from("gates")
         .select("id")
         .eq("id", payload.gate_id)
-        .eq("company_id", payload.company_id)
+        .eq("company_id", companyId)
         .maybeSingle();
 
       safeGateId = gate?.id ?? null;
@@ -67,19 +73,47 @@ export async function POST(request: Request) {
         .from("hosts")
         .select("id, name")
         .eq("id", payload.host_id)
-        .eq("company_id", payload.company_id)
+        .eq("company_id", companyId)
         .maybeSingle();
 
       safeHostId = host?.id ?? null;
       safeHostName = host?.name ?? null;
     }
 
+    const { data: restrictedVisitors, error: redFlagError } = await supabaseAdmin
+      .from("red_flags")
+      .select("name, id_number, phone, reason")
+      .eq("company_id", companyId);
+
+    if (redFlagError) {
+      console.error("Restricted visitor check failed:", redFlagError);
+      return NextResponse.json({ error: "Visitor registration could not be verified." }, { status: 500 });
+    }
+
+    const visitorNameLower = visitorName.toLowerCase();
+    const isRestricted = (restrictedVisitors || []).find((flag) => {
+      const matchId = normalizedIdNumber && flag.id_number && String(flag.id_number).trim() === normalizedIdNumber;
+      const matchPhone = normalizedPhone && flag.phone && String(flag.phone).trim() === normalizedPhone;
+      const matchName = flag.name && String(flag.name).trim().toLowerCase() === visitorNameLower;
+
+      if (matchId || matchPhone) return true;
+      if (!matchName) return false;
+
+      const differentId = normalizedIdNumber && flag.id_number && String(flag.id_number).trim() !== normalizedIdNumber;
+      const differentPhone = normalizedPhone && flag.phone && String(flag.phone).trim() !== normalizedPhone;
+      return !(differentId || differentPhone);
+    });
+
+    if (isRestricted) {
+      return NextResponse.json({ error: "Visitor registration cannot be completed at this entrance." }, { status: 403 });
+    }
+
     const insertPayload = {
-      company_id: payload.company_id,
-      name: payload.name.trim(),
-      phone: payload.phone || "",
+      company_id: companyId,
+      name: visitorName,
+      phone: normalizedPhone,
       document_type: payload.document_type || null,
-      id_number: payload.id_number || null,
+      id_number: normalizedIdNumber,
       host_id: safeHostId,
       host_name: safeHostName,
       purpose: payload.purpose || null,

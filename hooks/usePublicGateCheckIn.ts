@@ -10,7 +10,6 @@ import { getBasePlan } from "@/lib/billing/pricing";
 type CustomField = { id: string; label: string; active: boolean };
 type Department = { id: string; name: string };
 type Host = { id: string; name: string; phone: string; email: string; department_id: string };
-type RedFlag = { id_number?: string | null; phone?: string | null; name?: string | null; reason?: string | null };
 export type GeofenceDebugDetails = {
   currentLat: number;
   currentLng: number;
@@ -357,30 +356,6 @@ export function usePublicGateCheckIn() {
       let finalPhone = null;
       if (rules.askPhone && newVisitor.phone) {
         finalPhone = newVisitor.phone.startsWith("+") ? newVisitor.phone : `+${newVisitor.phone}`;
-      }
-
-      const redFlagsRes = await fetch(`/api/red-flags?company_id=${companyId}`);
-      if (redFlagsRes.ok) {
-        const redFlagsJson = await redFlagsRes.json();
-        const blacklisted = (redFlagsJson.data || []) as RedFlag[];
-        const isBanned = blacklisted.find((flag) => {
-          const matchId = rules.askId && flag.id_number && newVisitor.id_number && flag.id_number.trim() === newVisitor.id_number.trim();
-          const matchPhone = rules.askPhone && flag.phone && finalPhone && flag.phone.trim() === finalPhone.trim();
-          const matchName = flag.name && newVisitor.name && flag.name.trim().toLowerCase() === newVisitor.name.trim().toLowerCase();
-
-          if (matchId || matchPhone) return true;
-          if (matchName) {
-            const hasDifferentId = rules.askId && newVisitor.id_number && flag.id_number && newVisitor.id_number.trim() !== flag.id_number.trim();
-            const hasDifferentPhone = rules.askPhone && finalPhone && flag.phone && finalPhone.trim() !== flag.phone.trim();
-            return !(hasDifferentId || hasDifferentPhone);
-          }
-          return false;
-        });
-
-        if (isBanned) {
-          alert(`ACCESS DENIED: You are restricted from entering the premises.\n\nReason: ${isBanned.reason}`);
-          return;
-        }
       }
 
       if (selfieFile) {

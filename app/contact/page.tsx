@@ -4,13 +4,14 @@ import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
+import { publicMetadata } from "@/lib/seo/site";
 import { Building2, Mail, MessageCircle, Phone, ShieldCheck } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicMetadata({
   title: "Contact Karibu VMS | Visitor Management Support",
   description: "Contact the Karibu VMS team for help setting up a digital visitor management process for your office, school, apartment, or gated facility.",
-  alternates: { canonical: "/contact" },
-};
+  path: "/contact",
+});
 
 const supportTopics = ["One reception point or multiple gates", "Guard account and gate assignments", "QR self check-in or simple desk registration", "Host routing and department setup", "Host email confirmation", "Custom visitor questions", "Plan, billing, and M-Pesa support"];
 
@@ -19,7 +20,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden flex flex-col">
       <PublicNavbar />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="py-28 border-b border-zinc-100">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="grid lg:grid-cols-[0.95fr_1.05fr] gap-14 items-start">

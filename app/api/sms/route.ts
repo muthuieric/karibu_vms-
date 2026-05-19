@@ -1,77 +1,57 @@
 import { NextResponse } from "next/server";
-import Africastalking from "africastalking";
+import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { optionalText, requireKenyanPhoneNumber, requireUuid } from "@/lib/validation";
 
 export async function POST(request: Request) {
-  const rateLimitResponse = checkRateLimit(request, { keyPrefix: "sms" });
+  const rateLimitResponse = checkRateLimit(request, { keyPrefix: "sms", limit: 10, windowMs: 60_000 });
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    // 1. --- DIAGNOSTIC LOGS ---
-    console.log("--- DIAGNOSTIC CHECK ---");
-    
-    // Safely grab the keys
-    const rawUsername = process.env.AFRICASTALKING_USERNAME || "";
-    const rawApiKey = process.env.AFRICASTALKING_API_KEY || "";
+    const { phone, message, companyId } = await request.json();
+    const safeCompanyId = requireUuid(companyId, "companyId");
+    const { profile } = await requireRole(request, ["guard", "company_admin", "superadmin"]);
+    assertCompanyAccess(profile, safeCompanyId);
 
-    // Forcefully remove any accidental invisible spaces or newlines
-    const cleanUsername = rawUsername.trim();
-    const cleanApiKey = rawApiKey.trim();
-
-    console.log(`Username loaded: "${cleanUsername}"`);
-    console.log(`API Key loaded (first 5 chars): "${cleanApiKey.substring(0, 5)}..."`);
-    console.log(`API Key Length: ${cleanApiKey.length} characters`);
-    console.log("------------------------");
-
-    // Check if keys are actually missing
-    if (!cleanApiKey || !cleanUsername) {
-      throw new Error("Missing Africa's Talking credentials in .env.local file");
+    const username = process.env.AFRICASTALKING_USERNAME?.trim();
+    const apiKey = process.env.AFRICASTALKING_API_KEY?.trim();
+    if (!username || !apiKey) {
+      console.error("Missing Africa's Talking SMS credentials.");
+      return NextResponse.json({ error: "SMS could not be sent." }, { status: 500 });
     }
 
-    const credentials = {
-      apiKey: cleanApiKey,
-      username: cleanUsername,
-    };
-
-    const africastalking = Africastalking(credentials);
-    const sms = africastalking.SMS;
-
-    const { phone, message } = await request.json();
-
-    if (!phone || !message) {
-      return NextResponse.json(
-        { error: "Phone and message are required" },
-        { status: 400 }
-      );
+    const normalizedPhone = `+${requireKenyanPhoneNumber(phone)}`;
+    const safeMessage = optionalText(message, 320);
+    if (!safeMessage) {
+      return NextResponse.json({ error: "Message is required." }, { status: 400 });
     }
 
-    // Format phone number (Africa's Talking requires international format)
-    let formattedPhone = phone;
-    if (formattedPhone.startsWith("0")) {
-      formattedPhone = "+254" + formattedPhone.substring(1);
-    } else if (!formattedPhone.startsWith("+")) {
-      formattedPhone = "+" + formattedPhone;
+    const body = new URLSearchParams({
+      username,
+      to: normalizedPhone,
+      message: safeMessage,
+    });
+
+    const response = await fetch("https://api.africastalking.com/version1/messaging", {
+      method: "POST",
+      headers: {
+        apiKey,
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("Africa's Talking SMS error:", { status: response.status, body: text.slice(0, 300) });
+      return NextResponse.json({ error: "SMS could not be sent." }, { status: 502 });
     }
 
-    console.log("Attempting to send SMS to:", formattedPhone);
-
-    // Send the SMS
-    const options = {
-      to: [formattedPhone],
-      message: message,
-    };
-
-    const response = await sms.send(options);
-    
-    console.log("SMS Success:", response);
-    return NextResponse.json({ success: true, data: response });
-    
-  } catch (error: unknown) {
-    const details = error instanceof Error ? error.message : "Unknown SMS error";
-    console.error("SMS Error:", details);
-    return NextResponse.json(
-      { error: "Failed to send SMS", details },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("SMS Error:", error);
+    const safeError = getSafeErrorResponse(error, "SMS could not be sent.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

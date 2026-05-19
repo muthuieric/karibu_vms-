@@ -4,13 +4,14 @@ import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
+import { publicMetadata } from "@/lib/seo/site";
 import { BadgeCheck, CreditCard, FileText, Lock, Scale, ShieldCheck } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicMetadata({
   title: "Terms of Service | Karibu VMS",
   description: "Read the Karibu VMS terms covering account use, visitor records, billing, acceptable use, service availability, and support.",
-  alternates: { canonical: "/terms" },
-};
+  path: "/terms",
+});
 
 const terms = [
   {
@@ -50,7 +51,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden flex flex-col">
       <PublicNavbar />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="py-24 bg-zinc-950 text-white border-b border-zinc-800">
           <div className="container mx-auto px-6 max-w-4xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-zinc-200 text-xs font-semibold mb-6">

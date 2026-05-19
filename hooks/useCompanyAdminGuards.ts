@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 
 export type GuardProfile = {
@@ -76,7 +77,7 @@ export function useCompanyAdminGuards() {
         setGuards(guardsData || []);
 
         try {
-          const gatesRes = await fetch(`/api/gates?company_id=${profileData.company_id}`);
+          const gatesRes = await fetch(`/api/gates?company_id=${profileData.company_id}`, { headers: await getAuthHeaders() });
           if (gatesRes.ok) {
             const gatesJson = await gatesRes.json();
             if (gatesJson.data) setGates(gatesJson.data);
@@ -102,7 +103,7 @@ export function useCompanyAdminGuards() {
     try {
       const response = await fetch("/api/gates", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ company_id: companyId, name: newGateName }),
       });
       const result = await response.json();
@@ -132,7 +133,7 @@ export function useCompanyAdminGuards() {
     try {
       const response = await fetch("/api/gates", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({ id: editingGateId, name: editingGateName }),
       });
       const result = await response.json();
@@ -157,7 +158,7 @@ export function useCompanyAdminGuards() {
     if (!window.confirm(`Are you sure you want to delete the gate "${name}"?\n\nAny guards assigned to this gate will become Unassigned.`)) return;
 
     try {
-      const response = await fetch(`/api/gates?id=${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/gates?id=${id}`, { method: "DELETE", headers: await getAuthHeaders() });
       const result = await response.json();
 
       if (!response.ok) {

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin, markCompanyPaymentSuccessful, reconcileCompanyBilling } from "@/lib/billing/server";
 import { getPayHeroExternalReference, getPayHeroReference, normalizePayHeroStatus } from "@/lib/payhero";
+import { getSafeErrorResponse } from "@/lib/api-auth";
+import { safeNumber } from "@/lib/validation";
 
 function getPayloadValue(payload: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
@@ -57,7 +59,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unable to match callback to a company." }, { status: 400 });
     }
 
-    const amount = Number(getPayloadValue(payload, ["Amount", "amount"]) || existing?.amount || 0);
+    if (!existing) {
+      return NextResponse.json({ error: "Unable to match callback to a pending transaction." }, { status: 400 });
+    }
+
+    const providerAmount = safeNumber(getPayloadValue(payload, ["Amount", "amount"]), Number(existing.amount || 0));
+    const expectedAmount = Number(existing.amount || 0);
+    if (status === "paid" && Math.round(providerAmount) !== Math.round(expectedAmount)) {
+      await supabaseAdmin
+        .from("transactions")
+        .update({
+          status: "failed",
+          raw_callback_payload: body,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
+      return NextResponse.json({ error: "Payment amount mismatch." }, { status: 400 });
+    }
+
+    const amount = expectedAmount;
     const paidAt = status === "paid" ? new Date().toISOString() : existing?.paid_at || null;
     const reversedAt = status === "reversed" ? new Date().toISOString() : existing?.reversed_at || null;
     const wasAlreadyPaid = String(existing?.status || "").toLowerCase() === "paid";
@@ -88,11 +108,7 @@ export async function POST(req: Request) {
         : {}),
     };
 
-    if (existing) {
-      await supabaseAdmin.from("transactions").update(updatePayload).eq("id", existing.id);
-    } else {
-      await supabaseAdmin.from("transactions").insert(updatePayload);
-    }
+    await supabaseAdmin.from("transactions").update(updatePayload).eq("id", existing.id);
 
     if (status !== "paid") {
       await reconcileCompanyBilling(companyId);
@@ -100,8 +116,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, status });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "PayHero callback failed.";
     console.error("PayHero callback error:", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const safeError = getSafeErrorResponse(error, "PayHero callback failed.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

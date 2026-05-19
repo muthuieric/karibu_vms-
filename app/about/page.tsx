@@ -4,13 +4,14 @@ import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
+import { publicMetadata } from "@/lib/seo/site";
 import { BadgeCheck, Building2, ClipboardCheck, ShieldCheck, UsersRound } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicMetadata({
   title: "About Karibu VMS | Digital Visitor Management",
   description: "Learn how Karibu VMS replaces manual visitor books with digital check-in, verification, approvals, checkout, and searchable visitor records.",
-  alternates: { canonical: "/about" },
-};
+  path: "/about",
+});
 
 const values = [
   {
@@ -37,7 +38,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden flex flex-col">
       <PublicNavbar />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="py-28 bg-zinc-50 border-b border-zinc-100">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="grid lg:grid-cols-[1fr_0.85fr] gap-14 items-center">

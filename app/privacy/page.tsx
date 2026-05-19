@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
+import { publicMetadata } from "@/lib/seo/site";
 import { Database, Eye, LockKeyhole, Mail, ShieldCheck, UserCheck } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicMetadata({
   title: "Privacy Policy | Karibu VMS",
   description: "Read the Karibu VMS privacy policy covering visitor records, account data, payment records, security controls, and contact information.",
-  alternates: { canonical: "/privacy" },
-};
+  path: "/privacy",
+});
 
 const sections = [
   {
@@ -48,7 +49,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden flex flex-col">
       <PublicNavbar />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="py-24 bg-zinc-50 border-b border-zinc-100">
           <div className="container mx-auto px-6 max-w-4xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-zinc-200 text-zinc-600 text-xs font-semibold mb-6">

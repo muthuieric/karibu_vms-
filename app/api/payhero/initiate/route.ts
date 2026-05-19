@@ -1,41 +1,55 @@
 import { NextResponse } from "next/server";
 import { getCurrentBillingSummary, createSupabaseAdmin } from "@/lib/billing/server";
 import { initiatePayHeroPayment } from "@/lib/payhero";
-
-function normalizePhoneNumber(phoneNumber: string) {
-  const digits = phoneNumber.replace(/\D/g, "");
-  if (digits.startsWith("254")) return digits;
-  if (digits.startsWith("0")) return `254${digits.slice(1)}`;
-  if (digits.length === 9) return `254${digits}`;
-  return digits;
-}
+import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
+import { requireKenyanPhoneNumber, requireUuid } from "@/lib/validation";
 
 export async function POST(req: Request) {
   try {
     const { companyId, phoneNumber } = await req.json();
-
-    if (!companyId) {
-      return NextResponse.json({ error: "Missing companyId." }, { status: 400 });
-    }
-
-    const normalizedPhone = normalizePhoneNumber(String(phoneNumber || ""));
-    if (!/^254\d{9}$/.test(normalizedPhone)) {
-      return NextResponse.json({ error: "Enter a valid Kenyan M-Pesa phone number." }, { status: 400 });
-    }
+    const safeCompanyId = requireUuid(companyId, "companyId");
+    const normalizedPhone = requireKenyanPhoneNumber(phoneNumber);
+    const { profile } = await requireRole(req, ["company_admin", "superadmin"]);
+    assertCompanyAccess(profile, safeCompanyId);
 
     const channelId = process.env.PAYHERO_CHANNEL_ID;
     if (!channelId) {
-      return NextResponse.json({ error: "Missing PayHero channel configuration." }, { status: 500 });
+      console.error("Missing PayHero channel configuration.");
+      return NextResponse.json({ error: "Payment could not be started. Please try again." }, { status: 500 });
     }
 
-    const summary = await getCurrentBillingSummary(companyId);
+    const summary = await getCurrentBillingSummary(safeCompanyId);
+    if (summary.company.hard_locked) {
+      return NextResponse.json({ error: "Payment could not be started. Please contact support." }, { status: 403 });
+    }
+    if (summary.isTrial) {
+      return NextResponse.json({ error: "Your trial is active. No payment is due." }, { status: 400 });
+    }
     if (summary.currentBalance <= 0) {
       return NextResponse.json({ error: "Your account is already settled." }, { status: 400 });
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const callbackUrl = process.env.PAYHERO_CALLBACK_URL || `${appUrl}/api/payhero/callback`;
-    const externalReference = `KRB-${companyId}-${summary.periodKey}-${Date.now()}`;
+    const externalReference = `KRB-${safeCompanyId}-${summary.periodKey}-${Date.now()}`;
+
+    const supabaseAdmin = createSupabaseAdmin();
+    const recentPending = await supabaseAdmin
+      .from("transactions")
+      .select("id")
+      .eq("company_id", safeCompanyId)
+      .eq("provider", "payhero")
+      .eq("status", "pending")
+      .gte("created_at", new Date(Date.now() - 60_000).toISOString())
+      .limit(1);
+
+    if (recentPending.data?.length) {
+      return NextResponse.json(
+        { error: "A payment request was already started. Please wait a moment before trying again." },
+        { status: 429 }
+      );
+    }
+
     const response = await initiatePayHeroPayment({
       amount: summary.currentBalance,
       phoneNumber: normalizedPhone,
@@ -47,9 +61,8 @@ export async function POST(req: Request) {
     const checkoutRequestId =
       response.CheckoutRequestID || response.CheckoutRequestId || response.checkout_request_id || response.checkoutRequestId || response.reference;
 
-    const supabaseAdmin = createSupabaseAdmin();
     await supabaseAdmin.from("transactions").insert({
-      company_id: companyId,
+      company_id: safeCompanyId,
       amount: summary.currentBalance,
       currency: "KES",
       provider: "payhero",
@@ -82,8 +95,8 @@ export async function POST(req: Request) {
       message: response.message || "M-Pesa prompt sent. Complete the payment on your phone.",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to initiate PayHero payment.";
     console.error("PayHero initiate error:", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const safeError = getSafeErrorResponse(error, "Payment could not be started. Please try again.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

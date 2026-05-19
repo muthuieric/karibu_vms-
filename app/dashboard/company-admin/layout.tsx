@@ -147,7 +147,7 @@ export default function CompanyAdminLayout({ children }: { children: React.React
         onLogout={handleLogout}
       />
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <main id="main-content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {isLocked && !isPaymentSuccessPage && (
           <LockedAccountBanner
             title="Account locked"

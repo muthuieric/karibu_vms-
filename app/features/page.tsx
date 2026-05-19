@@ -4,13 +4,14 @@ import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
-import { BellRing, Building2, Car, ClipboardList, CreditCard, DoorOpen, FileDown, FileSearch, HelpCircle, IdCard, Lock, MapPin, QrCode, ShieldAlert, SlidersHorizontal, UsersRound } from "lucide-react";
+import { publicMetadata } from "@/lib/seo/site";
+import { BellRing, Building2, Car, ClipboardList, CreditCard, DoorOpen, FileSearch, HelpCircle, IdCard, Lock, MapPin, QrCode, ShieldAlert, SlidersHorizontal, UsersRound } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicMetadata({
   title: "Karibu VMS Features | Check-In, Guard Tools, Entry Records",
   description: "Explore Karibu VMS features including visitor intake, guard dashboards, QR entry, checkout tracking, departments, access restrictions, and admin records.",
-  alternates: { canonical: "/features" },
-};
+  path: "/features",
+});
 
 const featureGroups = [
   {
@@ -52,7 +53,7 @@ export default function FeaturesPage() {
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden flex flex-col">
       <PublicNavbar />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="py-28 bg-zinc-950 text-white border-b border-zinc-800">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="grid lg:grid-cols-[1fr_0.9fr] gap-14 items-center">

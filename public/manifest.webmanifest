@@ -1,21 +1,24 @@
 {
   "name": "Karibu VMS",
   "short_name": "Karibu VMS",
-  "description": "Modern visitor management system for secure check-in and access records.",
+  "description": "Karibu VMS is a modern visitor management system for secure check-in, guard workflows, host confirmation, and access records.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563EB",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icon-192.svg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icon-512.svg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }

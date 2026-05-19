@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { compressImage } from "@/lib/image-compression";
 import { getSupabaseErrorMessage } from "@/lib/supabase-error";
+import { getAuthHeaders } from "@/lib/client-auth";
 import AddVisitorForm from "@/components/dashboard/guard/add-visitor/AddVisitorForm";
 import "react-phone-input-2/lib/style.css";
 import type { Visitor } from "@/types/guard";
@@ -170,7 +171,7 @@ export default function AddVisitorModal({
       }
 
       // 1. ROBUST BLACKLIST SECURITY CHECK
-      const redFlagsRes = await fetch(`/api/red-flags?company_id=${companyId}`);
+      const redFlagsRes = await fetch(`/api/red-flags?company_id=${companyId}`, { headers: await getAuthHeaders() });
       if (redFlagsRes.ok) {
         const redFlagsJson = await redFlagsRes.json();
         const blacklisted = (redFlagsJson.data || []) as RedFlag[];

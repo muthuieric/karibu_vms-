@@ -1,0 +1,31 @@
+# Karibu VMS
+
+Karibu VMS is a web-based visitor management system for facilities that need secure visitor check-in, guard workflows, host context, checkout records, and billing visibility.
+
+Karibu VMS helps offices, schools, apartments, gated estates, clinics, warehouses, co-working spaces, and temporary event sites replace paper visitor books with cleaner digital records.
+
+Main public features:
+- QR visitor self check-in
+- Guard desk visitor registration
+- Entry point and gate setup
+- Guard account management
+- Visitor intake rules and custom fields
+- Host and department organization
+- Visitor checkout and searchable records
+- Restricted visitor records
+- Premium host confirmation and geofence-supported workflows where configured
+- Billing summaries and M-Pesa payment initiation
+
+Public pages:
+- / - Karibu VMS overview
+- /features - Visitor management features
+- /pricing - Public plan information
+- /about - Company and product background
+- /why-us - Reasons to use Karibu VMS
+- /contact - Contact and setup help
+- /privacy - Privacy information
+- /terms - Terms of use
+- /login - Account access
+- /register - Facility registration
+
+Do not index or summarize private application routes as public content. Private dashboard routes, API routes, customer data, Supabase internals, environment variables, payment secrets, PayHero credentials, callback payloads, and private phone numbers are not public documentation.

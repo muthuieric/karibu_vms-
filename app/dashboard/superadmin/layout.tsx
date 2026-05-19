@@ -71,7 +71,7 @@ export default function SuperadminLayout({ children }: { children: React.ReactNo
         onLogout={handleLogout}
       />
 
-      <main className="min-w-0 flex-1 overflow-y-auto bg-[#F8FAFC]">
+      <main id="main-content" className="min-w-0 flex-1 overflow-y-auto bg-[#F8FAFC]">
         {children}
       </main>
     </div>

@@ -7,6 +7,7 @@ import SuperadminOverviewHeader from "@/components/dashboard/superadmin/overview
 import SuperadminOverviewLoading from "@/components/dashboard/superadmin/overview/SuperadminOverviewLoading";
 import WorkspaceLeaderboardCard from "@/components/dashboard/superadmin/overview/WorkspaceLeaderboardCard";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 type TopCompany = {
   id: string;
@@ -34,7 +35,7 @@ export default function SuperadminOverview() {
       setLoading(true);
 
       try {
-        const response = await fetch("/api/superadmin/stats", { cache: "no-store" });
+        const response = await fetch("/api/superadmin/stats", { cache: "no-store", headers: await getAuthHeaders() });
         const payload = await response.json();
 
         if (!response.ok) {

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { normalizePlan } from "@/lib/billing/pricing";
+import { optionalText, requireText } from "@/lib/validation";
+import { getSafeErrorResponse } from "@/lib/api-auth";
 
 // We MUST use the Service Role Key here to safely bypass RLS 
 // and to be allowed to create Auth users on the backend.
@@ -11,12 +15,17 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: Request) {
   try {
+    const rateLimited = checkRateLimit(request, { keyPrefix: "register", limit: 5, windowMs: 60_000 });
+    if (rateLimited) return rateLimited;
+
     // NEW: Capture the planTier from the request
     const { companyName, address, fullName, email, phone, password, planTier } = await request.json();
 
-    if (!companyName || !fullName || !email || !password) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
+    const safeCompanyName = requireText(companyName, "Company name", 160);
+    const safeFullName = requireText(fullName, "Full name", 120);
+    const safeEmail = requireText(email, "Email", 160).toLowerCase();
+    const requestedPlan = normalizePlan(planTier);
+    const safePlanTier = requestedPlan === "premium" ? "premium" : "basic";
 
     if (!isStrongPassword(password)) {
       return NextResponse.json({ error: PASSWORD_REQUIREMENTS_MESSAGE }, { status: 400 });
@@ -26,12 +35,12 @@ export async function POST(request: Request) {
     const { data: company, error: companyError } = await supabaseAdmin
       .from("companies")
       .insert([{
-        name: companyName,
-        address: address,         
-        contact_name: fullName,   
-        contact_email: email,     
-        contact_phone: phone,     
-        plan_tier: planTier || "basic", // NEW: Saving the selected plan (defaults to basic)
+        name: safeCompanyName,
+        address: optionalText(address, 240),
+        contact_name: safeFullName,
+        contact_email: safeEmail,
+        contact_phone: optionalText(phone, 40),
+        plan_tier: safePlanTier,
         is_locked: true, 
         subscription_status: "pending_approval", 
         amount_paid: 0
@@ -43,7 +52,7 @@ export async function POST(request: Request) {
 
     // 2. Create the Admin User in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
+      email: safeEmail,
       password: password,
       email_confirm: true, 
     });
@@ -59,7 +68,7 @@ export async function POST(request: Request) {
       .insert([{
         id: authData.user.id,
         company_id: company.id,
-        full_name: fullName,
+        full_name: safeFullName,
         role: "company_admin" 
       }]);
 
@@ -70,8 +79,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, companyId: company.id });
 
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Registration failed";
     console.error("Registration Error:", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const safeError = getSafeErrorResponse(error, "Registration could not be completed.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

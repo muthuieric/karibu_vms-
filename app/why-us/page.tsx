@@ -4,13 +4,14 @@ import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
+import { publicMetadata } from "@/lib/seo/site";
 import { AlertTriangle, BadgeCheck, Building2, Clock3, DoorOpen, FileSearch, ShieldCheck, SlidersHorizontal, UserCheck } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicMetadata({
   title: "Why Karibu VMS | Faster, Cleaner Visitor Entry",
   description: "See why organizations use Karibu VMS to speed up visitor entry, improve security records, simplify guard workflows, and remove paper logbooks.",
-  alternates: { canonical: "/why-us" },
-};
+  path: "/why-us",
+});
 
 const reasons = [
   {
@@ -62,7 +63,7 @@ export default function WhyUsPage() {
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden flex flex-col">
       <PublicNavbar />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         <section className="py-28 bg-white border-b border-zinc-50">
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="text-center max-w-3xl mx-auto">

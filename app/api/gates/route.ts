@@ -1,117 +1,99 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from "next/server";
+import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
+import { assertResourceCompanyAccess } from "@/lib/api-resources";
+import { requireText, requireUuid } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error("Missing Supabase URL or Service Role Key");
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-    const body = await request.json();
-    const { company_id, name } = body;
-
-    if (!company_id || !name) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
+    const { company_id, name } = await request.json();
+    const companyId = requireUuid(company_id, "company_id");
+    const gateName = requireText(name, "Gate name", 100);
+    const { profile, supabaseAdmin } = await requireRole(request, ["company_admin", "superadmin"]);
+    assertCompanyAccess(profile, companyId);
 
     const { data, error } = await supabaseAdmin
-      .from('gates')
-      .insert([{ company_id, name }])
-      .select()
+      .from("gates")
+      .insert([{ company_id: companyId, name: gateName }])
+      .select("id, company_id, name, created_at")
       .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
+    if (error) throw error;
     return NextResponse.json({ data });
-  } catch (error: unknown) {
-    console.error("API Route Error:", error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error) {
+    console.error("Gate create error:", error);
+    const safeError = getSafeErrorResponse(error, "Gate could not be created.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }
 
 export async function GET(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-
     const { searchParams } = new URL(request.url);
-    const company_id = searchParams.get('company_id');
+    const companyId = requireUuid(searchParams.get("company_id"), "company_id");
+    const authHeader = request.headers.get("authorization");
 
-    if (!company_id) {
-      return NextResponse.json({ error: 'Missing company_id' }, { status: 400 });
+    let supabaseAdmin;
+    if (authHeader) {
+      const auth = await requireRole(request, ["company_admin", "guard", "superadmin"]);
+      supabaseAdmin = auth.supabaseAdmin;
+      assertCompanyAccess(auth.profile, companyId);
+    } else {
+      const { createSupabaseAdmin } = await import("@/lib/billing/server");
+      supabaseAdmin = createSupabaseAdmin();
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
     const { data, error } = await supabaseAdmin
-      .from('gates')
-      .select('*')
-      .eq('company_id', company_id);
+      .from("gates")
+      .select("id, name")
+      .eq("company_id", companyId)
+      .order("name", { ascending: true });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    
+    if (error) throw error;
     return NextResponse.json({ data });
-  } catch {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json({ error: 'Missing gate id' }, { status: 400 });
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-    
-    // Delete the gate
-    const { error } = await supabaseAdmin.from('gates').delete().eq('id', id);
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error) {
+    console.error("Gate list error:", error);
+    const safeError = getSafeErrorResponse(error, "Gates could not be loaded.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }
 
 export async function PUT(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !supabaseKey) return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    const { id, name } = await request.json();
+    const gateId = requireUuid(id, "gateId");
+    const gateName = requireText(name, "Gate name", 100);
+    const { profile, supabaseAdmin } = await requireRole(request, ["company_admin", "superadmin"]);
+    await assertResourceCompanyAccess(supabaseAdmin, profile, "gates", gateId);
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-    const body = await request.json();
-    const { id, name } = body;
+    const { data, error } = await supabaseAdmin
+      .from("gates")
+      .update({ name: gateName })
+      .eq("id", gateId)
+      .select("id, company_id, name, created_at")
+      .single();
 
-    if (!id || !name) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-
-    const { data, error } = await supabaseAdmin.from('gates').update({ name }).eq('id', id).select().single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    
+    if (error) throw error;
     return NextResponse.json({ data });
-  } catch {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (error) {
+    console.error("Gate update error:", error);
+    const safeError = getSafeErrorResponse(error, "Gate could not be updated.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const gateId = requireUuid(searchParams.get("id"), "gateId");
+    const { profile, supabaseAdmin } = await requireRole(request, ["company_admin", "superadmin"]);
+    await assertResourceCompanyAccess(supabaseAdmin, profile, "gates", gateId);
+
+    const { error } = await supabaseAdmin.from("gates").delete().eq("id", gateId);
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Gate delete error:", error);
+    const safeError = getSafeErrorResponse(error, "Gate could not be deleted.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

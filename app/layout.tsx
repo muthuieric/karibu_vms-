@@ -3,6 +3,7 @@ import { Geist_Mono, Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import InstallPrompt from "@/components/InstallPrompt";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,9 +35,9 @@ export const metadata: Metadata = {
     "Digital Logbook",
   ],
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/apple-touch-icon.svg",
   },
   openGraph: {
     title: "Karibu VMS",
@@ -44,14 +45,14 @@ export const metadata: Metadata = {
       "A modern visitor management system for secure visitor check-in and building access control.",
     siteName: "Karibu VMS",
     type: "website",
-    images: ["/og-image.png"],
+    images: ["/og-image.svg"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Karibu VMS",
     description:
       "A modern visitor management system for secure visitor check-in and building access control.",
-    images: ["/og-image.png"],
+    images: ["/og-image.svg"],
   },
   robots: {
     index: true,
@@ -71,6 +72,16 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} bg-background text-text-main antialiased`}
       >
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-slate-950 focus:shadow-lg"
+        >
+          Skip to content
+        </a>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd, websiteJsonLd]) }}
+        />
         {children}
         <InstallPrompt />
         {enableVercelInsights && (

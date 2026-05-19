@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { addOneMonth, calculateMonthlyCharge, isTrialPlan, normalizePlan } from "@/lib/billing/pricing";
+import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
+import { requireBillingPlan, requireUuid } from "@/lib/validation";
 
 function isMissingColumnError(error: unknown) {
   if (!error || typeof error !== "object") return false;
@@ -10,35 +11,27 @@ function isMissingColumnError(error: unknown) {
 
 export async function POST(request: Request) {
   try {
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
     const { companyId, planTier } = await request.json();
+    const safeCompanyId = requireUuid(companyId, "companyId");
+    const newPlan = normalizePlan(requireBillingPlan(planTier));
+    const { profile, supabaseAdmin } = await requireRole(request, ["company_admin", "superadmin"]);
+    assertCompanyAccess(profile, safeCompanyId);
 
-    if (!companyId || !planTier) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (isTrialPlan(newPlan) && profile.role !== "superadmin") {
+      return NextResponse.json({ error: "Unauthorized request." }, { status: 403 });
     }
-
-    const allowedPlans = ["basic", "premium", "custom", "trial_basic", "trial_premium"];
-    const requestedPlan = String(planTier || "").toLowerCase().trim();
-    if (!allowedPlans.includes(requestedPlan)) {
-      return NextResponse.json({ error: "Invalid plan tier." }, { status: 400 });
-    }
-    const newPlan = normalizePlan(requestedPlan);
 
     let companyResult = await supabaseAdmin
       .from("companies")
       .select("created_at, plan_tier, pending_plan_tier, pending_plan_effective_at, billing_period_start, billing_period_end, current_balance, is_locked, hard_locked")
-      .eq("id", companyId)
+      .eq("id", safeCompanyId)
       .single();
 
     if (isMissingColumnError(companyResult.error)) {
       companyResult = await supabaseAdmin
         .from("companies")
         .select("created_at, plan_tier, billing_period_start, billing_period_end, current_balance, is_locked")
-        .eq("id", companyId)
+        .eq("id", safeCompanyId)
         .single();
     }
 
@@ -88,7 +81,7 @@ export async function POST(request: Request) {
       const { count, error: visitorsError } = await supabaseAdmin
         .from("visitors")
         .select("id", { count: "exact", head: true })
-        .eq("company_id", companyId)
+        .eq("company_id", safeCompanyId)
         .gte("created_at", periodStart)
         .lt("created_at", periodEnd);
 
@@ -103,10 +96,10 @@ export async function POST(request: Request) {
       updatePayload.subscription_expires_at = null;
     }
 
-    let { error: updateError } = await supabaseAdmin.from("companies").update(updatePayload).eq("id", companyId);
+    let { error: updateError } = await supabaseAdmin.from("companies").update(updatePayload).eq("id", safeCompanyId);
     if (isMissingColumnError(updateError)) {
       delete updatePayload.hard_locked;
-      const retry = await supabaseAdmin.from("companies").update(updatePayload).eq("id", companyId);
+      const retry = await supabaseAdmin.from("companies").update(updatePayload).eq("id", safeCompanyId);
       updateError = retry.error;
     }
 
@@ -125,7 +118,7 @@ export async function POST(request: Request) {
 
   } catch (error: unknown) {
     console.error("Update Plan Error:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const safeError = getSafeErrorResponse(error, "Plan could not be updated.");
+    return NextResponse.json({ error: safeError.message }, { status: safeError.status });
   }
 }

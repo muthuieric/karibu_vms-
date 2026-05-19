@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { publicMetadata } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicMetadata({
   title: "Sign In | Karibu VMS",
   description: "Access your Karibu VMS security command center. Manage visitor logs, security guards, and active gates.",
-  alternates: { canonical: "/login" },
-};
+  path: "/login",
+});
 
 export default function LoginLayout({
   children,

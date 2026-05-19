@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 export type Ticket = {
   id: string;
@@ -36,7 +37,7 @@ export function useCompanySupport() {
         setCompanyId(profileData.company_id);
 
         try {
-          const res = await fetch(`/api/support?company_id=${profileData.company_id}`);
+          const res = await fetch(`/api/support?company_id=${profileData.company_id}`, { headers: await getAuthHeaders() });
           if (res.ok) {
             const json = await res.json();
             if (json.data) setTickets(json.data);
@@ -62,8 +63,8 @@ export function useCompanySupport() {
     try {
       const response = await fetch("/api/support", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ company_id: companyId, created_by: userId, subject, description }),
+        headers: await getAuthHeaders(true),
+        body: JSON.stringify({ company_id: companyId, subject, description }),
       });
       const result = await response.json();
 

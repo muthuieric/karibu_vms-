@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -45,8 +46,10 @@ export default function InstallPrompt() {
     }
 
     if (isIosSafari()) {
-      setShowIosPrompt(true);
-      setIsVisible(true);
+      window.setTimeout(() => {
+        setShowIosPrompt(true);
+        setIsVisible(true);
+      }, 0);
     }
 
     const handleBeforeInstallPrompt = (event: Event) => {
@@ -94,9 +97,11 @@ export default function InstallPrompt() {
   return (
     <div className="fixed inset-x-3 bottom-4 z-50 mx-auto max-w-md rounded-lg border border-slate-200 bg-white p-3 text-slate-900 shadow-lg shadow-slate-900/10 sm:bottom-5 sm:right-5 sm:left-auto sm:mx-0">
       <div className="flex items-start gap-3">
-        <img
+        <Image
           src="/logo.svg"
           alt=""
+          width={36}
+          height={36}
           className="mt-0.5 h-9 w-9 shrink-0 rounded-md bg-slate-50 object-contain p-1"
         />
         <div className="min-w-0 flex-1">

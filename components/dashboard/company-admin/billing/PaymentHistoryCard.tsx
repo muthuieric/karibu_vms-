@@ -3,14 +3,13 @@
 import { CheckCircle2, Clock, Receipt, XCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatCurrency, formatDateTime } from "@/lib/formatters";
 
 type Transaction = {
   id: string;
   created_at: string;
   amount: number;
   tracking_id: string;
-  provider_reference?: string | null;
-  checkout_request_id?: string | null;
   provider?: string | null;
   status: string;
   plan_name?: string | null;
@@ -22,6 +21,11 @@ type PaymentHistoryCardProps = {
 };
 
 export default function PaymentHistoryCard({ transactions, formatDate }: PaymentHistoryCardProps) {
+  const shortenReference = (value?: string | null) => {
+    if (!value) return "-";
+    return value.length > 14 ? `${value.slice(0, 6)}...${value.slice(-4)}` : value;
+  };
+
   return (
     <Card className="shadow-sm border-slate-100 rounded-[1.4rem] overflow-hidden bg-white">
       <CardHeader className="bg-white pb-5">
@@ -71,14 +75,14 @@ export default function PaymentHistoryCard({ transactions, formatDate }: Payment
                           {formatDate(tx.created_at)}
                         </div>
                         <div className="text-xs font-bold text-slate-500 mt-0.5">
-                          {new Date(tx.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {formatDateTime(tx.created_at).split(", ").at(-1)}
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-xs font-bold text-slate-500">
-                        {tx.provider_reference || tx.checkout_request_id || tx.tracking_id || "—"}
+                        {shortenReference(tx.tracking_id)}
                       </TableCell>
                       <TableCell className="font-bold text-slate-900 whitespace-nowrap text-right">
-                        KES {Number(tx.amount || 0).toLocaleString()}
+                        {formatCurrency(Number(tx.amount || 0))}
                       </TableCell>
                       <TableCell className="text-center">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border ${statusColor} whitespace-nowrap`}>

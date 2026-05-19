@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
+import { publicMetadata } from "@/lib/seo/site";
 import { BadgeCheck, ClipboardList, DoorOpen, FileSearch, LockKeyhole, QrCode, ShieldCheck, SlidersHorizontal, UsersRound, WalletCards } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = publicMetadata({
   title: "Karibu VMS | Digital Visitor Management",
   description: "Karibu VMS helps offices, schools, apartments, and gated spaces manage visitor check-in, guard approvals, checkout, and entry records.",
-  alternates: { canonical: "/" },
-};
+  path: "/",
+});
 
 const softwareApplicationJsonLd = {
   "@context": "https://schema.org",
@@ -21,9 +22,11 @@ const softwareApplicationJsonLd = {
   operatingSystem: "Web",
   description: "Enterprise Visitor Management System",
   offers: {
-    "@type": "Offer",
-    price: "29.00",
-    priceCurrency: "USD",
+    "@type": "AggregateOffer",
+    lowPrice: "1500",
+    priceCurrency: "KES",
+    offerCount: "2",
+    url: "https://karibuvms.com/pricing",
   },
 };
 
@@ -89,6 +92,7 @@ export default function LandingPage() {
       <PublicNavbar />
 
       {/* --- HERO SECTION --- */}
+      <main id="main-content">
       <section className="relative pt-20 pb-32 overflow-hidden bg-zinc-50">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white rounded-full mix-blend-normal opacity-50 blur-3xl pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-50/50 rounded-full mix-blend-normal opacity-50 blur-3xl pointer-events-none -translate-x-1/3 translate-y-1/3"></div>
@@ -408,6 +412,7 @@ export default function LandingPage() {
         </div>
       </section>
 
+      </main>
       <PublicFooter />
 
       <LazySmartChatbot />

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 import { canUseHostConfirmation, getHostReviewLabel, getVisitorStatusLabel, normalizeVisitorStatus } from "@/lib/visitor-display";
 
 export type AdminVisitor = {
@@ -119,7 +120,7 @@ export function useCompanyAdminDashboard() {
       }
 
       try {
-        const gatesRes = await fetch(`/api/gates?company_id=${profile.company_id}`);
+        const gatesRes = await fetch(`/api/gates?company_id=${profile.company_id}`, { headers: await getAuthHeaders() });
         if (gatesRes.ok) {
           const gatesJson = await gatesRes.json();
           if (gatesJson.data) setGates(gatesJson.data);
