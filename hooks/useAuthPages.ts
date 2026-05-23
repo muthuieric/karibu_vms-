@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getAppUrl } from "@/lib/app-url";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 import { supabase } from "@/lib/supabase";
+
+const EXPIRED_RESET_LINK_MESSAGE = "This reset link has expired or is invalid. Please request a new password reset link.";
+const RATE_LIMIT_MESSAGE = "Too many reset emails were requested. Please wait a few minutes before trying again.";
 
 export function useLoginPage() {
   const [email, setEmail] = useState("");
@@ -121,45 +125,120 @@ export function useForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+    setSuccess(false);
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${getAppUrl()}/reset-password`,
       });
 
       if (error) {
-        alert(`Error: ${error.message}`);
+        const message = error.message.toLowerCase();
+        if (message.includes("rate limit") || message.includes("too many")) {
+          setError(RATE_LIMIT_MESSAGE);
+        } else {
+          setError(error.message);
+        }
       } else {
         setSuccess(true);
       }
     } catch (error) {
       console.error(error);
-      alert("A network error occurred. Please try again.");
+      setError("A network error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  return { loading, success, email, setEmail, handleSubmit };
+  return { loading, success, error, email, setEmail, handleSubmit };
 }
 
 export function useResetPasswordPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [checkingLink, setCheckingLink] = useState(true);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  useEffect(() => {
+    let mounted = true;
+
+    const prepareRecoverySession = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const queryParams = new URLSearchParams(window.location.search);
+      const urlError = hashParams.get("error") || queryParams.get("error");
+      const urlErrorCode = hashParams.get("error_code") || queryParams.get("error_code");
+
+      if (urlError || urlErrorCode) {
+        if (mounted) {
+          setRecoveryError(EXPIRED_RESET_LINK_MESSAGE);
+          setCheckingLink(false);
+        }
+        return;
+      }
+
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (error) {
+          if (mounted) {
+            setRecoveryError(EXPIRED_RESET_LINK_MESSAGE);
+            setCheckingLink(false);
+          }
+          return;
+        }
+
+        window.history.replaceState(null, document.title, window.location.pathname);
+      }
+
+      const { data, error } = await supabase.auth.getSession();
+      if (mounted) {
+        if (error || !data.session) {
+          setRecoveryError(EXPIRED_RESET_LINK_MESSAGE);
+        }
+        setCheckingLink(false);
+      }
+    };
+
+    prepareRecoverySession();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
 
-    if (password !== confirmPassword) return alert("Passwords do not match. Please try again.");
+    if (!password) {
+      setFormError("Password is required.");
+      return;
+    }
 
     if (!isStrongPassword(password)) {
-      return alert(`Weak Password: ${PASSWORD_REQUIREMENTS_MESSAGE}`);
+      setFormError(PASSWORD_REQUIREMENTS_MESSAGE);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setFormError("Passwords do not match. Please try again.");
+      return;
     }
 
     setLoading(true);
@@ -167,18 +246,29 @@ export function useResetPasswordPage() {
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
-        alert(`Error: ${error.message}`);
+        setFormError(error.message);
       } else {
-        alert("Password successfully updated! You can now log in.");
-        router.push("/login");
+        setSuccess(true);
+        window.setTimeout(() => router.push("/login"), 1500);
       }
     } catch (error) {
       console.error(error);
-      alert("A network error occurred. Please try again.");
+      setFormError("A network error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  return { loading, password, confirmPassword, setPassword, setConfirmPassword, handleSubmit };
+  return {
+    loading,
+    checkingLink,
+    recoveryError,
+    formError,
+    success,
+    password,
+    confirmPassword,
+    setPassword,
+    setConfirmPassword,
+    handleSubmit,
+  };
 }

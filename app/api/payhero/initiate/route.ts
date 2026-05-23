@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentBillingSummary, createSupabaseAdmin } from "@/lib/billing/server";
 import { initiatePayHeroPayment } from "@/lib/payhero";
+import { getAppUrl } from "@/lib/app-url";
 import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 import { requireKenyanPhoneNumber, requireUuid } from "@/lib/validation";
 
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Your account is already settled." }, { status: 400 });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = getAppUrl();
     const callbackUrl = process.env.PAYHERO_CALLBACK_URL || `${appUrl}/api/payhero/callback`;
     const externalReference = `KRB-${safeCompanyId}-${summary.periodKey}-${Date.now()}`;
 

@@ -52,6 +52,12 @@ export default function ForgotPasswordPage() {
         </div>
 
         <form onSubmit={forgotPassword.handleSubmit} className="space-y-5 mt-8">
+          {forgotPassword.error && (
+            <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600" role="alert" aria-live="polite">
+              {forgotPassword.error}
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="recovery-email">Work Email</Label>
             <div className="relative">
