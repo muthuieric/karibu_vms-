@@ -25,7 +25,7 @@ export type BillingCalculationOptions = {
   isTrialActive?: boolean;
 };
 
-export const BASIC_BASE_PRICE = 1500;
+export const BASIC_BASE_PRICE = 10;
 export const BASIC_INCLUDED_VISITORS = 500;
 export const BASIC_EXTRA_VISITOR_RATE = 2;
 

@@ -1,3 +1,5 @@
+// app/api/payhero/callback/route.ts
+
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin, markCompanyPaymentSuccessful, reconcileCompanyBilling } from "@/lib/billing/server";
 import { getPayHeroExternalReference, getPayHeroReference, normalizePayHeroProviderStatus } from "@/lib/payhero";

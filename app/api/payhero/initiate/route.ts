@@ -1,3 +1,5 @@
+// app/api/payhero/initiate/route.ts
+
 import { NextResponse } from "next/server";
 import { getCurrentBillingSummary, createSupabaseAdmin } from "@/lib/billing/server";
 import { initiatePayHeroPayment } from "@/lib/payhero";

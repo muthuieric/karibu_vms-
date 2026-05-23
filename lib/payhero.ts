@@ -1,3 +1,5 @@
+// lib/payhero.ts
+
 export type PayHeroInitiatePaymentInput = {
   amount: number;
   phoneNumber: string;
