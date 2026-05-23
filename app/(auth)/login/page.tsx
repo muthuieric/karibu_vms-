@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AuthCard, AuthShell } from "@/components/auth/AuthShell";
+import { AuthTurnstile } from "@/components/auth/AuthTurnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,7 +68,18 @@ export default function LoginPage() {
             />
           </div>
 
-          <Button type="submit" className="w-full h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium text-base transition-colors mt-2" disabled={login.loading}>
+          <AuthTurnstile
+            onSuccess={(token) => {
+              login.setCaptchaToken(token);
+              login.setError(null);
+            }}
+            onFailure={(message) => {
+              login.setCaptchaToken(null);
+              login.setError(message);
+            }}
+          />
+
+          <Button type="submit" className="w-full h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium text-base transition-colors mt-2" disabled={login.loading || (login.isCaptchaEnabled && !login.captchaToken)}>
             {login.loading ? "Signing in..." : "Sign In"}
           </Button>
 

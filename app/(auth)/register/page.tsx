@@ -5,11 +5,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AuthTurnstile } from "@/components/auth/AuthTurnstile";
 import { useRegisterPage } from "@/hooks/useAuthPages";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function RegisterPage() {
-  const { loading, success, formData, setFormData, handleSubmit } = useRegisterPage();
+  const { loading, success, error, captchaToken, isCaptchaEnabled, formData, setFormData, setCaptchaToken, setError, handleSubmit } = useRegisterPage();
 
   if (success) {
     return (
@@ -59,6 +60,12 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6 text-left">
+            {error && (
+              <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-red-600" role="alert" aria-live="polite">
+                {error}
+              </div>
+            )}
+
             
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-zinc-900 border-b border-zinc-100 pb-2">Organization Details</h3>
@@ -188,7 +195,18 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 mt-6 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium text-base transition-colors" disabled={loading}>
+            <AuthTurnstile
+              onSuccess={(token) => {
+                setCaptchaToken(token);
+                setError(null);
+              }}
+              onFailure={(message) => {
+                setCaptchaToken(null);
+                setError(message);
+              }}
+            />
+
+            <Button type="submit" className="w-full h-12 mt-6 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium text-base transition-colors" disabled={loading || (isCaptchaEnabled && !captchaToken)}>
               {loading ? "Processing..." : "Register"}
             </Button>
           </form>

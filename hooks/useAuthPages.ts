@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { TURNSTILE_ENABLED, TURNSTILE_ERROR_MESSAGE } from "@/components/auth/AuthTurnstile";
 import { getAppUrl } from "@/lib/app-url";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 import { supabase } from "@/lib/supabase";
@@ -14,14 +15,24 @@ export function useLoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (TURNSTILE_ENABLED && !captchaToken) {
+      setError(TURNSTILE_ERROR_MESSAGE);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: { captchaToken: captchaToken ?? undefined },
+      });
       if (authError) throw authError;
 
       if (authData.user) {
@@ -70,12 +81,26 @@ export function useLoginPage() {
     }
   };
 
-  return { email, password, loading, error, setEmail, setPassword, handleLogin };
+  return {
+    email,
+    password,
+    loading,
+    error,
+    captchaToken,
+    isCaptchaEnabled: TURNSTILE_ENABLED,
+    setEmail,
+    setPassword,
+    setCaptchaToken,
+    setError,
+    handleLogin,
+  };
 }
 
 export function useRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     companyName: "",
     address: "",
@@ -89,11 +114,21 @@ export function useRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
-    if (formData.password !== formData.confirmPassword) return alert("Passwords do not match. Please try again.");
+    if (TURNSTILE_ENABLED && !captchaToken) {
+      setError(TURNSTILE_ERROR_MESSAGE);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match. Please try again.");
+      return;
+    }
 
     if (!isStrongPassword(formData.password)) {
-      return alert(`Weak Password: ${PASSWORD_REQUIREMENTS_MESSAGE}`);
+      setError(PASSWORD_REQUIREMENTS_MESSAGE);
+      return;
     }
 
     setLoading(true);
@@ -101,24 +136,35 @@ export function useRegisterPage() {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, captchaToken }),
       });
       const data = await response.json();
 
       if (data.error) {
-        alert(`Registration failed: ${data.error}`);
+        setError(data.error);
       } else {
         setSuccess(true);
       }
     } catch (error) {
       console.error(error);
-      alert("A network error occurred. Please try again.");
+      setError("A network error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  return { loading, success, formData, setFormData, handleSubmit };
+  return {
+    loading,
+    success,
+    error,
+    captchaToken,
+    isCaptchaEnabled: TURNSTILE_ENABLED,
+    formData,
+    setFormData,
+    setCaptchaToken,
+    setError,
+    handleSubmit,
+  };
 }
 
 export function useForgotPasswordPage() {
@@ -126,9 +172,15 @@ export function useForgotPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (TURNSTILE_ENABLED && !captchaToken) {
+      setError(TURNSTILE_ERROR_MESSAGE);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -136,6 +188,7 @@ export function useForgotPasswordPage() {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${getAppUrl()}/reset-password`,
+        captchaToken: captchaToken ?? undefined,
       });
 
       if (error) {
@@ -156,7 +209,18 @@ export function useForgotPasswordPage() {
     }
   };
 
-  return { loading, success, error, email, setEmail, handleSubmit };
+  return {
+    loading,
+    success,
+    error,
+    captchaToken,
+    isCaptchaEnabled: TURNSTILE_ENABLED,
+    email,
+    setEmail,
+    setCaptchaToken,
+    setError,
+    handleSubmit,
+  };
 }
 
 export function useResetPasswordPage() {

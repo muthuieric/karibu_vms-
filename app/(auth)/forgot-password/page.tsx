@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForgotPasswordPage } from "@/hooks/useAuthPages";
+import { AuthTurnstile } from "@/components/auth/AuthTurnstile";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function ForgotPasswordPage() {
@@ -74,7 +75,18 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 mt-6 text-base font-bold" disabled={forgotPassword.loading}>
+          <AuthTurnstile
+            onSuccess={(token) => {
+              forgotPassword.setCaptchaToken(token);
+              forgotPassword.setError(null);
+            }}
+            onFailure={(message) => {
+              forgotPassword.setCaptchaToken(null);
+              forgotPassword.setError(message);
+            }}
+          />
+
+          <Button type="submit" className="w-full h-12 mt-6 text-base font-bold" disabled={forgotPassword.loading || (forgotPassword.isCaptchaEnabled && !forgotPassword.captchaToken)}>
             {forgotPassword.loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin"/> Sending...</> : <>Send Recovery Link <ArrowRight className="w-5 h-5 ml-2"/></>}
           </Button>
         </form>
