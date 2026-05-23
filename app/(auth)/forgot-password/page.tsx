@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Loader2, Mail, ArrowRight, ShieldCheck } from "lucide-react";
+import { Loader2, Mail, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +17,18 @@ export default function ForgotPasswordPage() {
     return (
       <AuthShell>
         <div className="w-full text-center space-y-6 animate-in zoom-in-95 duration-500">
-          <div className="w-20 h-20 bg-success/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-success/15">
-            <ShieldCheck className="w-10 h-10 text-success" />
+          <div className="relative mx-auto mb-4 inline-flex items-center justify-center">
+            <Image
+              src="/logo.svg"
+              alt="Karibu VMS logo"
+              width={140}
+              height={46}
+              className="h-12 w-auto object-contain"
+              priority
+            />
+            <span className="absolute -right-3 -bottom-1 flex h-7 w-7 items-center justify-center rounded-full border-4 border-white bg-blue-600 text-white shadow-sm">
+              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+            </span>
           </div>
           <h2 className="text-3xl font-bold text-text-main tracking-tight">Check your email</h2>
           <p className="text-text-muted leading-relaxed text-sm">

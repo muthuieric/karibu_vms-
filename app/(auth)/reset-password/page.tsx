@@ -79,9 +79,9 @@ export default function ResetPasswordPage() {
               priority
             />
           </div>
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-success/15 bg-success/10">
+          {/* <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-success/15 bg-success/10">
             <ShieldCheck className="h-10 w-10 text-success" />
-          </div>
+          </div> */}
           <div>
             <h2 className="text-3xl font-bold text-text-main tracking-tight">Password updated</h2>
             <p className="text-text-muted mt-2 text-sm">You can now sign in with your new password.</p>
