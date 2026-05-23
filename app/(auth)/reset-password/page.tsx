@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useResetPasswordPage } from "@/hooks/useAuthPages";
 import { AuthShell } from "@/components/auth/AuthShell";
 
@@ -120,10 +120,9 @@ export default function ResetPasswordPage() {
             <Label htmlFor="reset-new-password">New Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-5 w-5 text-zinc-400" />
-              <Input 
+              <PasswordInput
                 id="reset-new-password"
                 required 
-                type="password" 
                 minLength={8}
                 placeholder="Min 8 chars, 1 uppercase, 1 symbol" 
                 className="pl-10 h-11"
@@ -138,10 +137,9 @@ export default function ResetPasswordPage() {
             <Label htmlFor="reset-confirm-password">Confirm New Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-5 w-5 text-zinc-400" />
-              <Input 
+              <PasswordInput
                 id="reset-confirm-password"
                 required 
-                type="password" 
                 minLength={8}
                 placeholder="Retype new password" 
                 className="pl-10 h-11"

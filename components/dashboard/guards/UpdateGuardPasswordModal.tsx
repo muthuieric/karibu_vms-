@@ -3,8 +3,8 @@
 import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import type { GuardPasswordData } from "@/hooks/useCompanyAdminGuards";
 
 type UpdateGuardPasswordModalProps = {
@@ -47,10 +47,9 @@ export default function UpdateGuardPasswordModal({
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
             <div className="space-y-1.5">
               <Label htmlFor="update-guard-password" className="font-bold text-slate-700">New password</Label>
-              <Input
+              <PasswordInput
                 id="update-guard-password"
                 required
-                type="password"
                 autoComplete="new-password"
                 placeholder="Min 8 chars, 1 uppercase, 1 symbol"
                 minLength={8}
@@ -64,10 +63,9 @@ export default function UpdateGuardPasswordModal({
 
             <div className="space-y-1.5">
               <Label htmlFor="update-guard-confirm-password" className="font-bold text-slate-700">Confirm new password</Label>
-              <Input
+              <PasswordInput
                 id="update-guard-confirm-password"
                 required
-                type="password"
                 autoComplete="new-password"
                 placeholder="Re-enter password"
                 minLength={8}

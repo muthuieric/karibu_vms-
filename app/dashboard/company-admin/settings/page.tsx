@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, SlidersHorizontal } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
@@ -140,9 +140,8 @@ export default function AccountPage() {
                 <form onSubmit={handleUpdatePassword} className="space-y-5">
                   <div className="space-y-1.5">
                     <Label htmlFor="account-new-password" className="font-bold text-slate-700 text-xs uppercase tracking-wider">New Password</Label>
-                    <Input 
+                    <PasswordInput
                       id="account-new-password"
-                      type="password" 
                       required 
                       value={newPassword} 
                       onChange={(e) => setNewPassword(e.target.value)} 
@@ -152,9 +151,8 @@ export default function AccountPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="account-confirm-password" className="font-bold text-slate-700 text-xs uppercase tracking-wider">Confirm New Password</Label>
-                    <Input 
+                    <PasswordInput
                       id="account-confirm-password"
-                      type="password" 
                       required 
                       value={confirmPassword} 
                       onChange={(e) => setConfirmPassword(e.target.value)} 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { AuthTurnstile } from "@/components/auth/AuthTurnstile";
 import { useRegisterPage } from "@/hooks/useAuthPages";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -167,10 +168,9 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="securePassword" className="text-zinc-700 font-medium text-sm">Secure Password</Label>
-                  <Input 
+                  <PasswordInput
                     id="securePassword"
                     required 
-                    type="password" 
                     minLength={8}
                     placeholder="Min 8 characters" 
                     className="h-11 rounded-xl border-zinc-200 focus:border-blue-500 focus:ring-blue-500/20 bg-zinc-50 focus:bg-white px-4 text-zinc-900 transition-colors"
@@ -181,10 +181,9 @@ export default function RegisterPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword" className="text-zinc-700 font-medium text-sm">Confirm Password</Label>
-                  <Input 
+                  <PasswordInput
                     id="confirmPassword"
                     required 
-                    type="password" 
                     minLength={8}
                     placeholder="Retype password" 
                     className="h-11 rounded-xl border-zinc-200 focus:border-blue-500 focus:ring-blue-500/20 bg-zinc-50 focus:bg-white px-4 text-zinc-900 transition-colors"

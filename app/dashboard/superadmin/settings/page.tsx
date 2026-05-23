@@ -6,8 +6,8 @@ import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, Settings } from "lucide-react";
 
@@ -140,9 +140,8 @@ export default function SuperadminSettingsPage() {
               
               <div className="space-y-1.5">
                 <Label htmlFor="newPassword" className="font-bold text-slate-700 text-xs uppercase tracking-wider">New Password</Label>
-                <Input
+                <PasswordInput
                   id="newPassword"
-                  type="password"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -153,9 +152,8 @@ export default function SuperadminSettingsPage() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="confirmPassword" className="font-bold text-slate-700 text-xs uppercase tracking-wider">Confirm New Password</Label>
-                <Input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

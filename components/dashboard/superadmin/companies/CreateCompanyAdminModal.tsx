@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { FormField } from "@/components/dashboard/shared/Fields";
 import { ModalShell } from "@/components/dashboard/shared/ModalShell";
 
@@ -60,9 +61,8 @@ export default function CreateCompanyAdminModal({
           />
         </FormField>
         <FormField label="Initial Password">
-          <Input
+          <PasswordInput
             required
-            type="password"
             placeholder="Min 8 chars, 1 uppercase, 1 symbol"
             minLength={8}
             value={adminForm.password}
