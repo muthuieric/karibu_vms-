@@ -108,7 +108,7 @@ export default function LandingPage() {
                 A cleaner way to manage every visit.
               </h1>
               <p className="text-lg text-zinc-600 mb-8 leading-relaxed">
-                Know who is coming in, who is inside, and who has left. Visitor entry made simple for offices, schools, apartments, and gated spaces.
+                Know who is coming in, who is inside, and who has left. Visitor entry made simple for buildings, offices, schools, apartments, and gated spaces.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <Link href="/register" className="w-full sm:w-auto">
