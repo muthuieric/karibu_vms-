@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { getAuthHeaders } from "@/lib/client-auth";
 import { filterGuardVisitors, getDynamicGateQrUrl, printGateQrPoster } from "@/lib/guard-dashboard";
 import { getBasePlan } from "@/lib/billing/pricing";
+import { isQrPassFrontendEnabled, resolveVisitorVerificationMethod, type VisitorVerificationMethod } from "@/lib/visitor-verification";
 import type { CustomField, Visitor } from "@/types/guard";
 
 function addVisitorOnce(visitors: Visitor[], visitor: Visitor) {
@@ -17,6 +18,7 @@ export function useGuardDashboard() {
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [planTier, setPlanTier] = useState("basic");
+  const [verificationMethod, setVerificationMethod] = useState<VisitorVerificationMethod | "basic_default">("basic_default");
   const [guardGateId, setGuardGateId] = useState<string | null>(null);
   const [guardGateName, setGuardGateName] = useState("All Gates");
   const [customFieldLabels, setCustomFieldLabels] = useState<Record<string, string>>({});
@@ -31,6 +33,7 @@ export function useGuardDashboard() {
   const [isLocked, setIsLocked] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [sendingOtpId, setSendingOtpId] = useState<string | null>(null);
+  const [approvingPassId, setApprovingPassId] = useState<string | null>(null);
   const [otpInput, setOtpInput] = useState("");
   const [qrTimestamp, setQrTimestamp] = useState(0);
 
@@ -79,12 +82,14 @@ export function useGuardDashboard() {
 
       const { data: companyData } = await supabase
         .from("companies")
-        .select("name, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier")
+        .select("name, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier, visitor_verification_method")
         .eq("id", currentCompanyId)
         .single();
 
       if (companyData) {
         setPlanTier(getBasePlan(companyData.plan_tier));
+        const resolvedVerificationMethod = resolveVisitorVerificationMethod(companyData.plan_tier, companyData.visitor_verification_method);
+        setVerificationMethod(resolvedVerificationMethod === "qr_pass" && !isQrPassFrontendEnabled() ? "sms_otp" : resolvedVerificationMethod);
         setRequirePhoto(companyData.require_photo || false);
         setAskPhone(companyData.ask_phone !== false);
         setAskId(companyData.ask_id !== false);
@@ -106,11 +111,13 @@ export function useGuardDashboard() {
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       try {
+        const rolloverAt = new Date().toISOString();
         await supabase
           .from("visitors")
           .update({
             status: "checked_out",
-            checked_out_at: new Date().toISOString(),
+            checked_out_at: rolloverAt,
+            pass_expired_at: rolloverAt,
             otp_code: null,
           })
           .eq("company_id", currentCompanyId)
@@ -180,7 +187,10 @@ export function useGuardDashboard() {
   };
 
   const handleDirectApprove = async (visitor: Visitor) => {
-    await supabase.from("visitors").update({ status: "checked_in", checked_in_at: new Date().toISOString() }).eq("id", visitor.id);
+    await supabase
+      .from("visitors")
+      .update({ status: "checked_in", checked_in_at: new Date().toISOString() })
+      .eq("id", visitor.id);
   };
 
   const handleManualOverride = async (visitor: Visitor) => {
@@ -257,15 +267,60 @@ export function useGuardDashboard() {
     const { data } = await supabase.from("visitors").select("otp_code").eq("id", visitor.id).single();
     if (!data || data.otp_code !== otpInput.trim()) return alert("Incorrect OTP.");
 
-    await supabase.from("visitors").update({ status: "checked_in", checked_in_at: new Date().toISOString() }).eq("id", visitor.id);
+    await supabase
+      .from("visitors")
+      .update({ status: "checked_in", checked_in_at: new Date().toISOString(), verification_method: "sms_otp" })
+      .eq("id", visitor.id);
     setVerifyingId(null);
   };
 
+  const handleApprovePass = async (visitor: Visitor) => {
+    if (approvingPassId === visitor.id) return;
+    setApprovingPassId(visitor.id);
+
+    try {
+      const response = await fetch("/api/visitor-pass/approve", {
+        method: "POST",
+        headers: await getAuthHeaders(true),
+        body: JSON.stringify({ visitorId: visitor.id }),
+      });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.error || "Visitor pass could not be approved.");
+      }
+
+      if (result.data) {
+        setVisitors((prev) => prev.map((item) => (item.id === visitor.id ? (result.data as Visitor) : item)));
+      }
+    } catch (error) {
+      console.error("Failed to approve visitor pass:", error);
+      alert(error instanceof Error ? error.message : "Visitor pass could not be approved.");
+    } finally {
+      setApprovingPassId(null);
+    }
+  };
+
   const handleCheckOut = async (id: string) => {
-    await supabase
-      .from("visitors")
-      .update({ status: "checked_out", checked_out_at: new Date().toISOString(), otp_code: null })
-      .eq("id", id);
+    try {
+      const response = await fetch("/api/visitor-pass/checkout", {
+        method: "POST",
+        headers: await getAuthHeaders(true),
+        body: JSON.stringify({ visitorId: id }),
+      });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.error || "Visitor could not be checked out.");
+      }
+
+      if (result.data) {
+        setVisitors((prev) => prev.filter((visitor) => visitor.id !== id));
+      }
+    } catch (error) {
+      console.error("Failed to check out visitor:", error);
+      alert(error instanceof Error ? error.message : "Visitor could not be checked out.");
+    }
   };
 
   return {
@@ -273,6 +328,7 @@ export function useGuardDashboard() {
     visitors,
     loading,
     planTier,
+    verificationMethod,
     guardGateId,
     guardGateName,
     customFieldLabels,
@@ -287,6 +343,7 @@ export function useGuardDashboard() {
     isLocked,
     verifyingId,
     sendingOtpId,
+    approvingPassId,
     otpInput,
     filteredVisitors: filterGuardVisitors(visitors, searchTerm, statusFilter),
     totalToday: visitors.length,
@@ -302,6 +359,7 @@ export function useGuardDashboard() {
     handleManualOverride,
     handleSendOTP,
     handleConfirmOTP,
+    handleApprovePass,
     handleCheckOut,
     handlePrintQr: () => printGateQrPoster(window.location.origin, companyId, guardGateId, guardGateName),
     getDynamicQrUrl: () => getDynamicGateQrUrl(window.location.origin, companyId, guardGateId, qrTimestamp),

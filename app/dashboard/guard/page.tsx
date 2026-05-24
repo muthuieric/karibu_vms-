@@ -87,8 +87,10 @@ export default function GuardDashboard() {
           searchTerm={dashboard.searchTerm}
           statusFilter={dashboard.statusFilter}
           planTier={dashboard.planTier}
+          verificationMethod={dashboard.verificationMethod}
           verifyingId={dashboard.verifyingId}
           sendingOtpId={dashboard.sendingOtpId}
+          approvingPassId={dashboard.approvingPassId}
           otpInput={dashboard.otpInput}
           onSearchTermChange={dashboard.setSearchTerm}
           onStatusFilterChange={dashboard.setStatusFilter}
@@ -98,6 +100,7 @@ export default function GuardDashboard() {
           onConfirmOTP={dashboard.handleConfirmOTP}
           onCancelOTP={() => dashboard.setVerifyingId(null)}
           onSendOTP={dashboard.handleSendOTP}
+          onApprovePass={dashboard.handleApprovePass}
           onCheckOut={dashboard.handleCheckOut}
           onDirectApprove={dashboard.handleDirectApprove}
           onManualOverride={dashboard.handleManualOverride}

@@ -1,9 +1,71 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/card";
+import VisitorPassCard, { type SafeVisitorPass } from "@/components/visitor/VisitorPassCard";
 
-export default function GateSuccessState() {
+type GateSuccessStateProps = {
+  companyName?: string;
+  gateName?: string | null;
+  visitorName?: string;
+  hostName?: string | null;
+  passUrl?: string | null;
+  passToken?: string | null;
+};
+
+export default function GateSuccessState({
+  companyName,
+  gateName,
+  visitorName,
+  hostName,
+  passUrl,
+  passToken,
+}: GateSuccessStateProps) {
+  const [livePass, setLivePass] = useState<SafeVisitorPass | null>(null);
+
+  useEffect(() => {
+    if (!passToken) return undefined;
+
+    let active = true;
+    const loadPass = async () => {
+      try {
+        const response = await fetch(`/api/visitor-pass/${encodeURIComponent(passToken)}`, { cache: "no-store" });
+        const result = await response.json().catch(() => ({}));
+        if (active && response.ok && result.data) setLivePass(result.data);
+      } catch {
+        // Keep the initial pending pass visible if polling briefly fails.
+      }
+    };
+
+    loadPass();
+    const interval = setInterval(loadPass, 4000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [passToken]);
+
+  if (passUrl) {
+    return (
+      <div className="relative z-10 flex w-full justify-center p-4">
+        <VisitorPassCard
+          pass={livePass || {
+            visitorName: visitorName || "Visitor",
+            hostName,
+            companyName: companyName || "Karibu VMS",
+            gateName,
+            status: "pending",
+            date: new Date().toISOString(),
+            checkedInAt: null,
+          }}
+          passUrl={passUrl}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="relative z-10 flex w-full justify-center p-4">
       <Card className="w-full max-w-md text-center p-8 bg-white">

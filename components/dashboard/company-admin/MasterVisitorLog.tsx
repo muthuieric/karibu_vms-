@@ -28,8 +28,10 @@ type Visitor = {
   status: string;
   created_at: string;
   checked_out_at?: string;
+  pass_expired_at?: string | null;
   host_name?: string;
   host_confirmed?: boolean;
+  host_confirmed_at?: string | null;
   purpose?: string;
   vehicle_reg?: string;
   photo_url?: string;

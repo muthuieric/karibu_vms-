@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { IdCard, Loader2, Camera, CheckCircle2, AlertCircle, Users, Briefcase, Car, Plus, Trash2, ListPlus, Lock, ClipboardList, MapPin, Crosshair } from "lucide-react";
+import { IdCard, Loader2, Camera, CheckCircle2, AlertCircle, Users, Briefcase, Car, Plus, Trash2, ListPlus, Lock, ClipboardList, MapPin, Crosshair, QrCode, MessageSquareText } from "lucide-react";
 import { useBuildingRules } from "@/hooks/useBuildingRules";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
@@ -17,6 +17,28 @@ function formatDistance(meters: number) {
   if (meters < 1000) return `${Math.round(meters)} m`;
   return `${(meters / 1000).toFixed(1)} km`;
 }
+
+type VerificationOption = {
+  value: "qr_pass" | "sms_otp";
+  title: string;
+  description: string;
+  icon: typeof QrCode;
+};
+
+const verificationOptions: VerificationOption[] = [
+  {
+    value: "qr_pass",
+    title: "QR Pass Verification",
+    description: "Visitors receive a locked digital pass that security approves from the guard dashboard.",
+    icon: QrCode,
+  },
+  {
+    value: "sms_otp",
+    title: "SMS OTP Verification",
+    description: "Security sends and confirms the visitor entry code by SMS.",
+    icon: MessageSquareText,
+  },
+];
 
 export default function BuildingRulesPage() {
   const rules = useBuildingRules();
@@ -133,6 +155,69 @@ export default function BuildingRulesPage() {
                   badge={rules.planTier === "basic" ? <Badge variant="pending" className="gap-1 bg-amber-50 text-amber-600 border-amber-200"><Lock className="h-3 w-3" /> Premium</Badge> : null}
                   onCheckedChange={(checked) => rules.handleToggleRule("require_photo", checked, rules.setRequirePhoto)}
                 />
+              </CardContent>
+            </Card>
+
+            <Card className="h-fit overflow-hidden rounded-[1.4rem] border-slate-100 shadow-sm bg-white">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <span className="rounded-2xl bg-blue-50 p-2 text-blue-600">
+                    <QrCode className="h-5 w-5" />
+                  </span>
+                  Verification method
+                </CardTitle>
+                <CardDescription>Choose one active verification path for Premium visitor check-in.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {rules.verificationPlanState === "unknown" ? (
+                  <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-800">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Unable to confirm your plan. Please refresh or contact support.
+                    </div>
+                  </div>
+                ) : !rules.canChooseVerification ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      Verification method selection is available on Premium.
+                    </div>
+                  </div>
+                ) : null}
+
+                {verificationOptions.map((option) => {
+                  const Icon = option.icon;
+                  const selected = rules.visitorVerificationMethod === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      disabled={!rules.canChooseVerification || rules.updatingRules}
+                      onClick={() => rules.handleVerificationMethodChange(option.value)}
+                      className={`flex w-full items-start gap-4 rounded-2xl border p-4 text-left shadow-sm transition ${
+                        selected
+                          ? "border-blue-300 bg-blue-50 ring-2 ring-blue-100"
+                          : "border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50"
+                      } ${(!rules.canChooseVerification || rules.updatingRules) ? "cursor-not-allowed opacity-70" : ""}`}
+                      aria-pressed={selected}
+                    >
+                      <span className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${
+                        selected ? "border-blue-200 bg-white text-blue-700" : "border-slate-200 bg-slate-50 text-slate-500"
+                      }`}>
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="text-base font-black text-slate-900">{option.title}</span>
+                          <span className={`h-4 w-4 rounded-full border ${
+                            selected ? "border-blue-600 bg-blue-600 shadow-[inset_0_0_0_4px_white]" : "border-slate-300 bg-white"
+                          }`} />
+                        </span>
+                        <span className="mt-1 block text-sm leading-6 text-slate-500">{option.description}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </CardContent>
             </Card>
           </div>

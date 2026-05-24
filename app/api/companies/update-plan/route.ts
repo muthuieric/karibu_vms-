@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { addOneMonth, calculateMonthlyCharge, isTrialPlan, normalizePlan } from "@/lib/billing/pricing";
 import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 import { requireBillingPlan, requireUuid } from "@/lib/validation";
+import { canChooseVerificationMethod } from "@/lib/visitor-verification";
 
 function isMissingColumnError(error: unknown) {
   if (!error || typeof error !== "object") return false;
@@ -55,6 +56,10 @@ export async function POST(request: Request) {
       billing_period_start: isTrialPlan(newPlan) ? now.toISOString() : periodStart,
       billing_period_end: isTrialPlan(newPlan) ? trialEnd : periodEnd,
     };
+
+    if (canChooseVerificationMethod(newPlan)) {
+      updatePayload.visitor_verification_method = "qr_pass";
+    }
 
     if (isTrialPlan(newPlan)) {
       currentBalance = 0;

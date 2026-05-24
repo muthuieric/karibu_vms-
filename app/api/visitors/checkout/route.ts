@@ -39,11 +39,13 @@ export async function POST(request: Request) {
     }
 
     // --- STEP 2: If the UI is confirming checkout, update the database ---
+    const checkedOutAt = new Date().toISOString();
     const { error: updateError } = await supabaseAdmin
       .from("visitors")
       .update({
         status: "checked_out",
-        checked_out_at: new Date().toISOString()
+        checked_out_at: checkedOutAt,
+        pass_expired_at: checkedOutAt,
       })
       .eq("id", activeVisitor.id);
 

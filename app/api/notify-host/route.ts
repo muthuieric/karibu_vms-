@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     const supabaseAdmin = createSupabaseAdmin();
     const { data: visitor, error: visitorError } = await supabaseAdmin
       .from("visitors")
-      .select("id, company_id, name, phone, purpose, photo_url, host_id")
+      .select("id, company_id, name, purpose, photo_url, host_id, gate_id, pass_code, pass_expired_at")
       .eq("id", safeVisitorId)
       .eq("company_id", safeCompanyId)
       .single();
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Visitor host could not be found." }, { status: 404 });
     }
 
-    const [{ data: host, error: hostError }, { data: company, error: companyError }] = await Promise.all([
+    const [{ data: host, error: hostError }, { data: company, error: companyError }, { data: gate }] = await Promise.all([
       supabaseAdmin
         .from("hosts")
         .select("id, company_id, name, email")
@@ -59,6 +59,9 @@ export async function POST(request: Request) {
         .select("id, name")
         .eq("id", safeCompanyId)
         .single(),
+      visitor.gate_id
+        ? supabaseAdmin.from("gates").select("name").eq("id", visitor.gate_id).eq("company_id", safeCompanyId).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     if (hostError || !host?.email || companyError || !company) {
@@ -67,6 +70,17 @@ export async function POST(request: Request) {
 
     const origin = getAppOrigin(request);
     const confirmLink = `${origin}/${safeCompanyId}/host-confirm`;
+    const activePassCode = visitor.pass_code && !visitor.pass_expired_at ? visitor.pass_code : null;
+    const passCodeRow = activePassCode
+      ? `
+                      <tr>
+                        <td style="padding: 0 0 14px 0; color: #64748b; font-size: 13px; line-height: 1.5; width: 130px;">Visitor Pass Code</td>
+                        <td style="padding: 0 0 14px 0; color: #0f172a; font-size: 22px; line-height: 1.3; font-weight: 900; letter-spacing: 0.14em;">${escapeHtml(activePassCode)}</td>
+                      </tr>`
+      : "";
+    const confirmationCopy = activePassCode
+      ? `When the visitor reaches you, ask for their <strong>Visitor Pass Code</strong> and use the confirmation link below to check them out. Security still controls entry approval.`
+      : `After security approves the visitor, ask them for their visitor code and use the confirmation link below to check them out.`;
     const visitorPhoto = visitor.photo_url
       ? `<img src="${escapeHtml(visitor.photo_url)}" alt="Visitor photo" style="width: 88px; height: 88px; border-radius: 999px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.16); display: block;" />`
       : `<div style="width: 88px; height: 88px; border-radius: 999px; background: #e0f2fe; border: 3px solid #ffffff; color: #0369a1; font-size: 13px; font-weight: 800; line-height: 88px; text-align: center; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);">No photo</div>`;
@@ -110,9 +124,10 @@ export async function POST(request: Request) {
                         <td style="padding: 0 0 14px 0; color: #0f172a; font-size: 15px; line-height: 1.5; font-weight: 700;">${escapeHtml(visitor.name)}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 0 0 14px 0; color: #64748b; font-size: 13px; line-height: 1.5; width: 130px;">Phone</td>
-                        <td style="padding: 0 0 14px 0; color: #0f172a; font-size: 15px; line-height: 1.5; font-weight: 700;">${escapeHtml(visitor.phone || "Not provided")}</td>
+                        <td style="padding: 0 0 14px 0; color: #64748b; font-size: 13px; line-height: 1.5; width: 130px;">Gate</td>
+                        <td style="padding: 0 0 14px 0; color: #0f172a; font-size: 15px; line-height: 1.5; font-weight: 700;">${escapeHtml(gate?.name || "Main entry")}</td>
                       </tr>
+                      ${passCodeRow}
                       <tr>
                         <td style="padding: 0; color: #64748b; font-size: 13px; line-height: 1.5; width: 130px;">Purpose</td>
                         <td style="padding: 0; color: #0f172a; font-size: 15px; line-height: 1.5; font-weight: 700;">${escapeHtml(visitor.purpose || "Not stated")}</td>
@@ -121,7 +136,7 @@ export async function POST(request: Request) {
                   </div>
 
                   <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 14px; padding: 18px 20px; margin: 0 0 24px 0;">
-                    <p style="margin: 0; color: #1e3a8a; font-size: 14px; line-height: 1.7;">When the visitor arrives, please ask them for the <strong>OTP code</strong> they received at the gate, then confirm their visit in Karibu VMS.</p>
+                    <p style="margin: 0; color: #1e3a8a; font-size: 14px; line-height: 1.7;">${confirmationCopy}</p>
                   </div>
 
                   <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin: 0 auto 18px auto;">

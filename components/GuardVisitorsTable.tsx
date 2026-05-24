@@ -25,11 +25,16 @@ type Visitor = {
   document_type: string;
   id_number?: string;
   otp_code?: string;
+  pass_token?: string | null;
+  pass_code?: string | null;
+  pass_expired_at?: string | null;
+  verification_method?: string | null;
   company_id: string;
   photo_url?: string;
   host_id?: string | null;
   host_name?: string;
   host_confirmed?: boolean;
+  host_confirmed_at?: string | null;
   purpose?: string;
   vehicle_reg?: string;
   custom_data?: Record<string, string>;
@@ -42,8 +47,10 @@ type GuardVisitorsTableProps = {
   searchTerm: string;
   statusFilter: "all" | "pending" | "checked_in";
   planTier: string;
+  verificationMethod: "qr_pass" | "sms_otp" | "basic_default";
   verifyingId: string | null;
   sendingOtpId: string | null;
+  approvingPassId: string | null;
   otpInput: string;
   onSearchTermChange: (value: string) => void;
   onStatusFilterChange: (value: "all" | "pending" | "checked_in") => void;
@@ -53,6 +60,7 @@ type GuardVisitorsTableProps = {
   onConfirmOTP: (visitor: Visitor) => void;
   onCancelOTP: () => void;
   onSendOTP: (id: string, phone: string) => void;
+  onApprovePass: (visitor: Visitor) => void;
   onCheckOut: (id: string) => void;
   onDirectApprove: (visitor: Visitor) => void;
   onManualOverride: (visitor: Visitor) => void;
@@ -107,8 +115,10 @@ export default function GuardVisitorsTable({
   searchTerm,
   statusFilter,
   planTier,
+  verificationMethod,
   verifyingId,
   sendingOtpId,
+  approvingPassId,
   otpInput,
   onSearchTermChange,
   onStatusFilterChange,
@@ -118,6 +128,7 @@ export default function GuardVisitorsTable({
   onConfirmOTP,
   onCancelOTP,
   onSendOTP,
+  onApprovePass,
   onCheckOut,
   onDirectApprove,
   onManualOverride,
@@ -133,6 +144,19 @@ export default function GuardVisitorsTable({
             className="w-full sm:w-auto whitespace-nowrap bg-blue-600 font-bold text-white hover:bg-blue-700 shadow-sm"
           >
             Approve
+          </Button>
+        );
+      }
+
+      if (verificationMethod === "qr_pass") {
+        return (
+          <Button
+            size="sm"
+            onClick={() => onApprovePass(visitor)}
+            disabled={approvingPassId === visitor.id || !visitor.pass_token}
+            className="w-full sm:w-auto whitespace-nowrap bg-slate-950 font-bold text-white hover:bg-slate-800 disabled:bg-slate-300"
+          >
+            {approvingPassId === visitor.id ? "Approving..." : "Approve Pass"}
           </Button>
         );
       }
@@ -169,15 +193,17 @@ export default function GuardVisitorsTable({
       }
       
       return (
-        <Button
-          size="sm"
-          onClick={() => onSendOTP(visitor.id, visitor.phone)}
-          disabled={sendingOtpId === visitor.id}
-          className="w-full sm:w-auto whitespace-nowrap font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
-          variant="outline"
-        >
-          {sendingOtpId === visitor.id ? "Sending..." : "Send OTP"}
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end">
+          <Button
+            size="sm"
+            onClick={() => onSendOTP(visitor.id, visitor.phone)}
+            disabled={sendingOtpId === visitor.id}
+            className="w-full sm:w-auto whitespace-nowrap font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+            variant="outline"
+          >
+            {sendingOtpId === visitor.id ? "Sending..." : "Send OTP"}
+          </Button>
+        </div>
       );
     }
     

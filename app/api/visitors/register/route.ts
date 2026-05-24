@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { getSupabaseErrorMessage } from "@/lib/supabase-error";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { optionalText, requireText, requireUuid } from "@/lib/validation";
+import { createVisitorPassToken, getVisitorPassUrl } from "@/lib/visitor-pass";
+import { isQrPassBackendEnabledForPlan, resolveVisitorVerificationMethod } from "@/lib/visitor-verification";
 
 type VisitorRegistrationPayload = {
   company_id?: string;
@@ -18,6 +20,20 @@ type VisitorRegistrationPayload = {
   photo_url?: string | null;
   custom_data?: Record<string, string>;
 };
+
+type VisitorRegistrationResponse = {
+  id: string;
+  company_id: string;
+  gate_id: string | null;
+  status: string;
+  pass_token?: string | null;
+};
+
+function isMissingColumnError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: string; message?: string };
+  return candidate.code === "42703" || candidate.code === "PGRST204" || /column .* does not exist|Could not find .* column/i.test(candidate.message || "");
+}
 
 export async function POST(request: Request) {
   try {
@@ -40,11 +56,21 @@ export async function POST(request: Request) {
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data: company, error: companyError } = await supabaseAdmin
+    let companyResult = await supabaseAdmin
       .from("companies")
-      .select("id, is_locked")
+      .select("id, is_locked, plan_tier, visitor_verification_method")
       .eq("id", companyId)
       .single();
+
+    if (isMissingColumnError(companyResult.error)) {
+      companyResult = await supabaseAdmin
+        .from("companies")
+        .select("id, is_locked, plan_tier")
+        .eq("id", companyId)
+        .single();
+    }
+
+    const { data: company, error: companyError } = companyResult;
 
     if (companyError || !company) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
@@ -108,6 +134,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Visitor registration cannot be completed at this entrance." }, { status: 403 });
     }
 
+    const verificationMethod = resolveVisitorVerificationMethod(company.plan_tier, company.visitor_verification_method);
+    const qrPassEnabled = verificationMethod === "qr_pass" && isQrPassBackendEnabledForPlan(company.plan_tier);
     const insertPayload = {
       company_id: companyId,
       name: visitorName,
@@ -124,10 +152,18 @@ export async function POST(request: Request) {
       gate_id: safeGateId,
     };
 
-    const { data, error } = await supabaseAdmin
+    const insertPayloadWithQrPass = qrPassEnabled
+      ? { ...insertPayload, pass_token: createVisitorPassToken() }
+      : insertPayload;
+
+    const visitorSelect: string = qrPassEnabled
+      ? "id, company_id, gate_id, status, pass_token"
+      : "id, company_id, gate_id, status";
+
+    const { data: insertedVisitor, error } = await supabaseAdmin
       .from("visitors")
-      .insert([insertPayload])
-      .select("id, company_id, gate_id, status")
+      .insert([insertPayloadWithQrPass])
+      .select(visitorSelect)
       .single();
 
     if (error) {
@@ -140,7 +176,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: getSupabaseErrorMessage(error, "Failed to register visitor") }, { status: 400 });
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    const data = insertedVisitor as unknown as VisitorRegistrationResponse;
+
+    return NextResponse.json({
+      data: {
+        ...data,
+        passToken: qrPassEnabled ? data.pass_token : null,
+        passUrl: qrPassEnabled && data.pass_token ? getVisitorPassUrl(data.pass_token) : null,
+        qrPassEnabled,
+        verificationMethod,
+      },
+    }, { status: 201 });
   } catch (error) {
     console.error("Public visitor registration failed:", error);
     return NextResponse.json({ error: getSupabaseErrorMessage(error, "Failed to register visitor") }, { status: 500 });

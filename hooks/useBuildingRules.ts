@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { getBasePlan } from "@/lib/billing/pricing";
+import { getAuthHeaders } from "@/lib/client-auth";
 import { getDistanceInMeters } from "@/lib/geo";
 import { supabase } from "@/lib/supabase";
+import {
+  canChooseVerificationMethod,
+  getVerificationPlanState,
+  isQrPassFrontendEnabled,
+  resolveVisitorVerificationMethod,
+  type VisitorVerificationMethod,
+} from "@/lib/visitor-verification";
 
 export type CustomField = {
   id: string;
@@ -23,6 +31,9 @@ export type GeofenceDistanceTest = {
 export function useBuildingRules() {
   const [companyId, setCompanyId] = useState("");
   const [planTier, setPlanTier] = useState("basic");
+  const [verificationPlanState, setVerificationPlanState] = useState<"eligible" | "locked" | "unknown">("unknown");
+  const [canChooseVerification, setCanChooseVerification] = useState(false);
+  const [visitorVerificationMethod, setVisitorVerificationMethod] = useState<VisitorVerificationMethod>("qr_pass");
   const [requirePhoto, setRequirePhoto] = useState(false);
   const [askHost, setAskHost] = useState(false);
   const [askPurpose, setAskPurpose] = useState(false);
@@ -62,12 +73,19 @@ export function useBuildingRules() {
 
       const { data: company } = await supabase
         .from("companies")
-        .select("require_photo, ask_host, ask_purpose, ask_vehicle, custom_fields, plan_tier, enable_geofence, lat, lng, geofence_radius")
+        .select("require_photo, ask_host, ask_purpose, ask_vehicle, custom_fields, plan_tier, visitor_verification_method, enable_geofence, lat, lng, geofence_radius")
         .eq("id", profile.company_id)
         .single();
 
       if (company) {
-        setPlanTier(getBasePlan(company.plan_tier));
+        const basePlan = getBasePlan(company.plan_tier);
+        const planState = getVerificationPlanState(company.plan_tier);
+        const eligibleForVerificationChoice = canChooseVerificationMethod(company.plan_tier);
+        const resolvedVerificationMethod = resolveVisitorVerificationMethod(company.plan_tier, company.visitor_verification_method);
+        setPlanTier(basePlan);
+        setVerificationPlanState(planState);
+        setCanChooseVerification(eligibleForVerificationChoice);
+        setVisitorVerificationMethod(resolvedVerificationMethod === "basic_default" ? "qr_pass" : resolvedVerificationMethod);
         setRequirePhoto(company.require_photo || false);
         setAskHost(company.ask_host || false);
         setAskPurpose(company.ask_purpose || false);
@@ -99,6 +117,39 @@ export function useBuildingRules() {
       setTimeout(() => setMessage(null), 3000);
     }
     setUpdatingRules(false);
+  };
+
+  const handleVerificationMethodChange = async (method: VisitorVerificationMethod) => {
+    if (!companyId || !canChooseVerification || visitorVerificationMethod === method) return;
+
+    const previousMethod = visitorVerificationMethod;
+    setVisitorVerificationMethod(method);
+    setUpdatingRules(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/company-rules/verification-method", {
+        method: "PATCH",
+        headers: await getAuthHeaders(true),
+        body: JSON.stringify({ companyId, verificationMethod: method }),
+      });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update verification method.");
+      }
+
+      setMessage({ type: "success", text: "Verification method updated." });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      setVisitorVerificationMethod(previousMethod);
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Failed to update verification method.",
+      });
+    } finally {
+      setUpdatingRules(false);
+    }
   };
 
   const saveCustomFields = async (updatedFields: CustomField[]) => {
@@ -261,6 +312,10 @@ export function useBuildingRules() {
 
   return {
     planTier,
+    verificationPlanState,
+    canChooseVerification,
+    isQrPassFrontendEnabled: isQrPassFrontendEnabled(),
+    visitorVerificationMethod,
     requirePhoto,
     askHost,
     askPurpose,
@@ -273,6 +328,7 @@ export function useBuildingRules() {
     setAskHost,
     setAskPurpose,
     setAskVehicle,
+    handleVerificationMethodChange,
     setNewFieldName,
     handleToggleRule,
     handleAddCustomField,

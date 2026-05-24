@@ -39,7 +39,16 @@ function CheckInFormContent() {
   }
 
   if (gate.submitted) {
-    return <GateSuccessState />;
+    return (
+      <GateSuccessState
+        companyName={gate.companyName}
+        gateName={gate.gateName}
+        visitorName={gate.newVisitor.name}
+        hostName={gate.hostSearchQuery || null}
+        passUrl={gate.visitorPass?.passUrl}
+        passToken={gate.visitorPass?.passToken}
+      />
+    );
   }
 
   return (

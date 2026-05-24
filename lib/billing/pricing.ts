@@ -66,12 +66,33 @@ export const BILLING_PLANS: Record<BillingPlan, PricingSnapshot> = {
   },
 };
 
-export function normalizePlan(plan?: string | null): BillingPlan {
-  const normalized = String(plan || "").toLowerCase().trim();
+function normalizePlanText(plan?: string | null) {
+  return String(plan || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/[()]/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+export function parseBillingPlan(plan?: string | null): BillingPlan | null {
+  const normalized = normalizePlanText(plan);
   if (normalized === "premium") return "premium";
   if (normalized === "custom") return "custom";
-  if (normalized === "trial_basic" || normalized === "trial-basic" || normalized === "trial basic") return "trial_basic";
-  if (normalized === "trial_premium" || normalized === "trial-premium" || normalized === "trial premium") return "trial_premium";
+  if (normalized === "basic") return "basic";
+  if (normalized === "trial basic" || normalized === "basic trial") return "trial_basic";
+  if (normalized === "trial premium" || normalized === "premium trial") return "trial_premium";
+  if (normalized.includes("trial") && normalized.includes("premium")) return "trial_premium";
+  if (normalized.includes("trial") && normalized.includes("basic")) return "trial_basic";
+  if (normalized.includes("premium")) return "premium";
+  if (normalized.includes("custom")) return "custom";
+  if (normalized.includes("basic")) return "basic";
+  return null;
+}
+
+export function normalizePlan(plan?: string | null): BillingPlan {
+  const parsed = parseBillingPlan(plan);
+  if (parsed) return parsed;
   return "basic";
 }
 

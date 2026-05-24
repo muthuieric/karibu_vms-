@@ -6,6 +6,7 @@ import { compressImage } from "@/lib/image-compression";
 import { getDistanceInMeters } from "@/lib/geo";
 import { getSupabaseErrorMessage } from "@/lib/supabase-error";
 import { getBasePlan } from "@/lib/billing/pricing";
+import { resolveVisitorVerificationMethod, type VisitorVerificationMethod } from "@/lib/visitor-verification";
 
 type CustomField = { id: string; label: string; active: boolean };
 type Department = { id: string; name: string };
@@ -119,8 +120,10 @@ export function usePublicGateCheckIn() {
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState("");
   const [planTier, setPlanTier] = useState("basic");
+  const [verificationMethod, setVerificationMethod] = useState<VisitorVerificationMethod | "basic_default">("basic_default");
   const [accessDenied, setAccessDenied] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [visitorPass, setVisitorPass] = useState<{ passUrl: string; passToken: string } | null>(null);
   const [isQrExpired, setIsQrExpired] = useState(false);
   const [geofenceError, setGeofenceError] = useState<string | null>(null);
   const [geofenceDebugDetails, setGeofenceDebugDetails] = useState<GeofenceDebugDetails | null>(null);
@@ -207,8 +210,10 @@ export function usePublicGateCheckIn() {
       }
 
       const basePlanTier = getBasePlan(company.plan_tier);
+      const resolvedVerificationMethod = resolveVisitorVerificationMethod(company.plan_tier, company.visitor_verification_method);
       setCompanyName(company.name);
       setPlanTier(basePlanTier);
+      setVerificationMethod(resolvedVerificationMethod);
       setRules({
         requirePhoto: basePlanTier === "basic" ? false : company.require_photo || false,
         askPhone: company.ask_phone !== false,
@@ -401,6 +406,15 @@ export function usePublicGateCheckIn() {
         throw new Error(registerData.error || "Failed to submit registration.");
       }
 
+      if (registerData.data?.passUrl && registerData.data?.passToken) {
+        setVisitorPass({
+          passUrl: registerData.data.passUrl,
+          passToken: registerData.data.passToken,
+        });
+      } else {
+        setVisitorPass(null);
+      }
+
       if (rules.askHost && newVisitor.host_id && planTier !== "basic" && registerData.data?.id) {
         try {
           await fetch("/api/notify-host", {
@@ -469,6 +483,8 @@ export function usePublicGateCheckIn() {
     gateName,
     accessDenied,
     submitted,
+    visitorPass,
+    verificationMethod,
     isQrExpired,
     geofenceError,
     geofenceFailureDetails,

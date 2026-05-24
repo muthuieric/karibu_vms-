@@ -17,8 +17,10 @@ export type AdminVisitor = {
   status: string;
   created_at: string;
   checked_out_at?: string;
+  pass_expired_at?: string | null;
   host_name?: string;
   host_confirmed?: boolean;
+  host_confirmed_at?: string | null;
   purpose?: string;
   vehicle_reg?: string;
   photo_url?: string;
@@ -81,11 +83,13 @@ export function useCompanyAdminDashboard() {
       activeCompanyId = profile.company_id;
 
       try {
+        const rolloverAt = new Date().toISOString();
         await supabase
           .from("visitors")
           .update({
             status: "checked_out",
-            checked_out_at: new Date().toISOString(),
+            checked_out_at: rolloverAt,
+            pass_expired_at: rolloverAt,
           })
           .eq("company_id", profile.company_id)
           .in("status", ["pending", "checked_in"])

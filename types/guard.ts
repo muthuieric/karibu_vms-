@@ -8,11 +8,16 @@ export type Visitor = {
   document_type: string;
   id_number?: string;
   otp_code?: string;
+  pass_token?: string | null;
+  pass_code?: string | null;
+  pass_expired_at?: string | null;
+  verification_method?: string | null;
   company_id: string;
   photo_url?: string;
   host_id?: string | null;
   host_name?: string;
   host_confirmed?: boolean;
+  host_confirmed_at?: string | null;
   purpose?: string;
   vehicle_reg?: string;
   custom_data?: Record<string, string>;
