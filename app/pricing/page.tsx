@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
@@ -10,9 +9,11 @@ import { BadgeCheck, Building2, CheckCircle2, CreditCard, ShieldCheck, XCircle }
 
 export const metadata: Metadata = publicMetadata({
   title: "Karibu VMS Pricing | Visitor Management Plans",
-  description: "Compare Karibu VMS pricing plans for digital visitor management, guard workflows, QR entry, checkout tracking, billing, and premium controls.",
+  description: "Compare Karibu VMS pricing plans for digital visitor management, QR Pass Verification, SMS OTP Verification, digital visitor passes, guard dashboards, and checkout.",
   path: "/pricing",
 });
+
+const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
 
 const planDetails = [
   {
@@ -20,14 +21,14 @@ const planDetails = [
     name: "Basic",
     description: "Best for small offices that need clean visitor records and simple guard desk registration.",
     features: ["Digital visitor records", "Guard desk registration", "QR self check-in", "Visitor form settings","Department/team organization", "Restricted visitor list"],
-    cta: "Start Basic",
+    cta: "Book Demo",
   },
   {
     key: "premium" as const,
     name: "Premium",
-    description: "Best for busy buildings and organizations that need more visitor capacity and stronger workflows.",
-    features: ["Everything in Basic","OTP phone verification for visitor check-in", "Host email confirmation", "Photo and location controls", "Priority support"],
-    cta: "Start Premium",
+    description: "Premium gives your team flexible visitor verification. Choose QR Pass Verification or SMS OTP Verification for secure visitor check-ins.",
+    features: ["Everything in Basic", "QR Pass Verification", "SMS OTP Verification", "Choose one active verification method", "Digital visitor passes", "Host confirmation", "Visitor checkout", "Advanced visitor rules"],
+    cta: "Book Demo",
     featured: true,
   },
   {
@@ -35,7 +36,7 @@ const planDetails = [
     name: "Custom",
     description: "For enterprise, multi-site, or specialized facilities that need a tailored visitor management setup.",
     features: ["Custom visitor volume", "Multi-site or complex gate workflows", "Tailored onboarding support", "Workflow configuration guidance", "Sales-assisted setup"],
-    cta: "Contact Sales",
+    cta: "Book Demo",
   },
 ];
 
@@ -59,10 +60,14 @@ const comparisonRows = [
   { feature: "Extra visitors at KES 2 each", basic: "Included", premium: "Not included" },
   { feature: "Up to 1,000 visitors/month", basic: "Not included", premium: "Included" },
   { feature: "Extra visitors at KES 3 each", basic: "Not included", premium: "Included" },
-  { feature: "Host email confirmation", basic: "Not included", premium: "Included" },
+  { feature: "QR Pass Verification", basic: "Not included", premium: "Included" },
+  { feature: "SMS OTP Verification", basic: "Not included", premium: "Included" },
+  { feature: "Choose one active verification method", basic: "Not included", premium: "Included" },
+  { feature: "Digital visitor passes", basic: "Not included", premium: "Included" },
+  { feature: "Host confirmation", basic: "Not included", premium: "Included" },
+  { feature: "Visitor checkout", basic: "Included", premium: "Included" },
   { feature: "Advanced visitor rules", basic: "Not included", premium: "Included" },
   { feature: "Priority support", basic: "Not included", premium: "Included" },
-  { feature: "OTP phone verification", basic: "Not included", premium: "Included" },
 
 ];
 
@@ -84,7 +89,7 @@ export default function PricingPage() {
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-zinc-900 mb-6 tracking-tight">Simple plans that scale with visitor volume.</h1>
               <p className="text-lg text-zinc-600 leading-relaxed">
-                Choose the monthly plan that fits your facility today. Each plan includes a visitor allowance, then usage-based charges apply only for extra visitors.
+                Choose the monthly plan that fits your facility today. Premium adds flexible visitor verification and lets your team choose either QR Pass Verification or SMS OTP Verification as the active method.
               </p>
             </div>
 
@@ -129,11 +134,11 @@ export default function PricingPage() {
                       ))}
                     </div>
 
-                    <Link href={plan.key === "custom" ? "/contact" : `/register?plan=${plan.key}`}>
+                    <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer">
                       <Button className={`w-full h-12 rounded-xl font-bold ${plan.featured ? "bg-white text-zinc-950 hover:bg-zinc-100" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
                         {plan.cta}
                       </Button>
-                    </Link>
+                    </a>
                   </div>
                 );
               })}
@@ -147,7 +152,7 @@ export default function PricingPage() {
               <p className="text-sm font-bold text-blue-600 uppercase tracking-wide mb-3">Feature comparison</p>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Basic vs Premium</h2>
               <p className="text-lg text-zinc-600 leading-relaxed">
-                Basic covers the core visitor management flow. Premium adds higher capacity and stronger workflows for busy buildings and larger organizations.
+                Basic covers the core visitor management flow. Premium adds higher capacity, digital visitor passes, host confirmation, and flexible verification for busy buildings and larger organizations.
               </p>
             </div>
 

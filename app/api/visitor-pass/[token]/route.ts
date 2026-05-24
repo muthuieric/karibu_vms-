@@ -37,7 +37,7 @@ export async function GET(_request: Request, context: VisitorPassRouteContext) {
     const supabaseAdmin = createSupabaseAdmin();
     const { data: visitor, error } = await supabaseAdmin
       .from("visitors")
-      .select("name, host_name, status, created_at, checked_in_at, checked_out_at, pass_code, pass_expired_at, company_id, gate_id")
+      .select("name, host_name, status, created_at, checked_in_at, checked_out_at, pass_code, pass_expired_at, host_confirmed_at, company_id, gate_id")
       .eq("pass_token", normalizedToken)
       .maybeSingle();
 
@@ -66,6 +66,7 @@ export async function GET(_request: Request, context: VisitorPassRouteContext) {
           checkedOutAt: visitor.checked_out_at || visitor.pass_expired_at || null,
           passCode: canRevealPassCode(visitor.status, visitor.pass_expired_at) ? visitor.pass_code || null : null,
           passExpiredAt: visitor.pass_expired_at || null,
+          hostConfirmedAt: visitor.host_confirmed_at || null,
         },
       },
       { headers: { "Cache-Control": "no-store" } }

@@ -3,7 +3,7 @@ import { createSupabaseAdmin } from "@/lib/billing/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { requireUuid } from "@/lib/validation";
 
-type HostConfirmPayload = {
+type CheckoutPayload = {
   companyId?: string;
   code?: string;
   otp?: string;
@@ -22,19 +22,18 @@ function safeError(error: unknown) {
   const safeStatus = Number.isInteger(status) && status >= 400 && status < 600 ? status : 500;
   return {
     status: safeStatus,
-    message: safeStatus >= 500 ? "Visit could not be confirmed." : error instanceof Error ? error.message : "Visit could not be confirmed.",
+    message: safeStatus >= 500 ? "Visitor could not be checked out." : error instanceof Error ? error.message : "Visitor could not be checked out.",
   };
 }
 
 export async function POST(request: Request) {
-  const rateLimitResponse = checkRateLimit(request, { keyPrefix: "host-confirm", limit: 20, windowMs: 60_000 });
+  const rateLimitResponse = checkRateLimit(request, { keyPrefix: "visitor-checkout", limit: 20, windowMs: 60_000 });
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const payload = (await request.json()) as HostConfirmPayload;
+    const payload = (await request.json()) as CheckoutPayload;
     const companyId = requireUuid(payload.companyId, "companyId");
     const code = normalizeVisitorCode(payload.code || payload.otp);
-    const now = new Date().toISOString();
     const supabaseAdmin = createSupabaseAdmin();
 
     const { data: visitors, error: visitorError } = await supabaseAdmin
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
 
     const visitor = visitors?.[0];
     if (!visitor) {
-      return NextResponse.json({ error: "No active visitor was found for that code." }, { status: 404 });
+      return NextResponse.json({ error: "No active visitor found with this code." }, { status: 404 });
     }
 
     if (visitor.status === "pending") {
@@ -57,44 +56,47 @@ export async function POST(request: Request) {
     }
 
     if (visitor.status === "checked_out" || visitor.status === "auto_checked_out" || visitor.checked_out_at) {
-      return NextResponse.json({ error: "This visitor has already been checked out." }, { status: 409 });
+      return NextResponse.json({ error: "No active visitor found with this code." }, { status: 409 });
     }
 
     if (visitor.pass_expired_at) {
-      return NextResponse.json({ error: "This visitor code has expired." }, { status: 409 });
+      return NextResponse.json({ error: "No active visitor found with this code." }, { status: 409 });
     }
 
     if (visitor.status !== "checked_in") {
-      return NextResponse.json({ error: "Only checked-in visitors can be confirmed by a host." }, { status: 409 });
+      return NextResponse.json({ error: "No active visitor found with this code." }, { status: 409 });
     }
 
+    const checkedOutAt = new Date().toISOString();
     const { data: updatedVisitor, error: updateError } = await supabaseAdmin
       .from("visitors")
       .update({
-        host_confirmed: true,
-        host_confirmed_at: now,
+        status: "checked_out",
+        checked_out_at: checkedOutAt,
+        pass_expired_at: checkedOutAt,
+        otp_code: null,
       })
       .eq("id", visitor.id)
       .eq("company_id", companyId)
       .eq("status", "checked_in")
-      .is("pass_expired_at", null)
       .is("checked_out_at", null)
-      .select("name, host_name, host_confirmed_at")
+      .is("pass_expired_at", null)
+      .select("name, host_name, checked_out_at")
       .single();
 
     if (updateError) throw updateError;
 
     return NextResponse.json({
       success: true,
+      message: "Visitor checked out successfully.",
       visitor: {
         name: updatedVisitor.name,
         hostName: updatedVisitor.host_name || null,
-        hostConfirmedAt: updatedVisitor.host_confirmed_at,
+        checkedOutAt: updatedVisitor.checked_out_at,
       },
-      message: "Visit confirmed",
     });
   } catch (error) {
-    console.error("Host Confirm API Error:", error);
+    console.error("Checkout API Error:", error);
     const response = safeError(error);
     return NextResponse.json({ error: response.message }, { status: response.status });
   }

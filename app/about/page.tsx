@@ -31,6 +31,8 @@ const values = [
   },
 ];
 
+const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
+
 const operatingPrinciples = ["Know who is inside at any time", "Give guards a faster check-in flow", "Set up entry points or gates where needed", "Choose visitor details and optional custom fields", "Keep host, department, and gate records organized", "Make checkout and audit trails easier", "Reduce dependency on paper visitor books"];
 
 export default function AboutPage() {
@@ -51,9 +53,9 @@ export default function AboutPage() {
                   Karibu VMS helps organizations replace paper visitor books with a cleaner digital check-in flow. Teams can register visitors at the desk, allow self check-in through QR codes, manage entry points, and keep visitor records in one place.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Link href="/register">
-                    <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white h-12 px-7 rounded-xl">Register Facility</Button>
-                  </Link>
+                  <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer">
+                    <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white h-12 px-7 rounded-xl">Book a Demo</Button>
+                  </a>
                   <Link href="/features">
                     <Button variant="outline" className="w-full sm:w-auto bg-white border-zinc-200 h-12 px-7 rounded-xl">View Features</Button>
                   </Link>

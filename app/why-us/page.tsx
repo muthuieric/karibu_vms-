@@ -68,7 +68,7 @@ export default function WhyUsPage() {
           <div className="container mx-auto px-6 max-w-6xl">
             <div className="text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold mb-6">
-                Why Us
+                Why Karibu VMS
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-zinc-900 mb-6 tracking-tight">Built for teams that need speed and accountability at the entrance.</h1>
               <p className="text-lg text-zinc-600 leading-relaxed">

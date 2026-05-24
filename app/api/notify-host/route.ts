@@ -79,8 +79,8 @@ export async function POST(request: Request) {
                       </tr>`
       : "";
     const confirmationCopy = activePassCode
-      ? `When the visitor reaches you, ask for their <strong>Visitor Pass Code</strong> and use the confirmation link below to check them out. Security still controls entry approval.`
-      : `After security approves the visitor, ask them for their visitor code and use the confirmation link below to check them out.`;
+      ? `When the visitor reaches you, ask for their <strong>Visitor Pass Code</strong> and use the confirmation link below to confirm the visit. Security still controls entry approval.`
+      : `After security approves the visitor, ask them for their visitor code and use the confirmation link below to confirm the visit.`;
     const visitorPhoto = visitor.photo_url
       ? `<img src="${escapeHtml(visitor.photo_url)}" alt="Visitor photo" style="width: 88px; height: 88px; border-radius: 999px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.16); display: block;" />`
       : `<div style="width: 88px; height: 88px; border-radius: 999px; background: #e0f2fe; border: 3px solid #ffffff; color: #0369a1; font-size: 13px; font-weight: 800; line-height: 88px; text-align: center; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);">No photo</div>`;

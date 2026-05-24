@@ -9,10 +9,12 @@ import { publicMetadata } from "@/lib/seo/site";
 import { BadgeCheck, ClipboardList, DoorOpen, FileSearch, LockKeyhole, QrCode, ShieldCheck, SlidersHorizontal, UsersRound, WalletCards } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
-  title: "Karibu VMS | Digital Visitor Management",
-  description: "Karibu VMS helps offices, schools, apartments, and gated spaces manage visitor check-in, guard approvals, checkout, and entry records.",
+  title: "Karibu VMS | Visitor Management System in Kenya",
+  description: "Karibu VMS is a digital visitor management system for secure check-ins, QR Pass verification, SMS OTP verification, guard dashboards, host confirmation, and visitor checkout.",
   path: "/",
 });
+
+const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
 
 const softwareApplicationJsonLd = {
   "@context": "https://schema.org",
@@ -20,7 +22,7 @@ const softwareApplicationJsonLd = {
   name: "Karibu VMS",
   applicationCategory: "SecurityApplication",
   operatingSystem: "Web",
-  description: "Enterprise Visitor Management System",
+  description: "Visitor management system in Kenya for secure check-ins, digital visitor passes, guard dashboards, host confirmation, and checkout.",
   offers: {
     "@type": "AggregateOffer",
     lowPrice: "1500",
@@ -37,8 +39,8 @@ const platformHighlights = [
     icon: ClipboardList,
   },
   {
-    title: "Visitor self-registration",
-    description: "Let visitors start registration from a QR check-in link while your team keeps control of review and entry records.",
+    title: "QR Pass Verification",
+    description: "Premium teams can choose QR Pass Verification so approved visitors receive a secure QR visitor pass and visitor code.",
     icon: QrCode,
   },
   {
@@ -52,8 +54,8 @@ const platformHighlights = [
     icon: SlidersHorizontal,
   },
   {
-    title: "Hosts and departments",
-    description: "Organize hosts by department for smoother visitor routing, with Premium host email confirmation when approval is needed.",
+    title: "Host confirmation",
+    description: "Let hosts confirm that a visitor reached them while guards remain responsible for entry approval.",
     icon: UsersRound,
   },
   {
@@ -79,7 +81,7 @@ const roleDetails = [
   },
   {
     role: "Visitors",
-    details: ["Use QR registration when enabled", "Provide the details required by the building", "Move through reception with less back-and-forth"],
+    details: ["Use QR registration when enabled", "Receive a digital visitor pass after approval", "Check out with a visitor code when leaving"],
   },
 ];
 
@@ -105,20 +107,20 @@ export default function LandingPage() {
                 Digital Visitor Management
               </div> */}
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-zinc-900 tracking-tight leading-[1.1] mb-6">
-                A cleaner way to manage every visit.
+                A visitor management system built for modern Kenyan facilities.
               </h1>
               <p className="text-lg text-zinc-600 mb-8 leading-relaxed">
-                Know who is coming in, who is inside, and who has left. Visitor entry made simple for buildings, offices, schools, apartments, and gated spaces.
+                Karibu VMS helps offices, apartments, schools, and gated spaces manage visitor check-in, guard review, digital visitor passes, host confirmation, and checkout from one clear system.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-4">
-                <Link href="/register" className="w-full sm:w-auto">
+                <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
                   <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 rounded-xl text-base font-medium transition-all">
-                    Register Facility
+                    Book a Demo
                   </Button>
-                </Link>
-                <Link href="/login" className="w-full sm:w-auto">
+                </a>
+                <Link href="/features" className="w-full sm:w-auto">
                   <Button variant="outline" className="w-full sm:w-auto bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50 h-12 px-8 rounded-xl text-base font-medium transition-all">
-                    Sign In
+                    View Features
                   </Button>
                 </Link>
               </div>
@@ -151,7 +153,7 @@ export default function LandingPage() {
                     <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold text-sm">MK</div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-zinc-900">Michael Klein</p>
-                      <p className="text-xs text-zinc-500">OTP Verification</p>
+                      <p className="text-xs text-zinc-500">SMS OTP verification</p>
                     </div>
                     <div className="px-2 py-1 bg-orange-50 text-orange-700 text-[10px] font-bold rounded uppercase tracking-wide">
                       Pending
@@ -183,7 +185,7 @@ export default function LandingPage() {
             <p className="text-sm font-bold text-blue-600 uppercase tracking-wide mb-3">What Karibu VMS gives you</p>
             <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4 tracking-tight">More control at the gate, better records after the visit.</h2>
             <p className="text-lg text-zinc-600 leading-relaxed">
-              Karibu VMS replaces scattered notebooks, message threads, and delayed visitor updates with one shared system for self check-in, guard registration, visitor rules, checkout, billing, and reporting.
+              Karibu VMS replaces scattered notebooks, message threads, and delayed visitor updates with one shared visitor check-in system for guard registration, QR Pass Verification, SMS OTP visitor verification, visitor rules, checkout, billing, and reporting.
             </p>
           </div>
 
@@ -212,7 +214,7 @@ export default function LandingPage() {
               <p className="text-sm font-bold text-blue-600 uppercase tracking-wide mb-3">Visitor setup</p>
               <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-5 tracking-tight">Configure how visitors enter your building.</h2>
               <p className="text-lg text-zinc-600 leading-relaxed">
-                Set up entry points, choose the details visitors should provide, and let guards manage arrivals from one clean workspace.
+                Set up entry points, choose the details visitors should provide, and let guards manage arrivals from one clean workspace. Premium teams choose one active verification method: QR Pass Verification or SMS OTP Verification.
               </p>
             </div>
 
@@ -236,9 +238,9 @@ export default function LandingPage() {
                     <BadgeCheck className="w-5 h-5" aria-hidden="true" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-zinc-900 mb-2">Optional controls where they fit</h3>
+                    <h3 className="text-lg font-bold text-zinc-900 mb-2">Digital visitor pass and verification controls</h3>
                     <p className="text-sm text-zinc-600 leading-relaxed">
-                      Add custom questions for site-specific requirements, keep a restricted visitor list, and organize hosts by department when your workflow needs it.
+                      Add digital visitor passes, host confirmation, custom questions, restricted visitor checks, and department routing where your workflow needs them.
                     </p>
                   </div>
                 </div>
@@ -280,7 +282,7 @@ export default function LandingPage() {
               <div aria-hidden="true" data-step="03" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-green-50" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Entry reviewed</h3>
               <p className="text-zinc-600 text-sm leading-relaxed">
-                The entry can be reviewed against host, department, gate, or restricted visitor records.
+                Guards approve entry after reviewing host, department, gate, or restricted visitor records.
               </p>
             </div>
 
@@ -289,7 +291,7 @@ export default function LandingPage() {
               <div aria-hidden="true" data-step="04" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-zinc-100" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Visit recorded</h3>
               <p className="text-zinc-600 text-sm leading-relaxed">
-                The visit is logged to the dashboard and checkout time is tracked later.
+                The visit is logged to the dashboard, hosts can confirm arrival, and checkout closes the record later.
               </p>
             </div>
           </div>
@@ -397,17 +399,17 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 max-w-3xl">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">Ready to improve your gate flow?</h2>
           <p className="text-white/90 text-lg mb-10 leading-relaxed">
-            Start maintaining better records, organizing hosts, and securing your entry points today.
+            Book a demo on WhatsApp and see how Karibu VMS can support office visitor management, apartment visitor management, or school visitor management.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register" className="w-full sm:w-auto">
+            <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto bg-white text-blue-600 hover:bg-zinc-50 h-14 px-8 rounded-xl text-base font-bold shadow-lg transition-all">
-                Register Now
+                Book Demo
               </Button>
-            </Link>
-            <Link href="/login" className="w-full sm:w-auto mt-2 sm:mt-0 sm:ml-4 text-white/90 hover:text-white font-medium text-sm transition-colors">
-              Sign In to existing account
-            </Link>
+            </a>
+            <a href="tel:+254702104690" className="w-full sm:w-auto mt-2 sm:mt-0 sm:ml-4 text-white/90 hover:text-white font-medium text-sm transition-colors">
+              Call Sales: +254 702 104 690
+            </a>
           </div>
         </div>
       </section>

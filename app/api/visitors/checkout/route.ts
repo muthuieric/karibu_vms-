@@ -1,60 +1,95 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdmin } from "@/lib/billing/server";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { requireUuid } from "@/lib/validation";
+
+type CheckoutPayload = {
+  companyId?: string;
+  code?: string;
+  otp?: string;
+};
+
+function normalizeVisitorCode(value: unknown) {
+  const code = String(value || "").trim();
+  if (!/^\d{4,6}$/.test(code)) {
+    throw Object.assign(new Error("Enter a valid visitor code."), { status: 400 });
+  }
+  return code;
+}
+
+function safeError(error: unknown) {
+  const status = typeof error === "object" && error && "status" in error ? Number((error as { status?: number }).status) : 500;
+  const safeStatus = Number.isInteger(status) && status >= 400 && status < 600 ? status : 500;
+  return {
+    status: safeStatus,
+    message: safeStatus >= 500 ? "Visitor could not be checked out." : error instanceof Error ? error.message : "Visitor could not be checked out.",
+  };
+}
 
 export async function POST(request: Request) {
+  const rateLimitResponse = checkRateLimit(request, { keyPrefix: "visitor-checkout-legacy", limit: 20, windowMs: 60_000 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
-    const { companyId, otp, action } = await request.json();
+    const payload = (await request.json()) as CheckoutPayload;
+    const companyId = requireUuid(payload.companyId, "companyId");
+    const code = normalizeVisitorCode(payload.code || payload.otp);
+    const supabaseAdmin = createSupabaseAdmin();
 
-    if (!companyId || !otp) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    // Securely connect using the Admin key (bypasses RLS safely on the server)
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    // 1. Find the active visitor record using the OTP code
-    const { data: visitors, error: fetchError } = await supabaseAdmin
+    const { data: visitors, error: visitorError } = await supabaseAdmin
       .from("visitors")
-      .select("*")
+      .select("id, company_id, name, host_name, status, checked_out_at, pass_expired_at, pass_code, otp_code")
       .eq("company_id", companyId)
-      .eq("otp_code", otp.trim())
-      .eq("status", "checked_in")
+      .or(`pass_code.eq.${code},otp_code.eq.${code}`)
       .order("created_at", { ascending: false })
       .limit(1);
 
-    if (fetchError) throw fetchError;
+    if (visitorError) throw visitorError;
 
-    if (!visitors || visitors.length === 0) {
-      return NextResponse.json({ error: "Invalid code or you are already checked out." }, { status: 404 });
+    const visitor = visitors?.[0];
+    if (
+      !visitor ||
+      visitor.status === "pending" ||
+      visitor.status === "checked_out" ||
+      visitor.status === "auto_checked_out" ||
+      visitor.checked_out_at ||
+      visitor.pass_expired_at ||
+      visitor.status !== "checked_in"
+    ) {
+      return NextResponse.json({ error: "No active visitor found with this code." }, { status: 404 });
     }
 
-    const activeVisitor = visitors[0];
-
-    // --- STEP 1: If the UI is just verifying, return the details ---
-    if (action === "verify") {
-      return NextResponse.json({ success: true, visitor: activeVisitor });
-    }
-
-    // --- STEP 2: If the UI is confirming checkout, update the database ---
     const checkedOutAt = new Date().toISOString();
-    const { error: updateError } = await supabaseAdmin
+    const { data: updatedVisitor, error: updateError } = await supabaseAdmin
       .from("visitors")
       .update({
         status: "checked_out",
         checked_out_at: checkedOutAt,
         pass_expired_at: checkedOutAt,
+        otp_code: null,
       })
-      .eq("id", activeVisitor.id);
+      .eq("id", visitor.id)
+      .eq("company_id", companyId)
+      .eq("status", "checked_in")
+      .is("checked_out_at", null)
+      .is("pass_expired_at", null)
+      .select("name, host_name, checked_out_at")
+      .single();
 
     if (updateError) throw updateError;
 
-    return NextResponse.json({ success: true, message: "Checked out successfully", visitorName: activeVisitor.name });
-
-  } catch (error: unknown) {
+    return NextResponse.json({
+      success: true,
+      message: "Visitor checked out successfully.",
+      visitor: {
+        name: updatedVisitor.name,
+        hostName: updatedVisitor.host_name || null,
+        checkedOutAt: updatedVisitor.checked_out_at,
+      },
+    });
+  } catch (error) {
     console.error("Checkout API Error:", error);
-    return NextResponse.json({ error: "Server Error during checkout" }, { status: 500 });
+    const response = safeError(error);
+    return NextResponse.json({ error: response.message }, { status: response.status });
   }
 }

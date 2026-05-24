@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useParams } from "next/navigation";
-import { Building2, CheckCircle2, Loader2, LogOut, UserCheck } from "lucide-react";
+import { Building2, CheckCircle2, Loader2, UserCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,19 +12,8 @@ import { Label } from "@/components/ui/label";
 type ConfirmedVisitor = {
   name: string;
   hostName?: string | null;
-  checkedOutAt?: string | null;
+  hostConfirmedAt?: string | null;
 };
-
-function formatCheckoutTime(value?: string | null) {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-
-  return new Intl.DateTimeFormat("en-KE", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
 
 function HostConfirmContent() {
   const params = useParams();
@@ -64,8 +53,6 @@ function HostConfirmContent() {
     }
   };
 
-  const checkedOutTime = formatCheckoutTime(visitor?.checkedOutAt);
-
   return (
     <main className="flex w-full justify-center px-4 py-8">
       <Card className="relative z-10 w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -79,11 +66,11 @@ function HostConfirmContent() {
           </CardDescription>
 
           <CardTitle className="text-2xl font-bold tracking-tight text-slate-900">
-            Host checkout confirmation
+            Host confirmation
           </CardTitle>
 
           <p className="mt-2 text-sm font-medium leading-relaxed text-slate-500">
-            Enter the visitor code after the guest reaches you to confirm the visit and check them out.
+            Enter the visitor code after the guest reaches you.
           </p>
         </CardHeader>
 
@@ -91,10 +78,9 @@ function HostConfirmContent() {
           {visitor && (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center text-emerald-800" role="status">
               <CheckCircle2 className="mx-auto h-10 w-10" aria-hidden="true" />
-              <p className="mt-3 text-lg font-black">{visitor.name} checked out</p>
+              <p className="mt-3 text-lg font-black">Visit confirmed</p>
               <p className="mt-1 text-sm font-semibold text-emerald-700">
-                {visitor.hostName ? `Host: ${visitor.hostName}` : "Visit confirmed"}
-                {checkedOutTime ? ` · ${checkedOutTime}` : ""}
+                The visitor has been confirmed by the host.
               </p>
             </div>
           )}
@@ -141,8 +127,8 @@ function HostConfirmContent() {
                 </>
               ) : (
                 <>
-                  <LogOut className="mr-2 h-5 w-5" aria-hidden="true" />
-                  Confirm Visit / Check Out
+                  <CheckCircle2 className="mr-2 h-5 w-5" aria-hidden="true" />
+                  Confirm Visit
                 </>
               )}
             </Button>

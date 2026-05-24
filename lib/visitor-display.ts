@@ -30,5 +30,5 @@ export function getVisitorStatusLabel(status?: string | null, isOverride?: boole
 }
 
 export function getHostReviewLabel(hostConfirmed?: boolean) {
-  return hostConfirmed ? "Approved by host" : "Waiting for host";
+  return hostConfirmed ? "Confirmed by host" : "Waiting for host";
 }

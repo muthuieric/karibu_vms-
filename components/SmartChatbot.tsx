@@ -100,7 +100,7 @@ function getProductAnswer(input: string) {
   }
 
   if (includesAny(input, ["premium", "otp", "phone verification", "verification"])) {
-    return "Premium adds stronger controls such as advanced rules, host workflows, and OTP phone verification when included in the selected plan.";
+    return "Premium adds advanced visitor rules, host confirmation, digital visitor passes, and a choice of QR Pass Verification or SMS OTP Verification as the active verification method.";
   }
 
   if (includesAny(input, ["pricing", "price", "cost", "pay", "plan", "subscription"])) {

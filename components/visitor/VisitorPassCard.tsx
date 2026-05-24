@@ -19,6 +19,7 @@ export type SafeVisitorPass = {
   checkedOutAt?: string | null;
   passCode?: string | null;
   passExpiredAt?: string | null;
+  hostConfirmedAt?: string | null;
 };
 
 type VisitorPassCardProps = {
@@ -260,6 +261,12 @@ export default function VisitorPassCard({ pass, passUrl }: VisitorPassCardProps)
         <div className={`rounded-2xl border p-4 text-center ${config.tone}`} role="status">
           <p className="text-sm font-black">{config.message}</p>
         </div>
+
+        {pass.hostConfirmedAt && pass.status !== "checked_out" && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center text-emerald-800" role="status">
+            <p className="text-sm font-black">Confirmed by host</p>
+          </div>
+        )}
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Pass Code</p>

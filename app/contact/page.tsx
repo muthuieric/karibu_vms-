@@ -1,102 +1,87 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
 import { publicMetadata } from "@/lib/seo/site";
-import { Building2, Mail, MessageCircle, Phone, ShieldCheck } from "lucide-react";
+import { Mail, MessageCircle, Phone } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
-  title: "Contact Karibu VMS | Visitor Management Support",
-  description: "Contact the Karibu VMS team for help setting up a digital visitor management process for your office, school, apartment, or gated facility.",
+  title: "Book a Demo | Karibu VMS",
+  description: "Book a Karibu VMS demo on WhatsApp or contact sales for a visitor management system for offices, apartments, schools, and gated facilities.",
   path: "/contact",
 });
 
-const supportTopics = ["One reception point or multiple gates", "Guard account and gate assignments", "QR self check-in or simple desk registration", "Host routing and department setup", "Host email confirmation", "Custom visitor questions", "Plan, billing, and M-Pesa support"];
+const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
+
+const contactOptions = [
+  {
+    title: "WhatsApp Sales",
+    detail: "+254 702 104 690",
+    button: "Book Demo on WhatsApp",
+    href: demoWhatsAppUrl,
+    icon: MessageCircle,
+    tone: "bg-green-50 text-green-700",
+    external: true,
+  },
+  {
+    title: "Email Support",
+    detail: "karibuvms@gmail.com",
+    button: "Send Email",
+    href: "mailto:karibuvms@gmail.com",
+    icon: Mail,
+    tone: "bg-blue-50 text-blue-700",
+    external: false,
+  },
+  {
+    title: "Call Sales",
+    detail: "+254 702 104 690",
+    button: "Call Now",
+    href: "tel:+254702104690",
+    icon: Phone,
+    tone: "bg-orange-50 text-orange-700",
+    external: false,
+  },
+];
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden flex flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-zinc-50 font-sans text-zinc-900 selection:bg-blue-100 selection:text-blue-900">
       <PublicNavbar />
 
       <main id="main-content" className="flex-1">
-        <section className="py-28 border-b border-zinc-100">
-          <div className="container mx-auto px-6 max-w-6xl">
-            <div className="grid lg:grid-cols-[0.95fr_1.05fr] gap-14 items-start">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-zinc-200 text-zinc-600 text-xs font-semibold mb-6">
-                  Contact Us
-                </div>
-                <h1 className="text-4xl md:text-5xl font-bold text-zinc-900 mb-5 tracking-tight">Need help setting up visitor management?</h1>
-                <p className="text-lg text-zinc-600 mb-8 leading-relaxed">
-                  Tell us how your building receives visitors. We can help you decide whether you need one entry point, multiple gates, host routing, custom visitor questions, or simple desk registration.
-                </p>
-
-                <div className="grid gap-4">
-                  <a href="https://wa.me/254702104690" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 rounded-2xl bg-white border border-zinc-100 p-5 shadow-sm hover:border-blue-200 transition-colors">
-                    <div className="w-11 h-11 rounded-xl bg-green-50 text-green-700 flex items-center justify-center">
-                      <MessageCircle className="w-5 h-5" aria-hidden="true" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-zinc-900">WhatsApp sales</p>
-                      <p className="text-sm text-zinc-600">+254 702 104 690</p>
-                    </div>
-                  </a>
-                  <div className="flex items-center gap-4 rounded-2xl bg-white border border-zinc-100 p-5 shadow-sm">
-                    <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-                      <Mail className="w-5 h-5" aria-hidden="true" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-zinc-900">Email support</p>
-                      <p className="text-sm text-zinc-600">karibuvms@gmail.com</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 rounded-2xl bg-white border border-zinc-100 p-5 shadow-sm">
-                    <div className="w-11 h-11 rounded-xl bg-orange-50 text-orange-700 flex items-center justify-center">
-                      <Phone className="w-5 h-5" aria-hidden="true" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-zinc-900">Response time</p>
-                      <p className="text-sm text-zinc-600">Most messages are reviewed within 24 hours.</p>
-                    </div>
-                  </div>
-                </div>
+        <section className="border-b border-zinc-100 py-28">
+          <div className="container mx-auto max-w-6xl px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-zinc-600">
+                Contact Karibu VMS
               </div>
+              <h1 className="mb-5 text-4xl font-bold tracking-tight text-zinc-900 md:text-5xl">
+                Book a demo for your organization.
+              </h1>
+              <p className="text-lg leading-relaxed text-zinc-600">
+                WhatsApp is the fastest way to schedule a Karibu VMS demo. You can also call sales or email support for help with office visitor management, apartment visitor management, school visitor management, or gated facility setup.
+              </p>
+            </div>
 
-              <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-200 shadow-sm">
-                <div className="flex items-start gap-4 mb-8">
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-                    <Building2 className="w-6 h-6" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-zinc-900 mb-2">Need help choosing a setup?</h2>
-                    <p className="text-sm text-zinc-600 leading-relaxed">A little context helps us recommend the right setup faster.</p>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 mb-8">
-                  {supportTopics.map((topic) => (
-                    <div key={topic} className="flex items-start gap-3 text-sm text-zinc-700">
-                      <ShieldCheck className="w-4 h-4 text-green-600 mt-0.5 shrink-0" aria-hidden="true" />
-                      <span>{topic}</span>
+            <div className="mt-14 grid gap-6 md:grid-cols-3">
+              {contactOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <div key={option.title} className="rounded-3xl border border-zinc-100 bg-white p-6 text-center shadow-sm">
+                    <div className={`mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl ${option.tone}`}>
+                      <Icon className="h-6 w-6" aria-hidden="true" />
                     </div>
-                  ))}
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-12 text-base font-medium transition-colors" asChild>
-                    <a href="https://wa.me/254702104690" target="_blank" rel="noopener noreferrer">
-                      Contact Sales
-                    </a>
-                  </Button>
-                  <Link href="/pricing">
-                    <Button variant="outline" className="w-full bg-white border-zinc-200 rounded-xl h-12 text-base font-medium">
-                      View Pricing
+                    <h2 className="text-xl font-bold text-zinc-900">{option.title}</h2>
+                    <p className="mt-2 text-sm font-semibold text-zinc-600">{option.detail}</p>
+                    <Button className="mt-6 h-12 w-full rounded-xl bg-blue-600 font-bold text-white hover:bg-blue-700" asChild>
+                      <a href={option.href} target={option.external ? "_blank" : undefined} rel={option.external ? "noopener noreferrer" : undefined}>
+                        {option.button}
+                      </a>
                     </Button>
-                  </Link>
-                </div>
-              </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>

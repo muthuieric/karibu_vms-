@@ -21,13 +21,21 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://karibuvms.com"),
   manifest: "/manifest.webmanifest",
   title: {
-    default: "Karibu VMS",
+    default: "Karibu VMS | Visitor Management System in Kenya",
     template: "%s | Karibu VMS",
   },
   description:
-    "Karibu VMS is a modern visitor management system for secure visitor check-in, guard workflows, host confirmation, and building access records.",
+    "Karibu VMS is a digital visitor management system for secure check-ins, QR Pass verification, SMS OTP verification, guard dashboards, host confirmation, and visitor checkout.",
   keywords: [
     "Visitor Management System",
+    "visitor management system in Kenya",
+    "visitor check-in system",
+    "digital visitor pass",
+    "QR visitor pass",
+    "SMS OTP visitor verification",
+    "office visitor management",
+    "apartment visitor management",
+    "school visitor management",
     "VMS",
     "Gate Check-in",
     "Security Access Control",
@@ -41,18 +49,18 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.svg",
   },
   openGraph: {
-    title: "Karibu VMS",
+    title: "Karibu VMS | Visitor Management System in Kenya",
     description:
-      "A modern visitor management system for secure visitor check-in and building access control.",
+      "A digital visitor management system for secure check-ins, QR Pass verification, SMS OTP verification, guard dashboards, host confirmation, and visitor checkout.",
     siteName: "Karibu VMS",
     type: "website",
     images: ["/og-image.svg"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Karibu VMS",
+    title: "Karibu VMS | Visitor Management System in Kenya",
     description:
-      "A modern visitor management system for secure visitor check-in and building access control.",
+      "A digital visitor management system for secure check-ins, QR Pass verification, SMS OTP verification, guard dashboards, host confirmation, and visitor checkout.",
     images: ["/og-image.svg"],
   },
   robots: {

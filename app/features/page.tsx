@@ -1,47 +1,47 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
 import { publicMetadata } from "@/lib/seo/site";
-import { BellRing, Building2, Car, ClipboardList, CreditCard, DoorOpen, FileSearch, HelpCircle, IdCard, Lock, MapPin, QrCode, ShieldAlert, SlidersHorizontal, UsersRound } from "lucide-react";
+import { BadgeCheck, BellRing, Building2, ClipboardList, FileSearch, KeyRound, LogOut, QrCode, ShieldAlert, SlidersHorizontal, Smartphone, UsersRound } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
-  title: "Karibu VMS Features | Check-In, Guard Tools, Entry Records",
-  description: "Explore Karibu VMS features including visitor intake, guard dashboards, QR entry, checkout tracking, departments, access restrictions, and admin records.",
+  title: "Karibu VMS Features | QR Pass, SMS OTP, Visitor Checkout",
+  description: "Explore Karibu VMS features including QR Pass Verification, SMS OTP visitor verification, digital visitor passes, host confirmation, guard dashboards, admin dashboards, visitor rules, and checkout.",
   path: "/features",
 });
+
+const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
 
 const featureGroups = [
   {
     title: "Visitor flow",
     features: [
-      { title: "QR self check-in", description: "Publish a facility QR link so visitors can start registration from their own phones.", icon: QrCode },
-      { title: "Guard desk registration", description: "Let guards register walk-in guests, review arrivals, and manage check-outs from a focused workspace.", icon: ClipboardList },
-      { title: "Visitor records", description: "Keep searchable records with arrival time, checkout state, host details, gate context, and visitor status.", icon: FileSearch },
-      { title: "Entry points", description: "Set up gates, receptions, or building entry points and assign guards where needed.", icon: DoorOpen },
-      { title: "Visitor rules", description: "Choose what information guests must provide before entry, such as phone number, ID number, purpose of visit, vehicle registration, photo capture, host selection, or custom questions.", icon: SlidersHorizontal },
-      { title: "Photo and ID requirements", description: "Collect ID details when required. Premium workflows can also require visitor photo capture for stronger verification records.", icon: IdCard },
+      { title: "QR Pass Verification", description: "Premium teams can choose QR Pass Verification so approved visitors receive a QR visitor pass and visitor code for the active visit.", icon: QrCode },
+      { title: "SMS OTP Verification", description: "Premium teams can choose SMS OTP visitor verification when phone-based visitor check-in is the better fit for the site.", icon: KeyRound },
+      { title: "Digital Visitor Pass", description: "Give approved visitors a digital visitor pass that shows status, pass code, time in, and checkout state.", icon: Smartphone },
+      { title: "Host Confirmation", description: "Hosts confirm that visitors reached them; guards remain responsible for approving entry.", icon: BellRing },
+      { title: "Visitor Checkout", description: "Close active visits separately with a visitor code so time out and pass expiry are recorded cleanly.", icon: LogOut },
+      { title: "Visitor Rules", description: "Choose the details visitors must provide before entry, such as phone number, ID number, purpose of visit, vehicle registration, photo capture, host selection, or custom questions.", icon: SlidersHorizontal },
     ],
   },
   {
     title: "Security operations",
     features: [
-      { title: "Vehicle registration", description: "Ask for vehicle registration details when your site needs drive-in or delivery records.", icon: Car },
-      { title: "Custom questions", description: "Ask site-specific questions such as equipment details, delivery reference, safety checks, or appointment notes.", icon: HelpCircle },
-      { title: "Geofence controls", description: "Premium gate rules can limit visitor registration to the correct physical area.", icon: MapPin },
-      { title: "Restricted visitor list", description: "Keep restricted visitor records visible to guards and admins before entry decisions.", icon: Lock },
-      { title: "Host email confirmation", description: "Premium workflows can email the host so they can confirm the visitor after checking the visit code.", icon: BellRing },
-      { title: "Guard workspace", description: "A focused dashboard for guards to register, review, and manage visitors at active gates.", icon: ShieldAlert },
+      { title: "Guard Dashboard", description: "Give guards a focused dashboard to register visitors, approve QR Pass visitors, send or verify SMS OTP visitors, and check out active guests.", icon: ShieldAlert },
+      { title: "Visitor records", description: "Keep searchable records with arrival time, checkout state, host details, gate context, and visitor status.", icon: FileSearch },
+      { title: "Restricted visitor list", description: "Keep restricted visitor records visible to guards and admins before entry decisions.", icon: BadgeCheck },
+      { title: "One active verification method", description: "Premium workspaces choose QR Pass Verification or SMS OTP Verification as the active visitor verification method.", icon: SlidersHorizontal },
     ],
   },
   {
     title: "Administration",
     features: [
+      { title: "Admin Dashboard", description: "Review visitor logs, manage gates, configure departments and hosts, and track billing from a central admin dashboard.", icon: ClipboardList },
       { title: "Departments, teams, and hosts", description: "Organize hosts by department for smoother visitor routing and cleaner daily records.", icon: Building2 },
       { title: "Guard management", description: "Create guard accounts and assign operational access without exposing admin tools.", icon: UsersRound },
-      { title: "Payment and account status", description: "Track plan, usage, monthly charges, M-Pesa initiation, and payment history.", icon: CreditCard },
+      { title: "Office, apartment, and school visitor management", description: "Use one visitor management system for receptions, apartments, schools, campuses, offices, and controlled entrances.", icon: Building2 },
     ],
   },
 ];
@@ -63,11 +63,11 @@ export default function FeaturesPage() {
                 </div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Everything your team needs to manage visitor entry.</h1>
                 <p className="text-zinc-300 text-lg leading-relaxed mb-8">
-                  Karibu VMS brings self check-in, guard registration, entry points, visitor rules, host context, restricted visitor checks, records, reporting, and billing into one connected visitor management platform.
+                  Karibu VMS brings QR visitor pass workflows, SMS OTP visitor verification, guard registration, visitor rules, host confirmation, checkout, records, reporting, and billing into one connected visitor management platform.
                 </p>
-                <Link href="/pricing">
-                  <Button className="bg-white text-zinc-950 hover:bg-zinc-100 h-12 px-7 rounded-xl font-bold">See Pricing</Button>
-                </Link>
+                <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer">
+                  <Button className="bg-white text-zinc-950 hover:bg-zinc-100 h-12 px-7 rounded-xl font-bold">Book Demo</Button>
+                </a>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-3xl p-6">

@@ -18,7 +18,7 @@ export default function PublicFooter() {
         
         <div className="flex flex-wrap justify-center gap-6 text-sm font-medium text-zinc-500">
           <Link href="/about" className="hover:text-zinc-900 transition-colors">About</Link>
-          <Link href="/why-us" className="hover:text-zinc-900 transition-colors">Why Us</Link>
+          <Link href="/why-us" className="hover:text-zinc-900 transition-colors">Why Karibu VMS</Link>
           <Link href="/features" className="hover:text-zinc-900 transition-colors">Features</Link>
           <Link href="/pricing" className="hover:text-zinc-900 transition-colors">Pricing</Link>
           <Link href="/contact" className="hover:text-zinc-900 transition-colors">Contact</Link>

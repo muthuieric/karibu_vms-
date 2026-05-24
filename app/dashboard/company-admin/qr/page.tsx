@@ -155,7 +155,7 @@ export default function QRCodeGenerator() {
           <div className="space-y-3">
             <QRDisplayCard
               title="Visitor checkout"
-              description="Scan to check out securely using the SMS exit PIN."
+              description="Scan to check out securely using the visitor code."
               qrUrl={checkoutQrCodeUrl}
               icon={LogOut}
               tone="warning"
@@ -163,7 +163,7 @@ export default function QRCodeGenerator() {
               footer={
                 <div className="w-full max-w-xs space-y-2 rounded-2xl border border-orange-100 bg-orange-50 p-4 text-sm font-semibold text-orange-900 print:max-w-xs print:p-6">
                   <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">1</span> Open camera</p>
-                  <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">2</span> Enter SMS OTP</p>
+                  <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">2</span> Enter visitor code</p>
                   <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">3</span> Exit securely</p>
                 </div>
               }

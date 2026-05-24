@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 
+const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
+
 export default function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -27,7 +29,7 @@ export default function PublicNavbar() {
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
             <Link href="/about" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">About</Link>
-            <Link href="/why-us" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Why Us</Link>
+            <Link href="/why-us" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Why Karibu VMS</Link>
             <Link href="/features" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Features</Link>
             <Link href="/pricing" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Pricing</Link>
             <Link href="/contact" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Contact</Link>
@@ -37,11 +39,11 @@ export default function PublicNavbar() {
             <Link href="/login" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">
               Sign In
             </Link>
-            <Link href="/register">
+            <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 h-9 text-sm shadow-sm">
-                Register
+                Book Demo
               </Button>
-            </Link>
+            </a>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -61,7 +63,7 @@ export default function PublicNavbar() {
         {mobileMenuOpen && (
           <nav id="public-mobile-menu" className="md:hidden border-t border-zinc-100 bg-white px-6 py-4 flex flex-col gap-4 shadow-lg" aria-label="Mobile navigation">
             <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">About</Link>
-            <Link href="/why-us" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Why Us</Link>
+            <Link href="/why-us" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Why Karibu VMS</Link>
             <Link href="/features" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Features</Link>
             <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Pricing</Link>
             <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Contact</Link>
@@ -69,11 +71,11 @@ export default function PublicNavbar() {
               <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-center text-sm font-medium text-zinc-600 py-2 border border-zinc-200 rounded-lg">
                 Sign In
               </Link>
-              <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+              <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)}>
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-10 text-sm">
-                  Register
+                  Book Demo
                 </Button>
-              </Link>
+              </a>
             </div>
           </nav>
         )}
