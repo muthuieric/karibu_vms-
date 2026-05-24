@@ -136,6 +136,14 @@ export async function POST(request: Request) {
 
     const verificationMethod = resolveVisitorVerificationMethod(company.plan_tier, company.visitor_verification_method);
     const qrPassEnabled = verificationMethod === "qr_pass" && isQrPassBackendEnabledForPlan(company.plan_tier);
+
+    if (verificationMethod === "qr_pass" && !qrPassEnabled) {
+      return NextResponse.json(
+        { error: "QR Pass is selected but not enabled in environment settings." },
+        { status: 503 }
+      );
+    }
+
     const insertPayload = {
       company_id: companyId,
       name: visitorName,
@@ -150,6 +158,7 @@ export async function POST(request: Request) {
       photo_url: payload.photo_url || null,
       custom_data: { ...(payload.custom_data || {}), source: "public_qr" },
       gate_id: safeGateId,
+      verification_method: verificationMethod === "basic_default" ? null : verificationMethod,
     };
 
     const insertPayloadWithQrPass = qrPassEnabled

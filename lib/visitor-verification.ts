@@ -43,3 +43,15 @@ export function resolveVisitorVerificationMethod(
   if (!canChooseVerificationMethod(plan)) return "basic_default";
   return isVerificationMethod(method) ? method : "qr_pass";
 }
+
+export function resolveEffectiveVisitorVerificationMethod(
+  plan?: string | null,
+  visitorMethod?: string | null,
+  companyMethod?: string | null
+): VisitorVerificationMethod | "basic_default" {
+  if (getBasePlan(plan) === "basic") return "basic_default";
+  if (!canChooseVerificationMethod(plan)) return "basic_default";
+  return isVerificationMethod(visitorMethod)
+    ? visitorMethod
+    : resolveVisitorVerificationMethod(plan, companyMethod);
+}

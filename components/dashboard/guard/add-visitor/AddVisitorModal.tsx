@@ -8,6 +8,7 @@ import { getAuthHeaders } from "@/lib/client-auth";
 import AddVisitorForm from "@/components/dashboard/guard/add-visitor/AddVisitorForm";
 import "react-phone-input-2/lib/style.css";
 import type { Visitor } from "@/types/guard";
+import type { VisitorVerificationMethod } from "@/lib/visitor-verification";
 
 type CustomField = {
   id: string;
@@ -35,7 +36,15 @@ export interface AddVisitorModalProps {
   askPurpose?: boolean;
   askVehicle?: boolean;
   guardGateId?: string | null;
+  verificationMethod: VisitorVerificationMethod | "basic_default";
+  qrPassEnabled: boolean;
   onVisitorAdded?: (visitor: Visitor) => void;
+}
+
+function createClientPassToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 export default function AddVisitorModal({
@@ -49,6 +58,8 @@ export default function AddVisitorModal({
   askPurpose = false,
   askVehicle = false,
   guardGateId = null,
+  verificationMethod,
+  qrPassEnabled,
   onVisitorAdded,
 }: AddVisitorModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -221,6 +232,10 @@ export default function AddVisitorModal({
       }
 
       // 3. Insert Visitor Record
+      if (verificationMethod === "qr_pass" && !qrPassEnabled) {
+        throw new Error("QR Pass is selected but not enabled in environment settings.");
+      }
+
       const finalGateId = guardGateId && guardGateId !== "" && guardGateId !== "unassigned" ? guardGateId : null;
 
       const insertPayload = {
@@ -237,6 +252,8 @@ export default function AddVisitorModal({
         photo_url: uploadedPhotoUrl,
         custom_data: { ...customAnswers, source: "guard_desk" },
         gate_id: finalGateId,
+        verification_method: verificationMethod === "basic_default" ? null : verificationMethod,
+        pass_token: verificationMethod === "qr_pass" ? createClientPassToken() : null,
       };
 
       const { data: createdVisitor, error } = await supabase

@@ -40,6 +40,15 @@ export default function GuardDashboard() {
     : null;
 
   if (!dashboard.companyId && !dashboard.loading) {
+    if (dashboard.accessError === "session_expired") {
+      return (
+        <GuardProfileErrorState
+          title="Session expired"
+          message="Please sign in again to continue managing visitors."
+        />
+      );
+    }
+
     return <GuardProfileErrorState />;
   }
 
@@ -54,6 +63,7 @@ export default function GuardDashboard() {
             setShowQrModal(true);
           }}
           onShowAddVisitor={() => setShowAddModal(true)}
+          onRefresh={dashboard.refreshCompanySettings}
         />
 
         <section className="grid gap-4">
@@ -81,6 +91,12 @@ export default function GuardDashboard() {
           />
         )}
 
+        {dashboard.qrPassSetupWarning && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">
+            {dashboard.qrPassSetupWarning}
+          </div>
+        )}
+
         <GuardVisitorsTable
           loading={dashboard.loading}
           visitors={dashboard.filteredVisitors}
@@ -88,6 +104,8 @@ export default function GuardDashboard() {
           statusFilter={dashboard.statusFilter}
           planTier={dashboard.planTier}
           verificationMethod={dashboard.verificationMethod}
+          qrPassSetupWarning={dashboard.qrPassSetupWarning}
+          qrPassEnabled={!dashboard.qrPassSetupWarning}
           verifyingId={dashboard.verifyingId}
           sendingOtpId={dashboard.sendingOtpId}
           approvingPassId={dashboard.approvingPassId}
@@ -103,7 +121,6 @@ export default function GuardDashboard() {
           onApprovePass={dashboard.handleApprovePass}
           onCheckOut={dashboard.handleCheckOut}
           onDirectApprove={dashboard.handleDirectApprove}
-          onManualOverride={dashboard.handleManualOverride}
         />
       <AddVisitorModal
         isOpen={showAddModal}
@@ -116,6 +133,8 @@ export default function GuardDashboard() {
         askPurpose={dashboard.askPurpose}
         askVehicle={dashboard.askVehicle}
         guardGateId={dashboard.guardGateId}
+        verificationMethod={dashboard.verificationMethod}
+        qrPassEnabled={!dashboard.qrPassSetupWarning}
         onVisitorAdded={dashboard.addVisitorToQueue}
       />
 

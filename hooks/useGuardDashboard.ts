@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getAuthHeaders } from "@/lib/client-auth";
 import { filterGuardVisitors, getDynamicGateQrUrl, printGateQrPoster } from "@/lib/guard-dashboard";
@@ -19,6 +19,8 @@ export function useGuardDashboard() {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [planTier, setPlanTier] = useState("basic");
   const [verificationMethod, setVerificationMethod] = useState<VisitorVerificationMethod | "basic_default">("basic_default");
+  const [qrPassSetupWarning, setQrPassSetupWarning] = useState<string | null>(null);
+  const [accessError, setAccessError] = useState<"session_expired" | "profile_missing" | null>(null);
   const [guardGateId, setGuardGateId] = useState<string | null>(null);
   const [guardGateName, setGuardGateName] = useState("All Gates");
   const [customFieldLabels, setCustomFieldLabels] = useState<Record<string, string>>({});
@@ -39,6 +41,89 @@ export function useGuardDashboard() {
 
   const tickQrTimestamp = () => setQrTimestamp(Date.now());
 
+  const applyCompanySettings = useCallback((companyData: {
+    require_photo?: boolean | null;
+    ask_phone?: boolean | null;
+    ask_id?: boolean | null;
+    ask_host?: boolean | null;
+    ask_purpose?: boolean | null;
+    ask_vehicle?: boolean | null;
+    custom_fields?: unknown;
+    is_locked?: boolean | null;
+    subscription_ends_at?: string | null;
+    plan_tier?: string | null;
+    visitor_verification_method?: string | null;
+    qr_pass_backend_enabled?: boolean | null;
+  }) => {
+    const resolvedVerificationMethod = resolveVisitorVerificationMethod(
+      companyData.plan_tier,
+      companyData.visitor_verification_method
+    );
+
+    setPlanTier(getBasePlan(companyData.plan_tier));
+    setVerificationMethod(resolvedVerificationMethod);
+    setQrPassSetupWarning(
+      resolvedVerificationMethod === "qr_pass" && (!isQrPassFrontendEnabled() || companyData.qr_pass_backend_enabled === false)
+        ? "QR Pass is selected but not enabled in environment settings."
+        : null
+    );
+    setRequirePhoto(companyData.require_photo || false);
+    setAskPhone(companyData.ask_phone !== false);
+    setAskId(companyData.ask_id !== false);
+    setAskHost(companyData.ask_host || false);
+    setAskPurpose(companyData.ask_purpose || false);
+    setAskVehicle(companyData.ask_vehicle || false);
+    setIsLocked(companyData.is_locked || (companyData.subscription_ends_at ? new Date(companyData.subscription_ends_at) < new Date() : false));
+
+    if (companyData.custom_fields) {
+      const labelMap: Record<string, string> = {};
+      const fields = Array.isArray(companyData.custom_fields) ? (companyData.custom_fields as CustomField[]) : [];
+      fields.forEach((field) => {
+        labelMap[field.id] = field.label;
+      });
+      setCustomFieldLabels(labelMap);
+    }
+  }, []);
+
+  const refreshCompanySettings = useCallback(async (targetCompanyId: string | null) => {
+    if (!targetCompanyId) return;
+
+    const { data: companyData, error } = await supabase
+      .from("companies")
+      .select("name, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier, visitor_verification_method")
+      .eq("id", targetCompanyId)
+      .single();
+
+    if (error) {
+      console.error("Could not refresh company visitor rules:", error);
+      return;
+    }
+
+    if (companyData) {
+      const resolvedVerificationMethod = resolveVisitorVerificationMethod(
+        companyData.plan_tier,
+        companyData.visitor_verification_method
+      );
+      let qrPassBackendEnabled: boolean | null = null;
+
+      if (resolvedVerificationMethod === "qr_pass") {
+        try {
+          const response = await fetch(`/api/company-rules/verification-method?companyId=${targetCompanyId}`, {
+            headers: await getAuthHeaders(),
+          });
+          const result = await response.json().catch(() => ({}));
+          if (response.ok && typeof result.data?.qrPassBackendEnabled === "boolean") {
+            qrPassBackendEnabled = result.data.qrPassBackendEnabled;
+          }
+        } catch (error) {
+          console.error("Could not verify QR Pass backend flag:", error);
+        }
+      }
+
+      applyCompanySettings({ ...companyData, qr_pass_backend_enabled: qrPassBackendEnabled });
+    }
+  }, [applyCompanySettings]);
+
   const addVisitorToQueue = (visitor: Visitor) => {
     if (!companyId || visitor.company_id !== companyId) return;
     if (guardGateId && visitor.gate_id && visitor.gate_id !== guardGateId) return;
@@ -53,6 +138,7 @@ export function useGuardDashboard() {
       const { data: authData, error: authError } = await supabase.auth.getUser();
 
       if (authError || !authData.user) {
+        setAccessError("session_expired");
         setLoading(false);
         return undefined;
       }
@@ -65,6 +151,7 @@ export function useGuardDashboard() {
 
       if (profileError || !profileData?.company_id) {
         console.error("Could not load guard profile:", profileError);
+        setAccessError("profile_missing");
         setLoading(false);
         return undefined;
       }
@@ -80,33 +167,7 @@ export function useGuardDashboard() {
         if (gateData) setGuardGateName(gateData.name);
       }
 
-      const { data: companyData } = await supabase
-        .from("companies")
-        .select("name, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier, visitor_verification_method")
-        .eq("id", currentCompanyId)
-        .single();
-
-      if (companyData) {
-        setPlanTier(getBasePlan(companyData.plan_tier));
-        const resolvedVerificationMethod = resolveVisitorVerificationMethod(companyData.plan_tier, companyData.visitor_verification_method);
-        setVerificationMethod(resolvedVerificationMethod === "qr_pass" && !isQrPassFrontendEnabled() ? "sms_otp" : resolvedVerificationMethod);
-        setRequirePhoto(companyData.require_photo || false);
-        setAskPhone(companyData.ask_phone !== false);
-        setAskId(companyData.ask_id !== false);
-        setAskHost(companyData.ask_host || false);
-        setAskPurpose(companyData.ask_purpose || false);
-        setAskVehicle(companyData.ask_vehicle || false);
-        setIsLocked(companyData.is_locked || (companyData.subscription_ends_at ? new Date(companyData.subscription_ends_at) < new Date() : false));
-
-        if (companyData.custom_fields) {
-          const labelMap: Record<string, string> = {};
-          const fields = Array.isArray(companyData.custom_fields) ? (companyData.custom_fields as CustomField[]) : [];
-          fields.forEach((field) => {
-            labelMap[field.id] = field.label;
-          });
-          setCustomFieldLabels(labelMap);
-        }
-      }
+      await refreshCompanySettings(currentCompanyId);
 
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
@@ -146,6 +207,8 @@ export function useGuardDashboard() {
       const channel = supabase
         .channel("guard-dashboard")
         .on("postgres_changes", { event: "*", schema: "public", table: "visitors" }, (payload) => {
+          void refreshCompanySettings(currentCompanyId);
+
           if (payload.eventType === "INSERT") {
             const newVisitor = payload.new as Visitor;
             if (newVisitor.company_id !== currentCompanyId) return;
@@ -179,7 +242,21 @@ export function useGuardDashboard() {
     return () => {
       cleanup.then((fn) => fn && fn());
     };
-  }, []);
+  }, [applyCompanySettings, refreshCompanySettings]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      void refreshCompanySettings(companyId);
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, [companyId, refreshCompanySettings]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -325,10 +402,12 @@ export function useGuardDashboard() {
 
   return {
     companyId,
+    accessError,
     visitors,
     loading,
     planTier,
     verificationMethod,
+    qrPassSetupWarning,
     guardGateId,
     guardGateName,
     customFieldLabels,
@@ -354,6 +433,7 @@ export function useGuardDashboard() {
     setOtpInput,
     setVerifyingId,
     tickQrTimestamp,
+    refreshCompanySettings: () => refreshCompanySettings(companyId),
     handleLogout,
     handleDirectApprove,
     handleManualOverride,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 import { createVisitorPassCode } from "@/lib/visitor-pass";
-import { isQrPassBackendEnabledForPlan, resolveVisitorVerificationMethod } from "@/lib/visitor-verification";
+import { isQrPassBackendEnabledForPlan, resolveEffectiveVisitorVerificationMethod } from "@/lib/visitor-verification";
 
 type ApprovePassPayload = {
   visitorId?: string;
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
     let query = auth.supabaseAdmin
       .from("visitors")
-      .select("id, company_id, gate_id, status, pass_token, pass_expired_at")
+      .select("id, company_id, gate_id, status, pass_token, pass_expired_at, verification_method")
       .limit(1);
 
     query = visitorId ? query.eq("id", visitorId) : query.eq("pass_token", passToken);
@@ -50,11 +50,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Company not found." }, { status: 404 });
     }
 
-    if (
-      resolveVisitorVerificationMethod(company.plan_tier, company.visitor_verification_method) !== "qr_pass" ||
-      !isQrPassBackendEnabledForPlan(company.plan_tier)
-    ) {
+    const effectiveVerificationMethod = resolveEffectiveVisitorVerificationMethod(
+      company.plan_tier,
+      visitor.verification_method,
+      company.visitor_verification_method
+    );
+
+    if (effectiveVerificationMethod !== "qr_pass") {
       return NextResponse.json({ error: "QR Pass is not enabled for this workspace." }, { status: 403 });
+    }
+
+    if (!isQrPassBackendEnabledForPlan(company.plan_tier)) {
+      return NextResponse.json(
+        { error: "QR Pass is selected but not enabled in environment settings." },
+        { status: 403 }
+      );
     }
 
     if (auth.profile.role === "guard" && auth.profile.company_id) {

@@ -17,6 +17,12 @@ export function useLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
+  const getSafeNextUrl = () => {
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+    return next;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (TURNSTILE_ENABLED && !captchaToken) {
@@ -60,14 +66,15 @@ export function useLoginPage() {
           }
           window.location.href = "/dashboard/company-admin";
         } else if (userRole === "guard") {
+          const nextUrl = getSafeNextUrl();
           if (profile.company_id) {
             const { data: company } = await supabase.from("companies").select("hard_locked").eq("id", profile.company_id).maybeSingle();
             if (company?.hard_locked) {
-              window.location.href = "/dashboard/guard";
+              window.location.href = nextUrl || "/dashboard/guard";
               return;
             }
           }
-          window.location.href = "/dashboard/guard";
+          window.location.href = nextUrl || "/dashboard/guard";
         } else {
           setError(`Your account has an unknown role: "${rawRole}"`);
           await supabase.auth.signOut();

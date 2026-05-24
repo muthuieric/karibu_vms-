@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { LogOutIcon, ScanQrCode, UserPlus2 } from "lucide-react";
+import { LogOutIcon, RefreshCw, ScanQrCode, UserPlus2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type GuardDashboardHeaderProps = {
@@ -9,6 +9,7 @@ type GuardDashboardHeaderProps = {
   onLogout: () => void;
   onShowQr: () => void;
   onShowAddVisitor: () => void;
+  onRefresh: () => void;
 };
 
 export default function GuardDashboardHeader({
@@ -16,6 +17,7 @@ export default function GuardDashboardHeader({
   onLogout,
   onShowQr,
   onShowAddVisitor,
+  onRefresh,
 }: GuardDashboardHeaderProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -36,6 +38,14 @@ export default function GuardDashboardHeader({
       </div>
       
       <div className="flex flex-wrap items-center gap-3">
+        <Button
+          variant="outline"
+          onClick={onRefresh}
+          className="h-11 border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Refresh
+        </Button>
         <Button
           variant="outline"
           onClick={onShowQr}

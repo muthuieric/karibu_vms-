@@ -34,6 +34,7 @@ export function useBuildingRules() {
   const [verificationPlanState, setVerificationPlanState] = useState<"eligible" | "locked" | "unknown">("unknown");
   const [canChooseVerification, setCanChooseVerification] = useState(false);
   const [visitorVerificationMethod, setVisitorVerificationMethod] = useState<VisitorVerificationMethod>("qr_pass");
+  const [qrPassSetupWarning, setQrPassSetupWarning] = useState<string | null>(null);
   const [requirePhoto, setRequirePhoto] = useState(false);
   const [askHost, setAskHost] = useState(false);
   const [askPurpose, setAskPurpose] = useState(false);
@@ -82,10 +83,31 @@ export function useBuildingRules() {
         const planState = getVerificationPlanState(company.plan_tier);
         const eligibleForVerificationChoice = canChooseVerificationMethod(company.plan_tier);
         const resolvedVerificationMethod = resolveVisitorVerificationMethod(company.plan_tier, company.visitor_verification_method);
+        let qrPassBackendEnabled = true;
+
+        if (resolvedVerificationMethod === "qr_pass") {
+          try {
+            const response = await fetch(`/api/company-rules/verification-method?companyId=${profile.company_id}`, {
+              headers: await getAuthHeaders(),
+            });
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && typeof result.data?.qrPassBackendEnabled === "boolean") {
+              qrPassBackendEnabled = result.data.qrPassBackendEnabled;
+            }
+          } catch (error) {
+            console.error("Could not verify QR Pass backend flag:", error);
+          }
+        }
+
         setPlanTier(basePlan);
         setVerificationPlanState(planState);
         setCanChooseVerification(eligibleForVerificationChoice);
         setVisitorVerificationMethod(resolvedVerificationMethod === "basic_default" ? "qr_pass" : resolvedVerificationMethod);
+        setQrPassSetupWarning(
+          resolvedVerificationMethod === "qr_pass" && (!isQrPassFrontendEnabled() || !qrPassBackendEnabled)
+            ? "QR Pass is selected but not enabled in environment settings."
+            : null
+        );
         setRequirePhoto(company.require_photo || false);
         setAskHost(company.ask_host || false);
         setAskPurpose(company.ask_purpose || false);
@@ -124,6 +146,11 @@ export function useBuildingRules() {
 
     const previousMethod = visitorVerificationMethod;
     setVisitorVerificationMethod(method);
+    setQrPassSetupWarning(
+      method === "qr_pass" && !isQrPassFrontendEnabled()
+        ? "QR Pass is selected but not enabled in environment settings."
+        : null
+    );
     setUpdatingRules(true);
     setMessage(null);
 
@@ -139,10 +166,16 @@ export function useBuildingRules() {
         throw new Error(result.error || "Failed to update verification method.");
       }
 
-      setMessage({ type: "success", text: "Verification method updated." });
+      setVisitorVerificationMethod(result.data?.visitorVerificationMethod || method);
+      setMessage({ type: "success", text: "Visitor verification method updated." });
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       setVisitorVerificationMethod(previousMethod);
+      setQrPassSetupWarning(
+        previousMethod === "qr_pass" && !isQrPassFrontendEnabled()
+          ? "QR Pass is selected but not enabled in environment settings."
+          : null
+      );
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Failed to update verification method.",
@@ -316,6 +349,7 @@ export function useBuildingRules() {
     canChooseVerification,
     isQrPassFrontendEnabled: isQrPassFrontendEnabled(),
     visitorVerificationMethod,
+    qrPassSetupWarning,
     requirePhoto,
     askHost,
     askPurpose,

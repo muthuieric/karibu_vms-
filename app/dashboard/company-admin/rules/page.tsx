@@ -185,20 +185,30 @@ export default function BuildingRulesPage() {
                   </div>
                 ) : null}
 
+                {rules.qrPassSetupWarning && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      {rules.qrPassSetupWarning}
+                    </div>
+                  </div>
+                )}
+
                 {verificationOptions.map((option) => {
                   const Icon = option.icon;
                   const selected = rules.visitorVerificationMethod === option.value;
+                  const optionDisabled = !rules.canChooseVerification || rules.updatingRules || (option.value === "qr_pass" && !rules.isQrPassFrontendEnabled);
                   return (
                     <button
                       key={option.value}
                       type="button"
-                      disabled={!rules.canChooseVerification || rules.updatingRules}
+                      disabled={optionDisabled}
                       onClick={() => rules.handleVerificationMethodChange(option.value)}
                       className={`flex w-full items-start gap-4 rounded-2xl border p-4 text-left shadow-sm transition ${
                         selected
                           ? "border-blue-300 bg-blue-50 ring-2 ring-blue-100"
                           : "border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50"
-                      } ${(!rules.canChooseVerification || rules.updatingRules) ? "cursor-not-allowed opacity-70" : ""}`}
+                      } ${optionDisabled ? "cursor-not-allowed opacity-70" : ""}`}
                       aria-pressed={selected}
                     >
                       <span className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${

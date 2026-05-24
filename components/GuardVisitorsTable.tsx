@@ -6,6 +6,7 @@ import { SearchInput } from "@/components/dashboard/shared/Fields";
 import { EmptyState, LoadingSkeleton } from "@/components/dashboard/shared/StateBlocks";
 import { Button } from "@/components/ui/button";
 import { getVisitorStatusLabel, normalizeVisitorStatus } from "@/lib/visitor-display";
+import { resolveEffectiveVisitorVerificationMethod } from "@/lib/visitor-verification";
 import {
   Table,
   TableBody,
@@ -48,6 +49,8 @@ type GuardVisitorsTableProps = {
   statusFilter: "all" | "pending" | "checked_in";
   planTier: string;
   verificationMethod: "qr_pass" | "sms_otp" | "basic_default";
+  qrPassSetupWarning: string | null;
+  qrPassEnabled: boolean;
   verifyingId: string | null;
   sendingOtpId: string | null;
   approvingPassId: string | null;
@@ -63,7 +66,6 @@ type GuardVisitorsTableProps = {
   onApprovePass: (visitor: Visitor) => void;
   onCheckOut: (id: string) => void;
   onDirectApprove: (visitor: Visitor) => void;
-  onManualOverride: (visitor: Visitor) => void;
 };
 
 const CustomStatusBadge = ({ status, isOverride }: { status: string, isOverride?: boolean }) => {
@@ -116,6 +118,8 @@ export default function GuardVisitorsTable({
   statusFilter,
   planTier,
   verificationMethod,
+  qrPassSetupWarning,
+  qrPassEnabled,
   verifyingId,
   sendingOtpId,
   approvingPassId,
@@ -131,7 +135,6 @@ export default function GuardVisitorsTable({
   onApprovePass,
   onCheckOut,
   onDirectApprove,
-  onManualOverride,
 }: GuardVisitorsTableProps) {
   
   const renderActions = (visitor: Visitor) => {
@@ -148,7 +151,21 @@ export default function GuardVisitorsTable({
         );
       }
 
-      if (verificationMethod === "qr_pass") {
+      const visitorVerificationMethod = resolveEffectiveVisitorVerificationMethod(
+        planTier,
+        visitor.verification_method,
+        verificationMethod
+      );
+
+      if (visitorVerificationMethod === "qr_pass") {
+        if (!qrPassEnabled) {
+          return (
+            <div className="max-w-xs rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-left text-xs font-bold leading-5 text-amber-900">
+              {qrPassSetupWarning || "QR Pass is selected but not enabled in environment settings."}
+            </div>
+          );
+        }
+
         return (
           <Button
             size="sm"
@@ -157,18 +174,6 @@ export default function GuardVisitorsTable({
             className="w-full sm:w-auto whitespace-nowrap bg-slate-950 font-bold text-white hover:bg-slate-800 disabled:bg-slate-300"
           >
             {approvingPassId === visitor.id ? "Approving..." : "Approve Pass"}
-          </Button>
-        );
-      }
-      
-      if (visitor.custom_data?.source === "guard_desk") {
-        return (
-          <Button
-            size="sm"
-            onClick={() => onManualOverride(visitor)}
-            className="w-full sm:w-auto whitespace-nowrap bg-orange-500 font-bold text-white hover:bg-orange-600 shadow-sm"
-          >
-            Override
           </Button>
         );
       }
