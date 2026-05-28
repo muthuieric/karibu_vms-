@@ -3,11 +3,11 @@ import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { publicMetadata } from "@/lib/seo/site";
-import { Database, Eye, LockKeyhole, Mail, ShieldCheck, UserCheck } from "lucide-react";
+import { ArchiveX, Database, Eye, Fingerprint, LockKeyhole, Mail, ShieldCheck, UserCheck } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
   title: "Privacy Policy | Karibu VMS",
-  description: "Read the Karibu VMS privacy policy covering visitor records, account data, payment records, security controls, and contact information.",
+  description: "Read the Karibu VMS privacy policy covering visitor records, retention, anonymisation, restricted visitors, billing records, security controls, and contact information.",
   path: "/privacy",
 });
 
@@ -18,28 +18,43 @@ const sections = [
     icon: Database,
   },
   {
-    title: "How we use information",
-    description: "We use information to provide visitor registration, approval, checkout, reporting, billing, support, security monitoring, troubleshooting, and product improvement.",
+    title: "Configurable visitor details",
+    description: "Facilities can configure which visitor fields are requested, such as phone number, ID or passport number, host, purpose of visit, vehicle registration, and photo capture where enabled. This supports data minimisation by allowing a facility to collect only what it needs.",
     icon: UserCheck,
   },
   {
-    title: "Visitor records",
-    description: "Visitor data may include names, contact details, ID-related information, photos when enabled, arrival and checkout times, host destination, gate, status, and guard actions. Facilities control how this information is captured and used within their workspace.",
+    title: "How we use information",
+    description: "We use information to provide visitor registration, approval, checkout, QR pass verification, guard workflows, reporting, billing, support, security monitoring, troubleshooting, and product improvement.",
     icon: Eye,
   },
   {
-    title: "Security",
-    description: "We apply technical and organizational safeguards intended to protect records from unauthorized access, misuse, loss, or alteration. No online service can guarantee absolute security, but we work to keep access limited and accountable.",
+    title: "Sensitive visitor fields",
+    description: "Where supported by the platform, sensitive fields such as phone numbers, ID or passport numbers, and vehicle registration details are protected using server-side encryption and cryptographic matching values. Plain legacy fields should remain blank for newly protected records.",
+    icon: Fingerprint,
+  },
+  {
+    title: "Restricted visitor checks",
+    description: "Restricted visitor matching is designed to use stronger identifiers such as phone, ID or passport number, or vehicle registration where those fields are provided. Restricted records may be reviewed and expire separately from normal visitor logs.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Data retention and anonymisation",
+    description: "Facilities may configure or request deletion/anonymisation of visitor personal data. The platform can anonymise checked-out visitors and remove personal details while keeping non-sensitive operational history, billing usage, and audit records where required for security, accounting, dispute handling, or legal reasons.",
+    icon: ArchiveX,
+  },
+  {
+    title: "Security and audit logs",
+    description: "We apply technical and organizational safeguards intended to protect records from unauthorized access, misuse, loss, or alteration. Audit logs record important security events such as sensitive record access, exports, restricted visitor matches, rule changes, and retention actions without intentionally storing raw phone or ID numbers in audit metadata.",
     icon: LockKeyhole,
   },
   {
     title: "Sharing information",
-    description: "We do not sell personal information. We may share data with service providers that help operate hosting, database, payment, analytics, communication, and support systems, or where required by law.",
+    description: "We do not sell personal information. We may share data with service providers that help operate hosting, database, payment, analytics, communication, and support systems, or where required by law. A facility may also share records with authorized staff, hosts, guards, building management, or lawful authorities where appropriate.",
     icon: ShieldCheck,
   },
   {
     title: "Contact",
-    description: "Questions about privacy, visitor data, correction requests, or account records can be sent through the contact page or by reaching our support team.",
+    description: "Questions about privacy, visitor data, correction requests, access requests, deletion/anonymisation requests, or account records can be sent through the contact page or by reaching our support team. Visitors may also contact the facility that collected their details.",
     icon: Mail,
   },
 ];
@@ -57,9 +72,9 @@ export default function PrivacyPage() {
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">How Karibu VMS handles privacy and data.</h1>
             <p className="text-lg text-zinc-600 leading-relaxed">
-              This policy explains how Karibu VMS collects, uses, protects, and shares information when facilities use the platform to manage visitor entry, guard workflows, payments, support, and administration.
+              This policy explains how Karibu VMS collects, uses, protects, retains, anonymises, and shares information when facilities use the platform to manage visitor entry, guard workflows, payments, support, and administration.
             </p>
-            <p className="text-sm text-zinc-500 mt-6">Last updated: May 17, 2026</p>
+            <p className="text-sm text-zinc-500 mt-6">Last updated: May 28, 2026</p>
           </div>
         </section>
 
@@ -85,9 +100,9 @@ export default function PrivacyPage() {
             </div>
 
             <div className="mt-10 rounded-2xl border border-blue-100 bg-blue-50 p-6">
-              <h2 className="text-lg font-bold text-zinc-900 mb-2">Data retention and access</h2>
+              <h2 className="text-lg font-bold text-zinc-900 mb-2">Facility responsibility and legal compliance</h2>
               <p className="text-sm text-zinc-600 leading-relaxed">
-                Facilities are responsible for deciding what visitor information they collect and how long they need to keep it for operational, security, legal, or compliance reasons. Account admins can review records inside their workspace, and support can help with access or correction questions.
+                Each facility or company workspace is responsible for deciding what visitor information it collects, giving appropriate notices to visitors, selecting lawful retention periods, managing access by guards and admins, and responding to visitor requests. Karibu VMS provides tools such as configurable fields, encryption, hashing for matching, audit logs, retention cleanup, and anonymisation to help facilities manage those responsibilities.
               </p>
             </div>
           </div>
