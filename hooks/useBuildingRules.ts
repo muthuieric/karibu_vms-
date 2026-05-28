@@ -36,9 +36,16 @@ export function useBuildingRules() {
   const [visitorVerificationMethod, setVisitorVerificationMethod] = useState<VisitorVerificationMethod>("qr_pass");
   const [qrPassSetupWarning, setQrPassSetupWarning] = useState<string | null>(null);
   const [requirePhoto, setRequirePhoto] = useState(false);
+  const [askPhone, setAskPhone] = useState(true);
+  const [askId, setAskId] = useState(true);
   const [askHost, setAskHost] = useState(false);
   const [askPurpose, setAskPurpose] = useState(false);
   const [askVehicle, setAskVehicle] = useState(false);
+  const [requirePhone, setRequirePhone] = useState(false);
+  const [requireId, setRequireId] = useState(false);
+  const [requireHost, setRequireHost] = useState(false);
+  const [requirePurpose, setRequirePurpose] = useState(false);
+  const [requireVehicle, setRequireVehicle] = useState(false);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [newFieldName, setNewFieldName] = useState("");
   const [updatingRules, setUpdatingRules] = useState(false);
@@ -74,7 +81,7 @@ export function useBuildingRules() {
 
       const { data: company } = await supabase
         .from("companies")
-        .select("require_photo, ask_host, ask_purpose, ask_vehicle, custom_fields, plan_tier, visitor_verification_method, enable_geofence, lat, lng, geofence_radius")
+        .select("require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, require_phone, require_id, require_host, require_purpose, require_vehicle, custom_fields, plan_tier, visitor_verification_method, enable_geofence, lat, lng, geofence_radius")
         .eq("id", profile.company_id)
         .single();
 
@@ -109,9 +116,16 @@ export function useBuildingRules() {
             : null
         );
         setRequirePhoto(company.require_photo || false);
+        setAskPhone(company.ask_phone !== false);
+        setAskId(company.ask_id !== false);
         setAskHost(company.ask_host || false);
         setAskPurpose(company.ask_purpose || false);
         setAskVehicle(company.ask_vehicle || false);
+        setRequirePhone(company.require_phone || false);
+        setRequireId(company.require_id || false);
+        setRequireHost(company.require_host || false);
+        setRequirePurpose(company.require_purpose || false);
+        setRequireVehicle(company.require_vehicle || false);
         setCustomFields(company.custom_fields || []);
         
         setEnableGeofence(company.enable_geofence || false);
@@ -134,6 +148,40 @@ export function useBuildingRules() {
     if (error) {
       setMessage({ type: "error", text: "Failed to update the rule." });
       setter(!checked);
+    } else {
+      setMessage({ type: "success", text: "Rules auto-saved successfully!" });
+      setTimeout(() => setMessage(null), 3000);
+    }
+    setUpdatingRules(false);
+  };
+
+  const handleToggleEnabledRule = async (
+    field: string,
+    checked: boolean,
+    setter: (value: boolean) => void,
+    requiredField: string,
+    requiredSetter: (value: boolean) => void
+  ) => {
+    const previousRequired = (() => {
+      if (requiredField === "require_phone") return requirePhone;
+      if (requiredField === "require_id") return requireId;
+      if (requiredField === "require_host") return requireHost;
+      if (requiredField === "require_purpose") return requirePurpose;
+      return requireVehicle;
+    })();
+
+    setter(checked);
+    if (!checked) requiredSetter(false);
+    setUpdatingRules(true);
+    setMessage(null);
+
+    const updatePayload = checked ? { [field]: true } : { [field]: false, [requiredField]: false };
+    const { error } = await supabase.from("companies").update(updatePayload).eq("id", companyId);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to update the rule." });
+      setter(!checked);
+      requiredSetter(previousRequired);
     } else {
       setMessage({ type: "success", text: "Rules auto-saved successfully!" });
       setTimeout(() => setMessage(null), 3000);
@@ -351,20 +399,35 @@ export function useBuildingRules() {
     visitorVerificationMethod,
     qrPassSetupWarning,
     requirePhoto,
+    askPhone,
+    askId,
     askHost,
     askPurpose,
     askVehicle,
+    requirePhone,
+    requireId,
+    requireHost,
+    requirePurpose,
+    requireVehicle,
     customFields,
     newFieldName,
     updatingRules,
     message,
     setRequirePhoto,
+    setAskPhone,
+    setAskId,
     setAskHost,
     setAskPurpose,
     setAskVehicle,
+    setRequirePhone,
+    setRequireId,
+    setRequireHost,
+    setRequirePurpose,
+    setRequireVehicle,
     handleVerificationMethodChange,
     setNewFieldName,
     handleToggleRule,
+    handleToggleEnabledRule,
     handleAddCustomField,
     handleToggleCustomField,
     handleDeleteCustomField,

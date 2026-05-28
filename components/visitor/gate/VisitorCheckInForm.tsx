@@ -48,7 +48,7 @@ type VisitorFormData = {
   vehicle_reg: string;
 };
 
-type ValidationErrors = Partial<Record<"name" | "phone" | "id_number" | "host_id" | "selfie" | "terms", string>>;
+type ValidationErrors = Partial<Record<"name" | "phone" | "id_number" | "host_id" | "purpose" | "vehicle_reg" | "selfie" | "terms", string>>;
 
 type Rules = {
   requirePhoto: boolean;
@@ -57,6 +57,11 @@ type Rules = {
   askHost: boolean;
   askPurpose: boolean;
   askVehicle: boolean;
+  requirePhone: boolean;
+  requireId: boolean;
+  requireHost: boolean;
+  requirePurpose: boolean;
+  requireVehicle: boolean;
 };
 
 type VisitorCheckInFormProps = {
@@ -248,14 +253,14 @@ export default function VisitorCheckInForm({
                       htmlFor="visitor-phone"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Phone Number <RequiredMark />
+                      Phone Number {rules.requirePhone && <RequiredMark />}
                     </Label>
 
                     <PhoneInput
                       inputProps={{
                         id: "visitor-phone",
                         autoComplete: "tel",
-                        required: true,
+                        required: rules.requirePhone,
                       }}
                       country="ke"
                       value={newVisitor.phone}
@@ -304,12 +309,12 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-id-number"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                        ID Number <RequiredMark />
+                        ID Number {rules.requireId && <RequiredMark />}
                       </Label>
 
                       <Input
                         id="visitor-id-number"
-                        required
+                        required={rules.requireId}
                         value={newVisitor.id_number}
                         onChange={(e) =>
                           onNewVisitorChange({
@@ -344,7 +349,7 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-host-search"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                        Who are you visiting?
+                      Who are you visiting? {rules.requireHost && <RequiredMark />}
                       </Label>
 
                       <div className="relative">
@@ -369,7 +374,7 @@ export default function VisitorCheckInForm({
                       <input
                         type="text"
                         className="hidden"
-                        required
+                        required={rules.requireHost}
                         value={newVisitor.host_id}
                         onChange={() => {}}
                       />
@@ -422,11 +427,12 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-purpose"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                        Purpose of Visit
+                        Purpose of Visit {rules.requirePurpose && <RequiredMark />}
                       </Label>
 
                       <Input
                         id="visitor-purpose"
+                        required={rules.requirePurpose}
                         value={newVisitor.purpose}
                         onChange={(e) =>
                           onNewVisitorChange({
@@ -437,6 +443,7 @@ export default function VisitorCheckInForm({
                         placeholder="e.g. Meeting, Delivery, Interview"
                         className="h-11 rounded-xl border-slate-200 bg-slate-50 text-base focus:bg-white focus:ring-blue-500/20"
                       />
+                      <FieldError message={validationErrors.purpose} />
                     </div>
                   )}
 
@@ -446,11 +453,12 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-vehicle"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                        Vehicle Registration
+                        Vehicle Registration {rules.requireVehicle && <RequiredMark />}
                       </Label>
 
                       <Input
                         id="visitor-vehicle"
+                        required={rules.requireVehicle}
                         value={newVisitor.vehicle_reg}
                         onChange={(e) =>
                           onNewVisitorChange({
@@ -461,6 +469,7 @@ export default function VisitorCheckInForm({
                         placeholder="e.g. KCA 123A"
                         className="h-11 rounded-xl border-slate-200 bg-slate-50 text-base uppercase focus:bg-white focus:ring-blue-500/20"
                       />
+                      <FieldError message={validationErrors.vehicle_reg} />
                     </div>
                   )}
 

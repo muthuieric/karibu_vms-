@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "retention:cleanup": "node scripts/retention-cleanup.mjs",
+    "privacy:backfill": "node scripts/backfill-sensitive-data.mjs",
     "lint": "eslint"
   },
   "dependencies": {

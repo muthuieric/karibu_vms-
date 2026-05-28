@@ -28,22 +28,32 @@ export default function GateSuccessState({
     if (!passToken) return undefined;
 
     let active = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     const loadPass = async () => {
       try {
         const response = await fetch(`/api/visitor-pass/${encodeURIComponent(passToken)}`, { cache: "no-store" });
         const result = await response.json().catch(() => ({}));
-        if (active && response.ok && result.data) setLivePass(result.data);
+        if (!active) return;
+        if (response.ok && result.data) {
+          setLivePass(result.data);
+          if (result.data.status === "pending") {
+            timeoutId = setTimeout(loadPass, 8000);
+          }
+        } else {
+          timeoutId = setTimeout(loadPass, 15000);
+        }
       } catch {
         // Keep the initial pending pass visible if polling briefly fails.
+        if (active) timeoutId = setTimeout(loadPass, 15000);
       }
     };
 
     loadPass();
-    const interval = setInterval(loadPass, 4000);
 
     return () => {
       active = false;
-      clearInterval(interval);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [passToken]);
 

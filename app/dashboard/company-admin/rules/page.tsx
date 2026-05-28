@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { IdCard, Loader2, Camera, CheckCircle2, AlertCircle, Users, Briefcase, Car, Plus, Trash2, ListPlus, Lock, ClipboardList, MapPin, Crosshair, QrCode, MessageSquareText } from "lucide-react";
+import { IdCard, Loader2, Camera, CheckCircle2, AlertCircle, Users, Briefcase, Car, Plus, Trash2, ListPlus, Lock, ClipboardList, MapPin, Crosshair, QrCode, MessageSquareText, Phone } from "lucide-react";
 import { useBuildingRules } from "@/hooks/useBuildingRules";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
@@ -46,6 +46,20 @@ export default function BuildingRulesPage() {
   const allowedRadius = Number.isNaN(parsedRadius) ? 200 : parsedRadius;
   const isCurrentDeviceOutsideSavedLocation =
     Boolean(rules.distanceTest) && rules.distanceTest!.distanceMeters > allowedRadius;
+
+  const requiredControl = (
+    id: string,
+    label: string,
+    enabled: boolean,
+    required: boolean,
+    field: string,
+    setter: (value: boolean) => void
+  ) => (
+    <div className={`flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 ${!enabled ? "opacity-50" : ""}`}>
+      <Label htmlFor={id} className="text-sm font-bold text-slate-700">{label}</Label>
+      <Switch id={id} checked={enabled && required} disabled={!enabled || rules.updatingRules} onCheckedChange={(checked) => rules.handleToggleRule(field, checked, setter)} />
+    </div>
+  );
 
   return (
     <PageContainer className="max-w-6xl">
@@ -89,15 +103,36 @@ export default function BuildingRulesPage() {
               </CardHeader>
               <CardContent className="grid gap-3">
                 <ToggleCard
+                  id="phone-toggle"
+                  title="Phone number"
+                  description="Ask visitors for a phone number."
+                  icon={Phone}
+                  checked={rules.askPhone}
+                  disabled={rules.updatingRules}
+                  onCheckedChange={(checked) => rules.handleToggleEnabledRule("ask_phone", checked, rules.setAskPhone, "require_phone", rules.setRequirePhone)}
+                />
+                {requiredControl("phone-required-toggle", "Require phone number", rules.askPhone, rules.requirePhone, "require_phone", rules.setRequirePhone)}
+                <ToggleCard
+                  id="id-toggle"
+                  title="ID / passport number"
+                  description="Ask visitors for an ID, passport, or document number."
+                  icon={IdCard}
+                  checked={rules.askId}
+                  disabled={rules.updatingRules}
+                  onCheckedChange={(checked) => rules.handleToggleEnabledRule("ask_id", checked, rules.setAskId, "require_id", rules.setRequireId)}
+                />
+                {requiredControl("id-required-toggle", "Require ID/passport number", rules.askId, rules.requireId, "require_id", rules.setRequireId)}
+                <ToggleCard
                   id="purpose-toggle"
                   title="Purpose of visit"
                   description="Capture a short reason for entry so admins can audit visitor intent."
                   icon={Briefcase}
                   checked={rules.askPurpose}
                   disabled={rules.updatingRules}
-                  onCheckedChange={(checked) => rules.handleToggleRule("ask_purpose", checked, rules.setAskPurpose)}
+                  onCheckedChange={(checked) => rules.handleToggleEnabledRule("ask_purpose", checked, rules.setAskPurpose, "require_purpose", rules.setRequirePurpose)}
                   tone="success"
                 />
+                {requiredControl("purpose-required-toggle", "Require purpose of visit", rules.askPurpose, rules.requirePurpose, "require_purpose", rules.setRequirePurpose)}
                 <ToggleCard
                   id="vehicle-toggle"
                   title="Vehicle registration"
@@ -105,9 +140,10 @@ export default function BuildingRulesPage() {
                   icon={Car}
                   checked={rules.askVehicle}
                   disabled={rules.updatingRules}
-                  onCheckedChange={(checked) => rules.handleToggleRule("ask_vehicle", checked, rules.setAskVehicle)}
+                  onCheckedChange={(checked) => rules.handleToggleEnabledRule("ask_vehicle", checked, rules.setAskVehicle, "require_vehicle", rules.setRequireVehicle)}
                   tone="warning"
                 />
+                {requiredControl("vehicle-required-toggle", "Require vehicle registration", rules.askVehicle, rules.requireVehicle, "require_vehicle", rules.setRequireVehicle)}
               </CardContent>
             </Card>
 
@@ -129,8 +165,9 @@ export default function BuildingRulesPage() {
                   icon={Users}
                   checked={rules.askHost}
                   disabled={rules.updatingRules}
-                  onCheckedChange={(checked) => rules.handleToggleRule("ask_host", checked, rules.setAskHost)}
+                  onCheckedChange={(checked) => rules.handleToggleEnabledRule("ask_host", checked, rules.setAskHost, "require_host", rules.setRequireHost)}
                 />
+                {requiredControl("host-required-toggle", "Require host selection", rules.askHost, rules.requireHost, "require_host", rules.setRequireHost)}
               </CardContent>
             </Card>
 

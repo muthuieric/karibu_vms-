@@ -62,7 +62,7 @@ type GuardVisitorsTableProps = {
   onOtpInputChange: (value: string) => void;
   onConfirmOTP: (visitor: Visitor) => void;
   onCancelOTP: () => void;
-  onSendOTP: (id: string, phone: string) => void;
+  onSendOTP: (id: string) => void;
   onApprovePass: (visitor: Visitor) => void;
   onCheckOut: (id: string) => void;
   onDirectApprove: (visitor: Visitor) => void;
@@ -201,7 +201,7 @@ export default function GuardVisitorsTable({
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end">
           <Button
             size="sm"
-            onClick={() => onSendOTP(visitor.id, visitor.phone)}
+            onClick={() => onSendOTP(visitor.id)}
             disabled={sendingOtpId === visitor.id}
             className="w-full sm:w-auto whitespace-nowrap font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
             variant="outline"
@@ -324,11 +324,11 @@ export default function GuardVisitorsTable({
                     <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
                       <div>
                         <span className="block text-xs font-semibold text-slate-400">Phone</span>
-                        <span className="font-medium text-slate-700">{visitor.phone || "—"}</span>
+                        <span className="font-medium text-slate-700">{visitor.phone || "Not provided"}</span>
                       </div>
                       <div>
                         <span className="block text-xs font-semibold text-slate-400">ID Number</span>
-                        <span className="font-medium text-slate-700">{visitor.id_number || "—"}</span>
+                        <span className="font-medium text-slate-700">{visitor.id_number || "Not provided"}</span>
                       </div>
                     </div>
 
@@ -404,8 +404,8 @@ export default function GuardVisitorsTable({
                         </TableCell>
 
                         <TableCell>
-                          <div className="text-sm font-medium text-slate-700 whitespace-nowrap">{visitor.phone || "—"}</div>
-                          <div className="text-xs text-slate-500 whitespace-nowrap mt-0.5">{visitor.id_number || "No ID"}</div>
+                          <div className="text-sm font-medium text-slate-700 whitespace-nowrap">{visitor.phone || "Not provided"}</div>
+                          <div className="text-xs text-slate-500 whitespace-nowrap mt-0.5">{visitor.id_number || "ID not provided"}</div>
                         </TableCell>
 
                         <TableCell>

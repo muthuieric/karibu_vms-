@@ -95,6 +95,12 @@ function getStoredBillingPeriod(company: CompanyBillingFields) {
   };
 }
 
+function getUtcBillingMonthKey(dateValue: string) {
+  const date = new Date(dateValue);
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return `${safeDate.getUTCFullYear()}-${String(safeDate.getUTCMonth() + 1).padStart(2, "0")}-01`;
+}
+
 async function updateCompanyWithOptionalHardLock(
   supabaseAdmin: ReturnType<typeof createSupabaseAdmin>,
   companyId: string,
@@ -223,18 +229,32 @@ export async function getCurrentBillingSummary(companyId: string) {
     });
   }
 
-  const { count, error: visitorsError } = await supabaseAdmin
-    .from("visitors")
-    .select("*", { count: "exact", head: true })
+  let visitorCount = 0;
+  const usageResult = await supabaseAdmin
+    .from("billing_usage")
+    .select("visitor_count")
     .eq("company_id", companyId)
-    .gte("created_at", periodStart)
-    .lt("created_at", periodEnd);
+    .eq("billing_month", getUtcBillingMonthKey(periodStart))
+    .maybeSingle();
 
-  if (visitorsError) {
-    throw new Error("Failed to calculate monthly visitor usage.");
+  if (!usageResult.error && usageResult.data) {
+    visitorCount = Number(usageResult.data.visitor_count || 0);
+  } else {
+    const { count, error: visitorsError } = await supabaseAdmin
+      .from("visitors")
+      .select("*", { count: "exact", head: true })
+      .eq("company_id", companyId)
+      .gte("created_at", periodStart)
+      .lt("created_at", periodEnd);
+
+    if (visitorsError) {
+      throw new Error("Failed to calculate monthly visitor usage.");
+    }
+
+    visitorCount = count || 0;
   }
 
-  const calculation = calculateMonthlyCharge(activePlan, count || 0, { isTrialActive: isActiveTrial });
+  const calculation = calculateMonthlyCharge(activePlan, visitorCount, { isTrialActive: isActiveTrial });
 
   let transactionsResult = await supabaseAdmin
     .from("transactions")

@@ -9,6 +9,7 @@ export type RedFlag = {
   name: string;
   id_number: string;
   phone: string;
+  vehicle_reg?: string;
   reason: string;
 };
 
@@ -17,7 +18,8 @@ export function useCompanyBlacklist() {
   const [redFlags, setRedFlags] = useState<RedFlag[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmittingRedFlag, setIsSubmittingRedFlag] = useState(false);
-  const [newRedFlag, setNewRedFlag] = useState({ name: "", id_number: "", phone: "", reason: "" });
+  const [identifierWarning, setIdentifierWarning] = useState(false);
+  const [newRedFlag, setNewRedFlag] = useState({ name: "", id_number: "", phone: "", vehicle_reg: "", reason: "" });
 
   const fetchData = async () => {
     setLoading(true);
@@ -34,6 +36,18 @@ export function useCompanyBlacklist() {
         setCompanyId(profileData.company_id);
 
         try {
+          const { data: companyRules } = await supabase
+            .from("companies")
+            .select("ask_phone, ask_id, ask_vehicle")
+            .eq("id", profileData.company_id)
+            .single();
+
+          setIdentifierWarning(
+            companyRules?.ask_phone === false &&
+              companyRules?.ask_id === false &&
+              companyRules?.ask_vehicle !== true
+          );
+
           const res = await fetch(`/api/red-flags?company_id=${profileData.company_id}`, { headers: await getAuthHeaders() });
           if (res.ok) {
             const json = await res.json();
@@ -68,7 +82,7 @@ export function useCompanyBlacklist() {
 
       if (!response.ok) throw new Error(result.error);
 
-      setNewRedFlag({ name: "", id_number: "", phone: "", reason: "" });
+      setNewRedFlag({ name: "", id_number: "", phone: "", vehicle_reg: "", reason: "" });
       onSuccess?.();
       fetchData();
     } catch (error) {
@@ -100,6 +114,7 @@ export function useCompanyBlacklist() {
     loading,
     isSubmittingRedFlag,
     newRedFlag,
+    identifierWarning,
     setNewRedFlag,
     handleCreateRedFlag,
     handleDeleteRedFlag,

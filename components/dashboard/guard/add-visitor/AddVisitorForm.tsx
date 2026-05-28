@@ -32,6 +32,11 @@ type AddVisitorFormProps = {
   askHost: boolean;
   askPurpose: boolean;
   askVehicle: boolean;
+  requirePhone: boolean;
+  requireId: boolean;
+  requireHost: boolean;
+  requirePurpose: boolean;
+  requireVehicle: boolean;
   requirePhoto: boolean;
   isSubmitting: boolean;
   newVisitor: VisitorFormData;
@@ -61,6 +66,11 @@ export default function AddVisitorForm({
   askHost,
   askPurpose,
   askVehicle,
+  requirePhone,
+  requireId,
+  requireHost,
+  requirePurpose,
+  requireVehicle,
   requirePhoto,
   isSubmitting,
   newVisitor,
@@ -113,9 +123,9 @@ export default function AddVisitorForm({
 
             {askPhone && (
               <div className="space-y-2">
-                <Label htmlFor="guard-visitor-phone" className="font-bold text-slate-800">Phone Number <span className="text-red-500">*</span></Label>
+                <Label htmlFor="guard-visitor-phone" className="font-bold text-slate-800">Phone Number {requirePhone && <span className="text-red-500">*</span>}</Label>
                 <PhoneInput
-                  inputProps={{ id: "guard-visitor-phone", required: true }}
+                  inputProps={{ id: "guard-visitor-phone", required: requirePhone }}
                   country="ke"
                   value={newVisitor.phone}
                   onChange={phone => onNewVisitorChange({ ...newVisitor, phone })}
@@ -142,10 +152,10 @@ export default function AddVisitorForm({
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="guard-id-number" className="font-bold text-slate-800">ID / Document No. <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="guard-id-number" className="font-bold text-slate-800">ID / Document No. {requireId && <span className="text-red-500">*</span>}</Label>
                   <Input
                     id="guard-id-number"
-                    required
+                    required={requireId}
                     value={newVisitor.id_number}
                     onChange={(e) => onNewVisitorChange({ ...newVisitor, id_number: e.target.value })}
                     placeholder="Enter ID number"
@@ -164,7 +174,7 @@ export default function AddVisitorForm({
             <div className="grid gap-4 md:grid-cols-2">
               {askHost && (
                 <div className="relative space-y-2 md:col-span-2" ref={dropdownRef}>
-                  <Label htmlFor="guard-host-search" className="font-bold text-slate-800">Who are you visiting?</Label>
+                  <Label htmlFor="guard-host-search" className="font-bold text-slate-800">Who are you visiting? {requireHost && <span className="text-red-500">*</span>}</Label>
                   <Input
                     id="guard-host-search"
                     type="text"
@@ -180,7 +190,7 @@ export default function AddVisitorForm({
                     autoComplete="off"
                   />
 
-                  <input type="text" className="hidden" required value={newVisitor.host_id} onChange={() => {}} />
+                  <input type="text" className="hidden" required={requireHost} value={newVisitor.host_id} onChange={() => {}} />
 
                   {isHostDropdownOpen && (
                     <div className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg">
@@ -217,9 +227,10 @@ export default function AddVisitorForm({
 
               {askPurpose && (
                 <div className="space-y-2">
-                  <Label htmlFor="guard-purpose" className="font-bold text-slate-800">Purpose of Visit</Label>
+                  <Label htmlFor="guard-purpose" className="font-bold text-slate-800">Purpose of Visit {requirePurpose && <span className="text-red-500">*</span>}</Label>
                   <Input
                     id="guard-purpose"
+                    required={requirePurpose}
                     value={newVisitor.purpose}
                     onChange={(e) => onNewVisitorChange({ ...newVisitor, purpose: e.target.value })}
                     placeholder="e.g. Meeting, Delivery, Interview"
@@ -230,9 +241,10 @@ export default function AddVisitorForm({
 
               {askVehicle && (
                 <div className="space-y-2">
-                  <Label htmlFor="guard-vehicle" className="font-bold text-slate-800">Vehicle Registration</Label>
+                  <Label htmlFor="guard-vehicle" className="font-bold text-slate-800">Vehicle Registration {requireVehicle && <span className="text-red-500">*</span>}</Label>
                   <Input
                     id="guard-vehicle"
+                    required={requireVehicle}
                     value={newVisitor.vehicle_reg}
                     onChange={(e) => onNewVisitorChange({ ...newVisitor, vehicle_reg: e.target.value })}
                     placeholder="e.g. KCA 123A (Leave blank if walk-in)"
