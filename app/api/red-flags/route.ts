@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 import { assertResourceCompanyAccess } from "@/lib/api-resources";
 import { optionalText, requireText, requireUuid } from "@/lib/validation";
-import { decryptValue, encryptValue, getLast4, hmacValue, normalizeIdentifier, normalizePhone } from "@/lib/crypto-fields";
+import { decryptValue, encryptValue, getActiveHashKeyId, getLast4, hmacValue, normalizeIdentifier, normalizePhone } from "@/lib/crypto-fields";
 import { writeAuditLog } from "@/lib/audit-log";
 
 function addMonths(date: Date, months: number) {
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     const phoneLast4 = normalizedPhone ? getLast4(normalizedPhone) : null;
     const idNumberLast4 = normalizedIdNumber ? getLast4(normalizedIdNumber) : null;
     const vehicleRegLast4 = normalizedVehicleReg ? getLast4(normalizedVehicleReg) : null;
+    const activeHashKeyId = getActiveHashKeyId();
 
     const { data, error } = await supabaseAdmin
       .from("red_flags")
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
         vehicle_reg_encrypted: normalizedVehicleReg ? encryptValue(normalizedVehicleReg) : null,
         vehicle_reg_hash: normalizedVehicleReg ? hmacValue(normalizedVehicleReg) : null,
         vehicle_reg_last4: vehicleRegLast4,
+        hash_key_id: activeHashKeyId,
         reason: safeReason,
         reason_category: optionalText(reason_category, 80),
         action: optionalText(action, 80) || "deny_entry",
@@ -176,6 +178,7 @@ export async function PATCH(request: Request) {
     const updatePayload: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
+    let identifierHashChanged = false;
 
     const visitorName = optionalText(name, 120);
     if (visitorName) {
@@ -189,6 +192,7 @@ export async function PATCH(request: Request) {
       updatePayload.phone_encrypted = normalizedPhone ? encryptValue(normalizedPhone) : null;
       updatePayload.phone_hash = normalizedPhone ? hmacValue(normalizedPhone) : null;
       updatePayload.phone_last4 = normalizedPhone ? getLast4(normalizedPhone) : null;
+      identifierHashChanged = true;
     }
 
     if (id_number !== undefined) {
@@ -197,6 +201,7 @@ export async function PATCH(request: Request) {
       updatePayload.id_number_encrypted = normalizedIdNumber ? encryptValue(normalizedIdNumber) : null;
       updatePayload.id_number_hash = normalizedIdNumber ? hmacValue(normalizedIdNumber) : null;
       updatePayload.id_number_last4 = normalizedIdNumber ? getLast4(normalizedIdNumber) : null;
+      identifierHashChanged = true;
     }
 
     if (vehicle_reg !== undefined) {
@@ -204,6 +209,11 @@ export async function PATCH(request: Request) {
       updatePayload.vehicle_reg_encrypted = normalizedVehicleReg ? encryptValue(normalizedVehicleReg) : null;
       updatePayload.vehicle_reg_hash = normalizedVehicleReg ? hmacValue(normalizedVehicleReg) : null;
       updatePayload.vehicle_reg_last4 = normalizedVehicleReg ? getLast4(normalizedVehicleReg) : null;
+      identifierHashChanged = true;
+    }
+
+    if (identifierHashChanged) {
+      updatePayload.hash_key_id = getActiveHashKeyId();
     }
 
     if (reason !== undefined) updatePayload.reason = requireText(reason, "Restriction reason", 500);

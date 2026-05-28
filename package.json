@@ -8,6 +8,7 @@
     "start": "next start",
     "retention:cleanup": "node scripts/retention-cleanup.mjs",
     "privacy:backfill": "node scripts/backfill-sensitive-data.mjs",
+    "privacy:rotate-keys": "node scripts/rotate-privacy-keys.mjs",
     "lint": "eslint"
   },
   "dependencies": {

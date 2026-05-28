@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { optionalText, requireText, requireUuid } from "@/lib/validation";
 import { createVisitorPassToken, getVisitorPassUrl } from "@/lib/visitor-pass";
 import { isQrPassBackendEnabledForPlan, resolveVisitorVerificationMethod } from "@/lib/visitor-verification";
-import { encryptValue, getLast4, hmacValue, normalizeIdentifier, normalizePhone } from "@/lib/crypto-fields";
+import { encryptValue, getActiveHashKeyId, getLast4, hmacValue, hmacValuesForAllKeys, normalizeIdentifier, normalizePhone } from "@/lib/crypto-fields";
 import { incrementBillingUsage } from "@/lib/billing/usage";
 import { writeAuditLog } from "@/lib/audit-log";
 
@@ -94,6 +94,10 @@ function getIdentifierMatchLabel(matches: Array<"phone" | "id_number" | "vehicle
   return matches[0] || "identifier_not_available";
 }
 
+function inFilter(column: string, values: string[]) {
+  return values.length > 0 ? `${column}.in.(${values.join(",")})` : null;
+}
+
 export async function POST(request: Request) {
   try {
     const rateLimited = checkRateLimit(request, { keyPrefix: "visitor-register", limit: 10, windowMs: 60_000 });
@@ -150,6 +154,7 @@ export async function POST(request: Request) {
     const safePhoneFields = phoneEnabled ? phoneFields : { encrypted: null, hash: null, last4: null, normalized: "" };
     const safeIdNumberFields = idNumberEnabled ? idNumberFields : { encrypted: null, hash: null, last4: null, normalized: "" };
     const safeVehicleRegFields = vehicleRegEnabled ? vehicleRegFields : { encrypted: null, hash: null, last4: null, normalized: "" };
+    const activeHashKeyId = getActiveHashKeyId();
 
     let safeGateId: string | null = null;
     if (payload.gate_id) {
@@ -178,10 +183,13 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
+    const phoneHashes = safePhoneFields.normalized ? hmacValuesForAllKeys(safePhoneFields.normalized) : [];
+    const idNumberHashes = safeIdNumberFields.normalized ? hmacValuesForAllKeys(safeIdNumberFields.normalized) : [];
+    const vehicleRegHashes = safeVehicleRegFields.normalized ? hmacValuesForAllKeys(safeVehicleRegFields.normalized) : [];
     const redFlagFilters = [
-      safePhoneFields.hash ? `phone_hash.eq.${safePhoneFields.hash}` : null,
-      safeIdNumberFields.hash ? `id_number_hash.eq.${safeIdNumberFields.hash}` : null,
-      safeVehicleRegFields.hash ? `vehicle_reg_hash.eq.${safeVehicleRegFields.hash}` : null,
+      inFilter("phone_hash", phoneHashes),
+      inFilter("id_number_hash", idNumberHashes),
+      inFilter("vehicle_reg_hash", vehicleRegHashes),
     ].filter(Boolean);
 
     if (redFlagFilters.length > 0) {
@@ -203,13 +211,13 @@ export async function POST(request: Request) {
 
       if (restrictedVisitors?.length) {
         const matchedIdentifiers: Array<"phone" | "id_number" | "vehicle_reg"> = [];
-        if (safePhoneFields.hash && restrictedVisitors.some((flag) => flag.phone_hash === safePhoneFields.hash)) {
+        if (phoneHashes.length && restrictedVisitors.some((flag) => phoneHashes.includes(flag.phone_hash || ""))) {
           matchedIdentifiers.push("phone");
         }
-        if (safeIdNumberFields.hash && restrictedVisitors.some((flag) => flag.id_number_hash === safeIdNumberFields.hash)) {
+        if (idNumberHashes.length && restrictedVisitors.some((flag) => idNumberHashes.includes(flag.id_number_hash || ""))) {
           matchedIdentifiers.push("id_number");
         }
-        if (safeVehicleRegFields.hash && restrictedVisitors.some((flag) => flag.vehicle_reg_hash === safeVehicleRegFields.hash)) {
+        if (vehicleRegHashes.length && restrictedVisitors.some((flag) => vehicleRegHashes.includes(flag.vehicle_reg_hash || ""))) {
           matchedIdentifiers.push("vehicle_reg");
         }
 
@@ -274,6 +282,7 @@ export async function POST(request: Request) {
       vehicle_reg_encrypted: safeVehicleRegFields.encrypted,
       vehicle_reg_hash: safeVehicleRegFields.hash,
       vehicle_reg_last4: safeVehicleRegFields.last4,
+      hash_key_id: activeHashKeyId,
       status: "pending",
       photo_url: payload.photo_url || null,
       custom_data: { ...(payload.custom_data || {}), source: payload.custom_data?.source || "public_qr" },
