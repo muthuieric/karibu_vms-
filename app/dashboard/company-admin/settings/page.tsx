@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
-import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, SlidersHorizontal } from "lucide-react";
+import { getAuthHeaders } from "@/lib/client-auth";
+import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, SlidersHorizontal, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
+
+const ANONYMISE_VISITORS_ENDPOINT = "/api/company-admin/visitors/anonymise-checked-out";
 
 export default function AccountPage() {
   const [userEmail, setUserEmail] = useState("");
@@ -19,6 +23,10 @@ export default function AccountPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loadingPass, setLoadingPass] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
+  const [eligibleCount, setEligibleCount] = useState<number | null>(null);
+  const [loadingEligibleCount, setLoadingEligibleCount] = useState(true);
+  const [anonymiseConfirmation, setAnonymiseConfirmation] = useState("");
+  const [anonymisingVisitors, setAnonymisingVisitors] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -40,6 +48,40 @@ export default function AccountPage() {
     fetchProfile();
   }, []);
 
+  const fetchEligibleCount = useCallback(async () => {
+    await Promise.resolve();
+    setLoadingEligibleCount(true);
+    try {
+      const response = await fetch(ANONYMISE_VISITORS_ENDPOINT, {
+        cache: "no-store",
+        headers: await getAuthHeaders(),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Checked-out visitors could not be counted.");
+      }
+
+      setEligibleCount(Number(payload.eligibleCount || 0));
+    } catch (error) {
+      setEligibleCount(null);
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Checked-out visitors could not be counted.",
+      });
+    } finally {
+      setLoadingEligibleCount(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      fetchEligibleCount();
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [fetchEligibleCount]);
+
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -56,6 +98,38 @@ export default function AccountPage() {
       setConfirmPassword("");
     }
     setLoadingPass(false);
+  };
+
+  const handleAnonymiseVisitors = async () => {
+    setMessage(null);
+    setAnonymisingVisitors(true);
+
+    try {
+      const response = await fetch(ANONYMISE_VISITORS_ENDPOINT, {
+        method: "POST",
+        headers: await getAuthHeaders(true),
+        body: JSON.stringify({ confirmation: anonymiseConfirmation }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Checked-out visitors could not be anonymised.");
+      }
+
+      setMessage({
+        type: "success",
+        text: `${payload.anonymisedCount || 0} checked-out visitor${payload.anonymisedCount === 1 ? "" : "s"} anonymised successfully.`,
+      });
+      setAnonymiseConfirmation("");
+      await fetchEligibleCount();
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Checked-out visitors could not be anonymised.",
+      });
+    } finally {
+      setAnonymisingVisitors(false);
+    }
   };
 
   // Helper to get initials for the avatar
@@ -174,6 +248,61 @@ export default function AccountPage() {
                     </Button>
                   </div>
                 </form>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[1.4rem] border-red-100 bg-white shadow-sm">
+              <CardHeader className="pb-6">
+                <CardTitle className="flex items-center text-xl font-bold text-red-900">
+                  <AlertTriangle className="mr-2 h-5 w-5 text-red-500" /> Danger Zone
+                </CardTitle>
+                <CardDescription>
+                  Permanently remove personal details from visitors who have already checked out.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="rounded-xl border border-red-100 bg-red-50 p-4">
+                  <p className="text-sm font-bold text-red-900">
+                    {loadingEligibleCount
+                      ? "Counting checked-out visitors..."
+                      : `${eligibleCount ?? 0} checked-out visitor${eligibleCount === 1 ? "" : "s"} available to anonymise`}
+                  </p>
+                  <p className="mt-1 text-sm text-red-800">
+                    This clears visitor personal fields and photos while leaving billing, transactions, audit logs, red flags, companies, and profiles untouched.
+                  </p>
+                </div>
+
+                <div className="max-w-md space-y-1.5">
+                  <Label htmlFor="anonymise-confirmation" className="font-bold text-slate-700 text-xs uppercase tracking-wider">
+                    Type ANONYMISE to confirm
+                  </Label>
+                  <Input
+                    id="anonymise-confirmation"
+                    value={anonymiseConfirmation}
+                    onChange={(event) => setAnonymiseConfirmation(event.target.value)}
+                    className="h-11 border-red-100 bg-red-50 focus:bg-white focus:ring-2 focus:ring-red-500"
+                    placeholder="ANONYMISE"
+                    autoComplete="off"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  disabled={
+                    anonymisingVisitors ||
+                    loadingEligibleCount ||
+                    anonymiseConfirmation !== "ANONYMISE" ||
+                    !eligibleCount
+                  }
+                  onClick={handleAnonymiseVisitors}
+                  className="w-full bg-red-600 text-sm font-bold text-white shadow-sm hover:bg-red-700 sm:w-auto"
+                >
+                  {anonymisingVisitors ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Anonymising...</>
+                  ) : (
+                    "Anonymise checked-out visitors"
+                  )}
+                </Button>
               </CardContent>
             </Card>
           </div>
