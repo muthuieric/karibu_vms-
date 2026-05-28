@@ -4,6 +4,7 @@ import {
   calculateMonthlyCharge,
   getBasePlan,
   getBillingPeriod,
+  getBillingPeriodKey,
   getPlanLabel,
   isTrialPlan,
   normalizePlan,
@@ -91,7 +92,7 @@ function getStoredBillingPeriod(company: CompanyBillingFields) {
   return {
     periodStart: safeStart.toISOString(),
     periodEnd: safeEnd.toISOString(),
-    periodKey: `${safeStart.getUTCFullYear()}-${String(safeStart.getUTCMonth() + 1).padStart(2, "0")}-${String(safeStart.getUTCDate()).padStart(2, "0")}`,
+    periodKey: getBillingPeriodKey(safeStart),
   };
 }
 
@@ -335,14 +336,37 @@ export async function reconcileCompanyBilling(companyId: string) {
   const amountPaid = (allPaidTransactions || []).reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
 
   await updateCompanyWithOptionalHardLock(supabaseAdmin, companyId, {
-      amount_paid: amountPaid,
-      current_balance: summary.currentBalance,
-      billing_period_start: summary.periodStart,
-      billing_period_end: summary.periodEnd,
-      subscription_status: summary.isTrial ? "trial" : summary.currentBalance > 0 ? "unpaid" : "paid",
-      // Hard lock is controlled by superadmin; unpaid balances should soft-lock access until settled.
-      is_locked: summary.currentBalance > 0,
-    });
+    current_balance: summary.currentBalance,
+    amount_paid: amountPaid,
+    subscription_status: summary.currentBalance > 0 ? "unpaid" : "active",
+    is_locked: summary.currentBalance > 0,
+    hard_locked: summary.currentBalance > 0,
+  });
 
   return summary;
+}
+
+export async function canCompanyRegisterVisitor(companyId: string) {
+  const summary = await getCurrentBillingSummary(companyId);
+  if (summary.company.hard_locked || summary.accountStatus === "locked") {
+    return {
+      allowed: false,
+      summary,
+      reason: "hard_locked" as const,
+    };
+  }
+
+  if (summary.currentBalance > 0) {
+    return {
+      allowed: true,
+      summary,
+      reason: "outstanding_balance" as const,
+    };
+  }
+
+  return {
+    allowed: true,
+    summary,
+    reason: "ok" as const,
+  };
 }
