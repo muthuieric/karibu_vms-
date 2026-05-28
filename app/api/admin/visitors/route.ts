@@ -93,6 +93,7 @@ export async function GET(request: Request) {
       resourceType: visitorId ? "visitor" : "visitor_collection",
       resourceId: visitorId || null,
       metadata: { recordCount: data?.length || 0 },
+      dedupeWindowSeconds: visitorId ? 300 : 60,
     });
 
     return NextResponse.json({ data: ((data || []) as unknown as Record<string, unknown>[]).map((visitor) => toAdminVisitor(visitor)) });

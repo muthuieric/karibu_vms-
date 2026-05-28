@@ -11,6 +11,7 @@ type AuditLogInput = {
   resourceType?: string | null;
   resourceId?: string | null;
   metadata?: Record<string, unknown>;
+  dedupeWindowSeconds?: number;
 };
 
 export async function writeAuditLog({
@@ -21,7 +22,45 @@ export async function writeAuditLog({
   resourceType = null,
   resourceId = null,
   metadata = {},
+  dedupeWindowSeconds = 0,
 }: AuditLogInput) {
+  if (dedupeWindowSeconds > 0) {
+    const since = new Date(Date.now() - dedupeWindowSeconds * 1000).toISOString();
+
+    let existingQuery = supabaseAdmin
+      .from("audit_logs")
+      .select("id")
+      .eq("action", action)
+      .gte("created_at", since)
+      .limit(1);
+
+    existingQuery = companyId
+      ? existingQuery.eq("company_id", companyId)
+      : existingQuery.is("company_id", null);
+
+    existingQuery = actor?.id
+      ? existingQuery.eq("actor_profile_id", actor.id)
+      : existingQuery.is("actor_profile_id", null);
+
+    existingQuery = resourceType
+      ? existingQuery.eq("resource_type", resourceType)
+      : existingQuery.is("resource_type", null);
+
+    existingQuery = resourceId
+      ? existingQuery.eq("resource_id", resourceId)
+      : existingQuery.is("resource_id", null);
+
+    const { data: existing, error: dedupeError } = await existingQuery;
+
+    if (!dedupeError && existing && existing.length > 0) {
+      return;
+    }
+
+    if (dedupeError) {
+      console.error("Audit log dedupe check failed:", { action, resourceType, resourceId, error: dedupeError });
+    }
+  }
+
   const payload = {
     company_id: companyId,
     actor_profile_id: actor?.id ?? null,

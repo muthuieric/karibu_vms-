@@ -147,6 +147,7 @@ export async function GET(request: Request) {
       resourceType: visitorId ? "visitor" : "visitor_collection",
       resourceId: visitorId || null,
       metadata: { recordCount: data?.length || 0, activeOnly: true },
+      dedupeWindowSeconds: visitorId ? 300 : 60,
     });
 
     const hydratedVisitors = await hydrateHostNames(auth.supabaseAdmin, (data || []) as unknown as Record<string, unknown>[]);

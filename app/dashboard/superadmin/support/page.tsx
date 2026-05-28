@@ -14,8 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getAuthHeaders } from "@/lib/client-auth";
 
-const SUPPORT_STATUSES = ["pending", "in_progress", "resolved"] as const;
-type SupportStatus = (typeof SUPPORT_STATUSES)[number];
+type SupportStatus = "pending" | "in_progress" | "resolved";
 
 type SupportTicket = {
   id: string;
@@ -79,7 +78,11 @@ export default function SuperadminSupportPage() {
   }, [statusFilter]);
 
   useEffect(() => {
-    void fetchTickets();
+    const timeoutId = window.setTimeout(() => {
+      void fetchTickets();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [fetchTickets]);
 
   const updateTicketStatus = async (ticketId: string, status: SupportStatus) => {
