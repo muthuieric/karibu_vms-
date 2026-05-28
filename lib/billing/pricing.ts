@@ -149,6 +149,10 @@ export function addOneMonth(date: Date) {
   return next;
 }
 
+export function getBillingPeriodKey(date = new Date()) {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 export function getBillingPeriod(date = new Date()) {
   const periodStart = new Date(date);
   const periodEnd = addOneMonth(periodStart);
@@ -156,7 +160,7 @@ export function getBillingPeriod(date = new Date()) {
   return {
     periodStart: periodStart.toISOString(),
     periodEnd: periodEnd.toISOString(),
-    periodKey: `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, "0")}-${String(periodStart.getUTCDate()).padStart(2, "0")}`,
+    periodKey: getBillingPeriodKey(periodStart),
   };
 }
 
