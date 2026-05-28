@@ -18,13 +18,6 @@ type CustomField = {
 
 type Department = { id: string; name: string };
 type Host = { id: string; name: string; department_id: string };
-type RedFlag = {
-  id_number?: string | null;
-  phone?: string | null;
-  name?: string | null;
-  reason?: string | null;
-};
-
 export interface AddVisitorModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -39,12 +32,6 @@ export interface AddVisitorModalProps {
   verificationMethod: VisitorVerificationMethod | "basic_default";
   qrPassEnabled: boolean;
   onVisitorAdded?: (visitor: Visitor) => void;
-}
-
-function createClientPassToken() {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 export default function AddVisitorModal({
@@ -165,11 +152,6 @@ export default function AddVisitorModal({
       return;
     }
 
-    if (askHost && !newVisitor.host_id) {
-      alert("Please select a valid host from the dropdown list.");
-      return;
-    }
-
     setIsSubmitting(true);
     let uploadedPhotoUrl = null;
 
@@ -179,38 +161,7 @@ export default function AddVisitorModal({
         finalPhone = newVisitor.phone.startsWith("+") ? newVisitor.phone : `+${newVisitor.phone}`;
       }
 
-      // 1. ROBUST BLACKLIST SECURITY CHECK
-      const redFlagsRes = await fetch(`/api/red-flags?company_id=${companyId}`, { headers: await getAuthHeaders() });
-      if (redFlagsRes.ok) {
-        const redFlagsJson = await redFlagsRes.json();
-        const blacklisted = (redFlagsJson.data || []) as RedFlag[];
-
-        if (blacklisted.length > 0) {
-          const isBanned = blacklisted.find((flag) => {
-            const matchId = askId && flag.id_number && newVisitor.id_number && flag.id_number.trim() === newVisitor.id_number.trim();
-            const matchPhone = askPhone && flag.phone && finalPhone && flag.phone.trim() === finalPhone.trim();
-            const matchName = flag.name && newVisitor.name && flag.name.trim().toLowerCase() === newVisitor.name.trim().toLowerCase();
-
-            if (matchId || matchPhone) return true;
-
-            if (matchName) {
-              const hasDifferentId = askId && newVisitor.id_number && flag.id_number && newVisitor.id_number.trim() !== flag.id_number.trim();
-              const hasDifferentPhone = askPhone && finalPhone && flag.phone && finalPhone.trim() !== flag.phone.trim();
-              if (hasDifferentId || hasDifferentPhone) return false;
-              return true;
-            }
-            return false;
-          });
-
-          if (isBanned) {
-            alert(`ACCESS DENIED: This visitor is restricted from entering the building.\n\nReason: ${isBanned.reason}`);
-            setIsSubmitting(false);
-            return;
-          }
-        }
-      }
-
-      // 2. Upload Selfie
+      // 1. Upload Selfie
       if (selfieFile) {
         const compressedFile = await compressImage(selfieFile);
 
@@ -231,49 +182,50 @@ export default function AddVisitorModal({
         }
       }
 
-      // 3. Insert Visitor Record
+      // 2. Register Visitor Record
       if (verificationMethod === "qr_pass" && !qrPassEnabled) {
         throw new Error("QR Pass is selected but not enabled in environment settings.");
       }
 
       const finalGateId = guardGateId && guardGateId !== "" && guardGateId !== "unassigned" ? guardGateId : null;
 
-      const insertPayload = {
+      const registerPayload = {
         company_id: companyId,
+        gate_id: finalGateId,
         name: newVisitor.name.trim(),
         phone: finalPhone || "",
         document_type: askId ? newVisitor.doc_type : null,
         id_number: askId ? newVisitor.id_number.trim() : null,
         host_id: askHost && newVisitor.host_id ? newVisitor.host_id : null,
-        host_name: askHost && newVisitor.host_id ? hostSearchQuery : null,
         purpose: askPurpose ? newVisitor.purpose.trim() || null : null,
         vehicle_reg: askVehicle ? newVisitor.vehicle_reg.trim() || null : null,
-        status: "pending",
         photo_url: uploadedPhotoUrl,
         custom_data: { ...customAnswers, source: "guard_desk" },
-        gate_id: finalGateId,
-        verification_method: verificationMethod === "basic_default" ? null : verificationMethod,
-        pass_token: verificationMethod === "qr_pass" ? createClientPassToken() : null,
       };
 
-      const { data: createdVisitor, error } = await supabase
-        .from("visitors")
-        .insert([insertPayload])
-        .select("*")
-        .single();
+      const registerRes = await fetch("/api/visitors/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registerPayload),
+      });
+      const registerJson = await registerRes.json().catch(() => ({}));
 
-      if (error) {
-        console.error("Supabase visitor insert failed:", {
-          error,
-          companyId,
-          gateId: finalGateId,
-          hostId: insertPayload.host_id,
-        });
-        throw new Error(getSupabaseErrorMessage(error, "Failed to add visitor."));
+      if (!registerRes.ok) {
+        throw new Error(registerJson.error || "Failed to add visitor.");
       }
 
+      const createdVisitor = registerJson.data as Visitor | undefined;
       if (createdVisitor) {
-        onVisitorAdded?.(createdVisitor as Visitor);
+        try {
+          const params = new URLSearchParams({ company_id: companyId, id: createdVisitor.id });
+          const guardVisitorRes = await fetch(`/api/guard/visitors?${params.toString()}`, {
+            headers: await getAuthHeaders(),
+          });
+          const guardVisitorJson = await guardVisitorRes.json().catch(() => ({}));
+          onVisitorAdded?.((guardVisitorJson.data?.[0] as Visitor | undefined) || createdVisitor);
+        } catch {
+          onVisitorAdded?.(createdVisitor);
+        }
       }
 
       if (askHost && newVisitor.host_id && planTier !== "basic" && createdVisitor?.id && companyId) {

@@ -8,6 +8,16 @@ type ApprovePassPayload = {
   passToken?: string;
 };
 
+const MAX_PASS_CODE_ATTEMPTS = 12;
+const GUARD_SAFE_VISITOR_SELECT = "id, company_id, gate_id, name, phone_last4, document_type, id_number_last4, vehicle_reg_last4, status, created_at, checked_in_at, host_id, host_name, host_confirmed, host_confirmed_at, purpose, photo_url, custom_data, otp_code, pass_token, pass_code, pass_expired_at, verification_method";
+
+function isUniqueConstraintError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: string; message?: string; details?: string };
+  const text = `${candidate.message || ""} ${candidate.details || ""}`.toLowerCase();
+  return candidate.code === "23505" || text.includes("duplicate key") || text.includes("unique constraint");
+}
+
 export async function POST(request: Request) {
   try {
     const auth = await requireRole(request, ["guard", "company_admin", "superadmin"]);
@@ -84,48 +94,55 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Only pending passes can be approved." }, { status: 409 });
     }
 
-    const checkedInAt = new Date().toISOString();
-    let passCode = createVisitorPassCode();
-    let passCodeAvailable = false;
-    for (let attempt = 0; attempt < 10; attempt += 1) {
+    let lastUniqueError: unknown = null;
+    for (let attempt = 0; attempt < MAX_PASS_CODE_ATTEMPTS; attempt += 1) {
+      const checkedInAt = new Date().toISOString();
+      const passCode = createVisitorPassCode();
       const { data: existingCode, error: codeError } = await auth.supabaseAdmin
         .from("visitors")
         .select("id")
         .eq("company_id", visitor.company_id)
         .eq("pass_code", passCode)
+        .is("checked_out_at", null)
         .is("pass_expired_at", null)
         .neq("id", visitor.id)
         .limit(1);
 
       if (codeError) throw codeError;
-      if (!existingCode?.length) {
-        passCodeAvailable = true;
-        break;
+      if (existingCode?.length) {
+        continue;
       }
-      passCode = createVisitorPassCode();
+
+      const { data: updatedVisitor, error: updateError } = await auth.supabaseAdmin
+        .from("visitors")
+        .update({
+          status: "checked_in",
+          checked_in_at: checkedInAt,
+          pass_code: passCode,
+          verification_method: "qr_pass",
+        })
+        .eq("id", visitor.id)
+        .eq("company_id", visitor.company_id)
+        .eq("status", "pending")
+        .is("checked_out_at", null)
+        .is("pass_expired_at", null)
+        .select(GUARD_SAFE_VISITOR_SELECT)
+        .single();
+
+      if (!updateError) {
+        return NextResponse.json({ data: updatedVisitor });
+      }
+
+      if (isUniqueConstraintError(updateError)) {
+        lastUniqueError = updateError;
+        continue;
+      }
+
+      throw updateError;
     }
 
-    if (!passCodeAvailable) {
-      return NextResponse.json({ error: "Visitor pass code could not be generated. Please try again." }, { status: 409 });
-    }
-
-    const { data: updatedVisitor, error: updateError } = await auth.supabaseAdmin
-      .from("visitors")
-      .update({
-        status: "checked_in",
-        checked_in_at: checkedInAt,
-        pass_code: passCode,
-        verification_method: "qr_pass",
-      })
-      .eq("id", visitor.id)
-      .eq("company_id", visitor.company_id)
-      .eq("status", "pending")
-      .select("*")
-      .single();
-
-    if (updateError) throw updateError;
-
-    return NextResponse.json({ data: updatedVisitor });
+    console.error("Visitor pass code generation exhausted retries:", lastUniqueError);
+    return NextResponse.json({ error: "Visitor pass code could not be generated. Please try again." }, { status: 409 });
   } catch (error) {
     console.error("Visitor pass approval failed:", error);
     const safeError = getSafeErrorResponse(error, "Visitor pass could not be approved.");

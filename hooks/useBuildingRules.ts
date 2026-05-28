@@ -36,6 +36,8 @@ export function useBuildingRules() {
   const [visitorVerificationMethod, setVisitorVerificationMethod] = useState<VisitorVerificationMethod>("qr_pass");
   const [qrPassSetupWarning, setQrPassSetupWarning] = useState<string | null>(null);
   const [requirePhoto, setRequirePhoto] = useState(false);
+  const [askPhone, setAskPhone] = useState(true);
+  const [askId, setAskId] = useState(true);
   const [askHost, setAskHost] = useState(false);
   const [askPurpose, setAskPurpose] = useState(false);
   const [askVehicle, setAskVehicle] = useState(false);
@@ -74,7 +76,7 @@ export function useBuildingRules() {
 
       const { data: company } = await supabase
         .from("companies")
-        .select("require_photo, ask_host, ask_purpose, ask_vehicle, custom_fields, plan_tier, visitor_verification_method, enable_geofence, lat, lng, geofence_radius")
+        .select("require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, plan_tier, visitor_verification_method, enable_geofence, lat, lng, geofence_radius")
         .eq("id", profile.company_id)
         .single();
 
@@ -109,6 +111,8 @@ export function useBuildingRules() {
             : null
         );
         setRequirePhoto(company.require_photo || false);
+        setAskPhone(company.ask_phone !== false);
+        setAskId(company.ask_id !== false);
         setAskHost(company.ask_host || false);
         setAskPurpose(company.ask_purpose || false);
         setAskVehicle(company.ask_vehicle || false);
@@ -140,6 +144,7 @@ export function useBuildingRules() {
     }
     setUpdatingRules(false);
   };
+
 
   const handleVerificationMethodChange = async (method: VisitorVerificationMethod) => {
     if (!companyId || !canChooseVerification || visitorVerificationMethod === method) return;
@@ -351,6 +356,8 @@ export function useBuildingRules() {
     visitorVerificationMethod,
     qrPassSetupWarning,
     requirePhoto,
+    askPhone,
+    askId,
     askHost,
     askPurpose,
     askVehicle,
@@ -359,6 +366,8 @@ export function useBuildingRules() {
     updatingRules,
     message,
     setRequirePhoto,
+    setAskPhone,
+    setAskId,
     setAskHost,
     setAskPurpose,
     setAskVehicle,

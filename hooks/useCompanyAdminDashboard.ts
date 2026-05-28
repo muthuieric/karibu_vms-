@@ -41,6 +41,18 @@ function addVisitorOnce(visitors: AdminVisitor[], visitor: AdminVisitor) {
   return { visitors: [visitor, ...visitors], added: true };
 }
 
+async function fetchAdminVisitors(companyId: string, visitorId?: string) {
+  const params = new URLSearchParams({ company_id: companyId });
+  if (visitorId) params.set("id", visitorId);
+
+  const response = await fetch(`/api/admin/visitors?${params.toString()}`, {
+    headers: await getAuthHeaders(),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || "Visitor records could not be loaded.");
+  return (result.data || []) as AdminVisitor[];
+}
+
 export function useCompanyAdminDashboard() {
   const [visitors, setVisitors] = useState<AdminVisitor[]>([]);
   const [gates, setGates] = useState<AdminGate[]>([]);
@@ -133,19 +145,12 @@ export function useCompanyAdminDashboard() {
         console.error("Error fetching gates:", error);
       }
 
-      const { data: visitorData, error: visitorError } = await supabase
-        .from("visitors")
-        .select("*")
-        .eq("company_id", profile.company_id)
-        .order("created_at", { ascending: false })
-        .limit(2000);
-
-      if (visitorError) {
-        console.error("Error fetching visitors:", visitorError);
-      } else {
-        const initialVisitors = visitorData || [];
+      try {
+        const initialVisitors = await fetchAdminVisitors(profile.company_id);
         visitorIdsRef.current = new Set(initialVisitors.map((visitor) => visitor.id));
         setVisitors(initialVisitors);
+      } catch (visitorError) {
+        console.error("Error fetching visitors:", visitorError);
       }
 
       const { count: lifetimeCount, error: lifetimeError } = await supabase
@@ -172,13 +177,23 @@ export function useCompanyAdminDashboard() {
           if (!activeCompanyId || newVisitor.company_id !== activeCompanyId) return;
           if (visitorIdsRef.current.has(newVisitor.id)) return;
           visitorIdsRef.current.add(newVisitor.id);
-          setVisitors((prev) => addVisitorOnce(prev, newVisitor).visitors);
+          fetchAdminVisitors(activeCompanyId, newVisitor.id)
+            .then((records) => {
+              const visitor = records[0];
+              if (visitor) setVisitors((prev) => addVisitorOnce(prev, visitor).visitors);
+            })
+            .catch((error) => console.error("Could not hydrate inserted visitor:", error));
           setLifetimeVisitors((prev) => prev + 1);
         } else if (payload.eventType === "UPDATE") {
           if (!activeCompanyId || (payload.new as AdminVisitor).company_id !== activeCompanyId) return;
-          setVisitors((prev) =>
-            prev.map((visitor) => (visitor.id === payload.new.id ? (payload.new as AdminVisitor) : visitor))
-          );
+          fetchAdminVisitors(activeCompanyId, String(payload.new.id))
+            .then((records) => {
+              const visitor = records[0];
+              if (visitor) {
+                setVisitors((prev) => prev.map((item) => (item.id === visitor.id ? visitor : item)));
+              }
+            })
+            .catch((error) => console.error("Could not hydrate updated visitor:", error));
         } else if (payload.eventType === "DELETE") {
           visitorIdsRef.current.delete(payload.old.id as string);
           setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.old.id));
@@ -254,6 +269,24 @@ export function useCompanyAdminDashboard() {
 
     const todayStr = new Date().toISOString().split("T")[0];
     const exportDate = new Date();
+    void (async () => {
+      try {
+        await fetch("/api/admin/audit", {
+          method: "POST",
+          headers: await getAuthHeaders(true),
+          body: JSON.stringify({
+            action: "admin_exported_visitor_data",
+            resourceType: "visitor_collection",
+            metadata: {
+              recordCount: filteredVisitors.length,
+              filters: { searchQuery, statusFilter, gateFilter, startDate, endDate },
+            },
+          }),
+        });
+      } catch (error) {
+        console.error("Visitor export audit log failed:", error);
+      }
+    })();
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -320,7 +353,6 @@ export function useCompanyAdminDashboard() {
       margin: { left: margin, right: margin },
       head: [[
         "Visitor name",
-        "Phone",
         "Host / department",
         ...(showHostReview ? ["Host review"] : []),
         "Purpose",
@@ -335,7 +367,6 @@ export function useCompanyAdminDashboard() {
 
         return [
           visitor.name || "N/A",
-          visitor.phone || "N/A",
           visitor.host_name || "N/A",
           ...(showHostReview ? [visitor.host_name ? getHostReviewLabel(visitor.host_confirmed) : "N/A"] : []),
           visitor.purpose || "N/A",
@@ -368,16 +399,15 @@ export function useCompanyAdminDashboard() {
         lineWidth: 0.4,
       },
       columnStyles: {
-        0: { cellWidth: 82 },
-        1: { cellWidth: 66 },
-        2: { cellWidth: 84 },
-        3: { cellWidth: showHostReview ? 78 : 122 },
-        4: { cellWidth: showHostReview ? 104 : 76 },
-        5: { cellWidth: showHostReview ? 68 : 72 },
-        6: { cellWidth: showHostReview ? 66 : 62 },
-        7: { cellWidth: showHostReview ? 58 : 62 },
-        8: { cellWidth: showHostReview ? 58 : 68 },
-        ...(showHostReview ? { 9: { cellWidth: 62 } } : {}),
+        0: { cellWidth: 90 }, // Visitor name
+        1: { cellWidth: 100 }, // Host / department
+        2: { cellWidth: showHostReview ? 78 : 120 },
+        3: { cellWidth: showHostReview ? 100 : 80 },
+        4: { cellWidth: 70 },
+        5: { cellWidth: 70 },
+        6: { cellWidth: 65 },
+        7: { cellWidth: 65 },
+        ...(showHostReview ? { 8: { cellWidth: 70 } } : {}),
       },
       didDrawPage: () => {
         const pageNumber = doc.getCurrentPageInfo().pageNumber;

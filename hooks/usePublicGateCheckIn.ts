@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { compressImage } from "@/lib/image-compression";
 import { getDistanceInMeters } from "@/lib/geo";
 import { getSupabaseErrorMessage } from "@/lib/supabase-error";
@@ -33,7 +33,7 @@ type VisitorFormData = {
   purpose: string;
   vehicle_reg: string;
 };
-type ValidationErrors = Partial<Record<"name" | "phone" | "id_number" | "host_id" | "selfie" | "terms", string>>;
+type ValidationErrors = Partial<Record<"name" | "phone" | "id_number" | "host_id" | "purpose" | "vehicle_reg" | "selfie" | "terms", string>>;
 
 function validateDocumentNumber(docType: string, value: string) {
   const trimmedValue = value.trim();
@@ -69,6 +69,8 @@ function validatePublicRegistration({
     askPhone: boolean;
     askId: boolean;
     askHost: boolean;
+    askPurpose: boolean;
+    askVehicle: boolean;
   };
   hasSelfie: boolean;
   agreedToTerms: boolean;
@@ -82,9 +84,7 @@ function validatePublicRegistration({
   }
 
   if (rules.askPhone) {
-    if (!phoneDigits) {
-      errors.phone = "Phone number is required.";
-    } else if (phoneDigits.length < 8 || phoneDigits.length > 15) {
+    if (phoneDigits && (phoneDigits.length < 8 || phoneDigits.length > 15)) {
       errors.phone = "Phone number should have 8 to 15 digits.";
     } else if (phoneDigits.startsWith("254") && !/^254[71]\d{8}$/.test(phoneDigits)) {
       errors.phone = "Kenyan numbers should use 2547XXXXXXXX or 2541XXXXXXXX.";
@@ -92,12 +92,9 @@ function validatePublicRegistration({
   }
 
   if (rules.askId) {
-    const documentError = validateDocumentNumber(visitor.doc_type, visitor.id_number);
+    const idNumber = visitor.id_number.trim();
+    const documentError = idNumber ? validateDocumentNumber(visitor.doc_type, visitor.id_number) : null;
     if (documentError) errors.id_number = documentError;
-  }
-
-  if (rules.askHost && !visitor.host_id) {
-    errors.host_id = "Please select a host from the list.";
   }
 
   if (rules.requirePhoto && !hasSelfie) {
@@ -113,6 +110,7 @@ function validatePublicRegistration({
 
 export function usePublicGateCheckIn() {
   const params = useParams();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const companyId = params.companyId as string;
   const urlGateId = searchParams.get("gateId");
@@ -406,10 +404,13 @@ export function usePublicGateCheckIn() {
         throw new Error(registerData.error || "Failed to submit registration.");
       }
 
-      if (registerData.data?.passUrl && registerData.data?.passToken) {
+      const passUrl = registerData.data?.passUrl || null;
+      const passToken = registerData.data?.passToken || null;
+
+      if (passUrl && passToken) {
         setVisitorPass({
-          passUrl: registerData.data.passUrl,
-          passToken: registerData.data.passToken,
+          passUrl,
+          passToken,
         });
       } else {
         setVisitorPass(null);
@@ -433,6 +434,10 @@ export function usePublicGateCheckIn() {
       setHostSearchQuery("");
       setIsHostDropdownOpen(false);
       setSubmitted(true);
+
+      if (passUrl) {
+        router.push(passUrl);
+      }
     } catch (err) {
       const message = getSupabaseErrorMessage(err, "Failed to submit registration.");
       console.error("Failed to submit public visitor registration:", err);

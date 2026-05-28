@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Banknote, CircuitBoard, Command, Factory, SlidersHorizontal } from "lucide-react";
+import { Banknote, CircuitBoard, Command, Factory, Inbox, SlidersHorizontal } from "lucide-react";
 
 import { DashboardSidebar, type DashboardNavItem } from "@/components/dashboard/shared/DashboardSidebar";
 import { LoadingState } from "@/components/dashboard/shared/StateBlocks";
@@ -13,6 +13,7 @@ const superadminNavItems: DashboardNavItem[] = [
   { href: "/dashboard/superadmin/companies", label: "Workspaces", icon: Factory },
   { href: "/dashboard/superadmin/billing", label: "Revenue", icon: Banknote },
   { href: "/dashboard/superadmin/transactions", label: "Payments", icon: CircuitBoard },
+  { href: "/dashboard/superadmin/support", label: "Support Inbox", icon: Inbox },
   { href: "/dashboard/superadmin/settings", label: "Platform Settings", icon: SlidersHorizontal },
 ];
 

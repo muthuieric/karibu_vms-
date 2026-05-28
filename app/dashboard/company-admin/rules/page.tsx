@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { IdCard, Loader2, Camera, CheckCircle2, AlertCircle, Users, Briefcase, Car, Plus, Trash2, ListPlus, Lock, ClipboardList, MapPin, Crosshair, QrCode, MessageSquareText } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { IdCard, Loader2, Camera, CheckCircle2, AlertCircle, Users, Briefcase, Car, Plus, Trash2, ListPlus, Lock, ClipboardList, MapPin, Crosshair, QrCode, MessageSquareText, Phone } from "lucide-react";
 import { useBuildingRules } from "@/hooks/useBuildingRules";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { EmptyState } from "@/components/dashboard/shared/StateBlocks";
 import { ToggleCard } from "@/components/dashboard/shared/ToggleCard";
-import { Label } from "@/components/ui/label";
 
 function formatDistance(meters: number) {
   if (meters < 1000) return `${Math.round(meters)} m`;
@@ -88,6 +88,24 @@ export default function BuildingRulesPage() {
                 <CardDescription>Core information requested during check-in.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3">
+                <ToggleCard
+                  id="phone-toggle"
+                  title="Phone number"
+                  description="Ask visitors for a phone number."
+                  icon={Phone}
+                  checked={rules.askPhone}
+                  disabled={rules.updatingRules}
+                  onCheckedChange={(checked) => rules.handleToggleRule("ask_phone", checked, rules.setAskPhone)}
+                />
+                <ToggleCard
+                  id="id-toggle"
+                  title="ID / passport number"
+                  description="Ask visitors for an ID, passport, or document number."
+                  icon={IdCard}
+                  checked={rules.askId}
+                  disabled={rules.updatingRules}
+                  onCheckedChange={(checked) => rules.handleToggleRule("ask_id", checked, rules.setAskId)}
+                />
                 <ToggleCard
                   id="purpose-toggle"
                   title="Purpose of visit"

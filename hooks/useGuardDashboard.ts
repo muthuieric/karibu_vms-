@@ -13,6 +13,18 @@ function addVisitorOnce(visitors: Visitor[], visitor: Visitor) {
   return [visitor, ...visitors];
 }
 
+async function fetchGuardVisitors(companyId: string, visitorId?: string) {
+  const params = new URLSearchParams({ company_id: companyId });
+  if (visitorId) params.set("id", visitorId);
+
+  const response = await fetch(`/api/guard/visitors?${params.toString()}`, {
+    headers: await getAuthHeaders(),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || "Active visitors could not be loaded.");
+  return (result.data || []) as Visitor[];
+}
+
 export function useGuardDashboard() {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -188,24 +200,15 @@ export function useGuardDashboard() {
         console.error("Visitor status rollover failed:", err);
       }
 
-      let query = supabase
-        .from("visitors")
-        .select("*")
-        .eq("company_id", currentCompanyId)
-        .gte("created_at", startOfToday.toISOString())
-        .in("status", ["pending", "checked_in"])
-        .order("created_at", { ascending: false });
-
-      if (currentGateId) {
-        query = query.or(`gate_id.eq.${currentGateId},gate_id.is.null`);
+      try {
+        setVisitors(await fetchGuardVisitors(currentCompanyId));
+      } catch (visitorError) {
+        console.error("Could not load active guard visitors:", visitorError);
       }
-
-      const { data: visitorData, error: visitorError } = await query;
-      if (!visitorError) setVisitors(visitorData || []);
       setLoading(false);
 
       const channel = supabase
-        .channel("guard-dashboard")
+        .channel(`guard-dashboard-${currentCompanyId}-${Date.now()}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "visitors" }, (payload) => {
           void refreshCompanySettings(currentCompanyId);
 
@@ -213,7 +216,12 @@ export function useGuardDashboard() {
             const newVisitor = payload.new as Visitor;
             if (newVisitor.company_id !== currentCompanyId) return;
             if (!currentGateId || newVisitor.gate_id === currentGateId || !newVisitor.gate_id) {
-              setVisitors((prev) => addVisitorOnce(prev, newVisitor));
+              fetchGuardVisitors(currentCompanyId, newVisitor.id)
+                .then((records) => {
+                  const visitor = records[0];
+                  if (visitor) setVisitors((prev) => addVisitorOnce(prev, visitor));
+                })
+                .catch((error) => console.error("Could not hydrate inserted guard visitor:", error));
             }
           } else if (payload.eventType === "UPDATE") {
             const updatedVisitor = payload.new as Visitor;
@@ -225,9 +233,15 @@ export function useGuardDashboard() {
             if (payload.new.status === "checked_out") {
               setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.new.id));
             } else {
-              setVisitors((prev) =>
-                prev.map((visitor) => (visitor.id === payload.new.id ? (payload.new as Visitor) : visitor))
-              );
+              fetchGuardVisitors(currentCompanyId, updatedVisitor.id)
+                .then((records) => {
+                  const visitor = records[0];
+                  setVisitors((prev) => {
+                    if (!visitor) return prev.filter((item) => item.id !== updatedVisitor.id);
+                    return prev.map((item) => (item.id === visitor.id ? visitor : item));
+                  });
+                })
+                .catch((error) => console.error("Could not hydrate updated guard visitor:", error));
             }
           } else if (payload.eventType === "DELETE") {
             setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.old.id));
@@ -298,30 +312,17 @@ export function useGuardDashboard() {
     }
   };
 
-  const handleSendOTP = async (id: string, phone: string) => {
+  const handleSendOTP = async (id: string) => {
     if (sendingOtpId === id) return;
     setSendingOtpId(id);
 
     try {
       if (!companyId) throw new Error("Company context is missing.");
 
-      let code = "";
-      let isUnique = false;
-      while (!isUnique) {
-        const randomValues = new Uint32Array(1);
-        crypto.getRandomValues(randomValues);
-        code = (1000 + (randomValues[0] % 9000)).toString();
-        const { data } = await supabase.from("visitors").select("id").eq("otp_code", code).in("status", ["pending", "checked_in"]);
-        if (!data || data.length === 0) isUnique = true;
-      }
-
-      const { error: updateError } = await supabase.from("visitors").update({ otp_code: code }).eq("id", id);
-      if (updateError) throw updateError;
-
-      const smsRes = await fetch("/api/sms", {
+      const smsRes = await fetch("/api/visitors/send-otp", {
         method: "POST",
         headers: await getAuthHeaders(true),
-        body: JSON.stringify({ phone, companyId, message: `Your building entry code is: ${code}` }),
+        body: JSON.stringify({ visitorId: id }),
       });
 
       const smsData = await smsRes.json().catch(() => ({}));
@@ -368,7 +369,9 @@ export function useGuardDashboard() {
       }
 
       if (result.data) {
-        setVisitors((prev) => prev.map((item) => (item.id === visitor.id ? (result.data as Visitor) : item)));
+        const refreshedVisitors = await fetchGuardVisitors(visitor.company_id, visitor.id);
+        const refreshedVisitor = refreshedVisitors[0] || (result.data as Visitor);
+        setVisitors((prev) => prev.map((item) => (item.id === visitor.id ? refreshedVisitor : item)));
       }
     } catch (error) {
       console.error("Failed to approve visitor pass:", error);

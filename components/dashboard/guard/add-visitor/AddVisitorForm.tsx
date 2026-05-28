@@ -113,9 +113,9 @@ export default function AddVisitorForm({
 
             {askPhone && (
               <div className="space-y-2">
-                <Label htmlFor="guard-visitor-phone" className="font-bold text-slate-800">Phone Number <span className="text-red-500">*</span></Label>
+                <Label htmlFor="guard-visitor-phone" className="font-bold text-slate-800">Phone Number</Label>
                 <PhoneInput
-                  inputProps={{ id: "guard-visitor-phone", required: true }}
+                  inputProps={{ id: "guard-visitor-phone" }}
                   country="ke"
                   value={newVisitor.phone}
                   onChange={phone => onNewVisitorChange({ ...newVisitor, phone })}
@@ -142,10 +142,9 @@ export default function AddVisitorForm({
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="guard-id-number" className="font-bold text-slate-800">ID / Document No. <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="guard-id-number" className="font-bold text-slate-800">ID / Document No.</Label>
                   <Input
                     id="guard-id-number"
-                    required
                     value={newVisitor.id_number}
                     onChange={(e) => onNewVisitorChange({ ...newVisitor, id_number: e.target.value })}
                     placeholder="Enter ID number"
@@ -180,7 +179,7 @@ export default function AddVisitorForm({
                     autoComplete="off"
                   />
 
-                  <input type="text" className="hidden" required value={newVisitor.host_id} onChange={() => {}} />
+                  <input type="text" className="hidden" value={newVisitor.host_id} onChange={() => {}} />
 
                   {isHostDropdownOpen && (
                     <div className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg">

@@ -48,7 +48,7 @@ type VisitorFormData = {
   vehicle_reg: string;
 };
 
-type ValidationErrors = Partial<Record<"name" | "phone" | "id_number" | "host_id" | "selfie" | "terms", string>>;
+type ValidationErrors = Partial<Record<"name" | "phone" | "id_number" | "host_id" | "purpose" | "vehicle_reg" | "selfie" | "terms", string>>;
 
 type Rules = {
   requirePhoto: boolean;
@@ -248,14 +248,13 @@ export default function VisitorCheckInForm({
                       htmlFor="visitor-phone"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Phone Number <RequiredMark />
+                      Phone Number
                     </Label>
 
                     <PhoneInput
                       inputProps={{
                         id: "visitor-phone",
                         autoComplete: "tel",
-                        required: true,
                       }}
                       country="ke"
                       value={newVisitor.phone}
@@ -304,12 +303,11 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-id-number"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                        ID Number <RequiredMark />
+                        ID Number
                       </Label>
 
                       <Input
                         id="visitor-id-number"
-                        required
                         value={newVisitor.id_number}
                         onChange={(e) =>
                           onNewVisitorChange({
@@ -344,7 +342,7 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-host-search"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                        Who are you visiting?
+                      Who are you visiting?
                       </Label>
 
                       <div className="relative">
@@ -369,7 +367,7 @@ export default function VisitorCheckInForm({
                       <input
                         type="text"
                         className="hidden"
-                        required
+                        required={false}
                         value={newVisitor.host_id}
                         onChange={() => {}}
                       />
@@ -437,6 +435,7 @@ export default function VisitorCheckInForm({
                         placeholder="e.g. Meeting, Delivery, Interview"
                         className="h-11 rounded-xl border-slate-200 bg-slate-50 text-base focus:bg-white focus:ring-blue-500/20"
                       />
+                      <FieldError message={validationErrors.purpose} />
                     </div>
                   )}
 
@@ -461,6 +460,7 @@ export default function VisitorCheckInForm({
                         placeholder="e.g. KCA 123A"
                         className="h-11 rounded-xl border-slate-200 bg-slate-50 text-base uppercase focus:bg-white focus:ring-blue-500/20"
                       />
+                      <FieldError message={validationErrors.vehicle_reg} />
                     </div>
                   )}
 

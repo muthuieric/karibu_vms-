@@ -38,6 +38,7 @@ export async function GET(_request: Request, context: VisitorPassRouteContext) {
     const { data: visitor, error } = await supabaseAdmin
       .from("visitors")
       .select("name, host_name, status, created_at, checked_in_at, checked_out_at, pass_code, pass_expired_at, host_confirmed_at, company_id, gate_id")
+      // TODO: migrate this lookup to pass_token_hash once existing pass_token flows are upgraded.
       .eq("pass_token", normalizedToken)
       .maybeSingle();
 

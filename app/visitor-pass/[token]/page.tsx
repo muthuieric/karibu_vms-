@@ -14,6 +14,8 @@ export default function VisitorPassPage() {
     if (!token) return undefined;
 
     let active = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     const loadPass = async () => {
       try {
         const response = await fetch(`/api/visitor-pass/${encodeURIComponent(token)}`, { cache: "no-store" });
@@ -27,17 +29,24 @@ export default function VisitorPassPage() {
 
         setPass(result.data);
         setError(null);
+
+        const status = result.data.status as SafeVisitorPass["status"] | undefined;
+        if (status === "pending" || status === "approved") {
+          timeoutId = setTimeout(loadPass, status === "pending" ? 8000 : 15000);
+        }
       } catch {
-        if (active) setError("Visitor pass could not be loaded.");
+        if (active) {
+          setError("Visitor pass could not be loaded.");
+          timeoutId = setTimeout(loadPass, 15000);
+        }
       }
     };
 
     loadPass();
-    const interval = setInterval(loadPass, 4000);
 
     return () => {
       active = false;
-      clearInterval(interval);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [token]);
 

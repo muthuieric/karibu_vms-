@@ -5,6 +5,8 @@ type CheckoutPassPayload = {
   visitorId?: string;
 };
 
+const GUARD_SAFE_VISITOR_SELECT = "id, company_id, gate_id, name, phone_last4, document_type, id_number_last4, vehicle_reg_last4, status, created_at, checked_in_at, checked_out_at, host_id, host_name, host_confirmed, host_confirmed_at, purpose, photo_url, custom_data, otp_code, pass_token, pass_code, pass_expired_at, verification_method";
+
 export async function POST(request: Request) {
   try {
     const auth = await requireRole(request, ["guard", "company_admin", "superadmin"]);
@@ -56,7 +58,7 @@ export async function POST(request: Request) {
       .eq("id", visitor.id)
       .eq("company_id", visitor.company_id)
       .eq("status", "checked_in")
-      .select("*")
+      .select(GUARD_SAFE_VISITOR_SELECT)
       .single();
 
     if (updateError) throw updateError;
