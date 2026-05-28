@@ -11,7 +11,16 @@ type AuditLogInput = {
   resourceType?: string | null;
   resourceId?: string | null;
   metadata?: Record<string, unknown>;
+  dedupeWindowSeconds?: number;
 };
+
+function applyNullableFilter(
+  query: ReturnType<SupabaseClient["from"]> extends { select: (...args: never[]) => infer R } ? R : never,
+  column: string,
+  value: string | null | undefined
+) {
+  return value ? query.eq(column, value) : query.is(column, null);
+}
 
 export async function writeAuditLog({
   supabaseAdmin,
@@ -21,7 +30,34 @@ export async function writeAuditLog({
   resourceType = null,
   resourceId = null,
   metadata = {},
+  dedupeWindowSeconds = 0,
 }: AuditLogInput) {
+  if (dedupeWindowSeconds > 0) {
+    const since = new Date(Date.now() - dedupeWindowSeconds * 1000).toISOString();
+
+    let existingQuery = supabaseAdmin
+      .from("audit_logs")
+      .select("id")
+      .eq("action", action)
+      .gte("created_at", since)
+      .limit(1);
+
+    existingQuery = applyNullableFilter(existingQuery, "company_id", companyId);
+    existingQuery = applyNullableFilter(existingQuery, "actor_profile_id", actor?.id ?? null);
+    existingQuery = applyNullableFilter(existingQuery, "resource_type", resourceType);
+    existingQuery = applyNullableFilter(existingQuery, "resource_id", resourceId);
+
+    const { data: existing, error: dedupeError } = await existingQuery;
+
+    if (!dedupeError && existing && existing.length > 0) {
+      return;
+    }
+
+    if (dedupeError) {
+      console.error("Audit log dedupe check failed:", { action, resourceType, resourceId, error: dedupeError });
+    }
+  }
+
   const payload = {
     company_id: companyId,
     actor_profile_id: actor?.id ?? null,
