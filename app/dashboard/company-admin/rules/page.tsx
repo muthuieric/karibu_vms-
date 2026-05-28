@@ -32,12 +32,12 @@ const verificationOptions: VerificationOption[] = [
     description: "Visitors receive a locked digital pass that security approves from the guard dashboard.",
     icon: QrCode,
   },
-  {
-    value: "sms_otp",
-    title: "SMS OTP Verification",
-    description: "Security sends and confirms the visitor entry code by SMS.",
-    icon: MessageSquareText,
-  },
+  // {
+  //   value: "sms_otp",
+  //   title: "SMS OTP Verification",
+  //   description: "Security sends and confirms the visitor entry code by SMS.",
+  //   icon: MessageSquareText,
+  // },
 ];
 
 export default function BuildingRulesPage() {
