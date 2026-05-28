@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -190,16 +189,61 @@ function rotateIdentifierField(row, prefix, normalizer) {
   return { update, rotated: rotated.rotated };
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()?.replace(/\/$/, "");
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
 if (!supabaseUrl || !serviceRoleKey) {
   throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
 }
 
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { persistSession: false },
-});
+const restHeaders = {
+  apikey: serviceRoleKey,
+  Authorization: `Bearer ${serviceRoleKey}`,
+  "Content-Type": "application/json",
+  Accept: "application/json",
+};
+
+function buildRestUrl(table, params = {}) {
+  const url = new URL(`${supabaseUrl}/rest/v1/${table}`);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
+  }
+  return url;
+}
+
+async function restSelect(table, select, from, to) {
+  const url = buildRestUrl(table, {
+    select,
+    order: "id.asc",
+    limit: to - from + 1,
+    offset: from,
+  });
+
+  const response = await fetch(url, { headers: restHeaders });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Select from ${table} failed (${response.status}): ${body}`);
+  }
+
+  return response.json();
+}
+
+async function restUpdate(table, id, update) {
+  const url = buildRestUrl(table, { id: `eq.${id}` });
+  const response = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      ...restHeaders,
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify(update),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Update ${table} row ${id} failed (${response.status}): ${body}`);
+  }
+}
 
 async function rotateTable({ table, select, buildUpdate }) {
   let scanned = 0;
@@ -208,14 +252,7 @@ async function rotateTable({ table, select, buildUpdate }) {
   let from = 0;
 
   while (true) {
-    const { data, error } = await supabase
-      .from(table)
-      .select(select)
-      .order("id", { ascending: true })
-      .range(from, from + BATCH_SIZE - 1);
-
-    if (error) throw error;
-    const rows = data || [];
+    const rows = await restSelect(table, select, from, from + BATCH_SIZE - 1);
     if (rows.length === 0) break;
 
     for (const row of rows) {
@@ -232,8 +269,7 @@ async function rotateTable({ table, select, buildUpdate }) {
 
       if (Object.keys(update).length === 0) continue;
 
-      const { error: updateError } = await supabase.from(table).update(update).eq("id", row.id);
-      if (updateError) throw updateError;
+      await restUpdate(table, row.id, update);
       updated += 1;
     }
 
