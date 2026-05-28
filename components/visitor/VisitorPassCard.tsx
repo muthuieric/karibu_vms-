@@ -79,7 +79,6 @@ export default function VisitorPassCard({ pass, passUrl }: VisitorPassCardProps)
   const StatusIcon = config.icon;
   const checkedInTime = formatTime(pass.checkedInAt);
   const checkedOutTime = formatTime(pass.checkedOutAt || pass.passExpiredAt);
-  const passCodeLabel = pass.status === "checked_out" || pass.passExpiredAt ? "Expired" : pass.passCode || "Locked";
   const passDate = useMemo(() => formatDate(pass.checkedInAt || pass.date), [pass.checkedInAt, pass.date]);
 
   useEffect(() => {
@@ -174,7 +173,7 @@ export default function VisitorPassCard({ pass, passUrl }: VisitorPassCardProps)
     const details = [
       ["Host", pass.hostName || "Security desk"],
       ["Gate", pass.gateName || "Main entry"],
-      ["Pass Code", passCodeLabel],
+      ...(pass.passCode ? [["Pass Code", pass.passCode]] : []),
       ["Date", passDate],
       ["Time In", checkedInTime || (pass.status === "approved" || pass.status === "checked_out" ? "Recorded" : "Locked")],
       ...(pass.status === "checked_out" ? [["Time Out", checkedOutTime || "Recorded"]] : []),
@@ -268,12 +267,12 @@ export default function VisitorPassCard({ pass, passUrl }: VisitorPassCardProps)
           </div>
         )}
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Pass Code</p>
-          <p className={`mt-1 text-3xl font-black ${passCodeLabel === "Expired" ? "text-slate-500" : "tracking-[0.2em] text-slate-950"}`}>
-            {passCodeLabel}
-          </p>
-        </div>
+        {pass.passCode && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Pass Code</p>
+            <p className="mt-1 text-3xl font-black tracking-[0.2em] text-slate-950">{pass.passCode}</p>
+          </div>
+        )}
 
         <div className={`grid gap-3 text-center ${pass.status === "checked_out" ? "grid-cols-3" : "grid-cols-2"}`}>
           <div className="rounded-2xl border border-slate-200 bg-white p-3">

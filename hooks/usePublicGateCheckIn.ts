@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { compressImage } from "@/lib/image-compression";
 import { getDistanceInMeters } from "@/lib/geo";
 import { getSupabaseErrorMessage } from "@/lib/supabase-error";
@@ -110,6 +110,7 @@ function validatePublicRegistration({
 
 export function usePublicGateCheckIn() {
   const params = useParams();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const companyId = params.companyId as string;
   const urlGateId = searchParams.get("gateId");
@@ -403,10 +404,13 @@ export function usePublicGateCheckIn() {
         throw new Error(registerData.error || "Failed to submit registration.");
       }
 
-      if (registerData.data?.passUrl && registerData.data?.passToken) {
+      const passUrl = registerData.data?.passUrl || null;
+      const passToken = registerData.data?.passToken || null;
+
+      if (passUrl && passToken) {
         setVisitorPass({
-          passUrl: registerData.data.passUrl,
-          passToken: registerData.data.passToken,
+          passUrl,
+          passToken,
         });
       } else {
         setVisitorPass(null);
@@ -430,6 +434,10 @@ export function usePublicGateCheckIn() {
       setHostSearchQuery("");
       setIsHostDropdownOpen(false);
       setSubmitted(true);
+
+      if (passUrl) {
+        router.push(passUrl);
+      }
     } catch (err) {
       const message = getSupabaseErrorMessage(err, "Failed to submit registration.");
       console.error("Failed to submit public visitor registration:", err);
