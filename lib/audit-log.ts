@@ -14,14 +14,6 @@ type AuditLogInput = {
   dedupeWindowSeconds?: number;
 };
 
-function applyNullableFilter(
-  query: ReturnType<SupabaseClient["from"]> extends { select: (...args: never[]) => infer R } ? R : never,
-  column: string,
-  value: string | null | undefined
-) {
-  return value ? query.eq(column, value) : query.is(column, null);
-}
-
 export async function writeAuditLog({
   supabaseAdmin,
   companyId = null,
@@ -42,10 +34,21 @@ export async function writeAuditLog({
       .gte("created_at", since)
       .limit(1);
 
-    existingQuery = applyNullableFilter(existingQuery, "company_id", companyId);
-    existingQuery = applyNullableFilter(existingQuery, "actor_profile_id", actor?.id ?? null);
-    existingQuery = applyNullableFilter(existingQuery, "resource_type", resourceType);
-    existingQuery = applyNullableFilter(existingQuery, "resource_id", resourceId);
+    existingQuery = companyId
+      ? existingQuery.eq("company_id", companyId)
+      : existingQuery.is("company_id", null);
+
+    existingQuery = actor?.id
+      ? existingQuery.eq("actor_profile_id", actor.id)
+      : existingQuery.is("actor_profile_id", null);
+
+    existingQuery = resourceType
+      ? existingQuery.eq("resource_type", resourceType)
+      : existingQuery.is("resource_type", null);
+
+    existingQuery = resourceId
+      ? existingQuery.eq("resource_id", resourceId)
+      : existingQuery.is("resource_id", null);
 
     const { data: existing, error: dedupeError } = await existingQuery;
 
