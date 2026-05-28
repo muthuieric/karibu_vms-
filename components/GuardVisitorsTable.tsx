@@ -316,7 +316,7 @@ export default function GuardVisitorsTable({
                           )}
                         </div>
                         <p className="text-xs font-medium text-slate-500 mt-0.5 truncate">
-                          {visitor.host_name ? `Host: ${visitor.host_name}` : "Walk-in entry"}
+                          {visitor.host_name ? `Host: ${visitor.host_name}` : "No host selected"}
                         </p>
                       </div>
                     </div>
@@ -398,7 +398,7 @@ export default function GuardVisitorsTable({
                               <div className="flex items-center gap-2">
                                 <span className="font-bold whitespace-nowrap text-slate-900">{visitor.name}</span>
                               </div>
-                              <p className="mt-1 text-xs font-medium text-slate-500">{visitor.host_name ? `Host: ${visitor.host_name}` : "Walk-in entry"}</p>
+                              <p className="mt-1 text-xs font-medium text-slate-500">{visitor.host_name ? `Host: ${visitor.host_name}` : "No host selected"}</p>
                             </div>
                           </div>
                         </TableCell>

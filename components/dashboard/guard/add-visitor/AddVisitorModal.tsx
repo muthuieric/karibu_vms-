@@ -28,11 +28,6 @@ export interface AddVisitorModalProps {
   askHost?: boolean;
   askPurpose?: boolean;
   askVehicle?: boolean;
-  requirePhone?: boolean;
-  requireId?: boolean;
-  requireHost?: boolean;
-  requirePurpose?: boolean;
-  requireVehicle?: boolean;
   guardGateId?: string | null;
   verificationMethod: VisitorVerificationMethod | "basic_default";
   qrPassEnabled: boolean;
@@ -49,11 +44,6 @@ export default function AddVisitorModal({
   askHost = false,
   askPurpose = false,
   askVehicle = false,
-  requirePhone = false,
-  requireId = false,
-  requireHost = false,
-  requirePurpose = false,
-  requireVehicle = false,
   guardGateId = null,
   verificationMethod,
   qrPassEnabled,
@@ -159,31 +149,6 @@ export default function AddVisitorModal({
 
     if (requirePhoto && !selfieFile) {
       alert("A security photo is required by building management.");
-      return;
-    }
-
-    if (askPhone && requirePhone && !newVisitor.phone.replace(/\D/g, "")) {
-      alert("Phone number is required.");
-      return;
-    }
-
-    if (askId && requireId && !newVisitor.id_number.trim()) {
-      alert("ID or passport number is required.");
-      return;
-    }
-
-    if (askHost && requireHost && !newVisitor.host_id) {
-      alert("Please select a valid host from the dropdown list.");
-      return;
-    }
-
-    if (askPurpose && requirePurpose && !newVisitor.purpose.trim()) {
-      alert("Purpose of visit is required.");
-      return;
-    }
-
-    if (askVehicle && requireVehicle && !newVisitor.vehicle_reg.trim()) {
-      alert("Vehicle registration is required.");
       return;
     }
 
@@ -303,11 +268,6 @@ export default function AddVisitorModal({
       askHost={askHost}
       askPurpose={askPurpose}
       askVehicle={askVehicle}
-      requirePhone={requirePhone}
-      requireId={requireId}
-      requireHost={requireHost}
-      requirePurpose={requirePurpose}
-      requireVehicle={requireVehicle}
       requirePhoto={requirePhoto}
       isSubmitting={isSubmitting}
       newVisitor={newVisitor}

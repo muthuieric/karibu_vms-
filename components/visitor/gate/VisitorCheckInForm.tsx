@@ -57,11 +57,6 @@ type Rules = {
   askHost: boolean;
   askPurpose: boolean;
   askVehicle: boolean;
-  requirePhone: boolean;
-  requireId: boolean;
-  requireHost: boolean;
-  requirePurpose: boolean;
-  requireVehicle: boolean;
 };
 
 type VisitorCheckInFormProps = {
@@ -253,14 +248,13 @@ export default function VisitorCheckInForm({
                       htmlFor="visitor-phone"
                       className="mb-1.5 block text-sm font-semibold text-slate-700"
                     >
-                      Phone Number {rules.requirePhone && <RequiredMark />}
+                      Phone Number
                     </Label>
 
                     <PhoneInput
                       inputProps={{
                         id: "visitor-phone",
                         autoComplete: "tel",
-                        required: rules.requirePhone,
                       }}
                       country="ke"
                       value={newVisitor.phone}
@@ -309,12 +303,11 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-id-number"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                        ID Number {rules.requireId && <RequiredMark />}
+                        ID Number
                       </Label>
 
                       <Input
                         id="visitor-id-number"
-                        required={rules.requireId}
                         value={newVisitor.id_number}
                         onChange={(e) =>
                           onNewVisitorChange({
@@ -349,7 +342,7 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-host-search"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                      Who are you visiting? {rules.requireHost && <RequiredMark />}
+                      Who are you visiting?
                       </Label>
 
                       <div className="relative">
@@ -374,7 +367,7 @@ export default function VisitorCheckInForm({
                       <input
                         type="text"
                         className="hidden"
-                        required={rules.requireHost}
+                        required={false}
                         value={newVisitor.host_id}
                         onChange={() => {}}
                       />
@@ -427,12 +420,11 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-purpose"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                        Purpose of Visit {rules.requirePurpose && <RequiredMark />}
+                        Purpose of Visit
                       </Label>
 
                       <Input
                         id="visitor-purpose"
-                        required={rules.requirePurpose}
                         value={newVisitor.purpose}
                         onChange={(e) =>
                           onNewVisitorChange({
@@ -453,12 +445,11 @@ export default function VisitorCheckInForm({
                         htmlFor="visitor-vehicle"
                         className="mb-1.5 block text-sm font-semibold text-slate-700"
                       >
-                        Vehicle Registration {rules.requireVehicle && <RequiredMark />}
+                        Vehicle Registration
                       </Label>
 
                       <Input
                         id="visitor-vehicle"
-                        required={rules.requireVehicle}
                         value={newVisitor.vehicle_reg}
                         onChange={(e) =>
                           onNewVisitorChange({

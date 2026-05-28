@@ -353,7 +353,6 @@ export function useCompanyAdminDashboard() {
       margin: { left: margin, right: margin },
       head: [[
         "Visitor name",
-        "Phone",
         "Host / department",
         ...(showHostReview ? ["Host review"] : []),
         "Purpose",
@@ -368,7 +367,6 @@ export function useCompanyAdminDashboard() {
 
         return [
           visitor.name || "N/A",
-          visitor.phone || "N/A",
           visitor.host_name || "N/A",
           ...(showHostReview ? [visitor.host_name ? getHostReviewLabel(visitor.host_confirmed) : "N/A"] : []),
           visitor.purpose || "N/A",
@@ -401,16 +399,15 @@ export function useCompanyAdminDashboard() {
         lineWidth: 0.4,
       },
       columnStyles: {
-        0: { cellWidth: 82 },
-        1: { cellWidth: 66 },
-        2: { cellWidth: 84 },
-        3: { cellWidth: showHostReview ? 78 : 122 },
-        4: { cellWidth: showHostReview ? 104 : 76 },
-        5: { cellWidth: showHostReview ? 68 : 72 },
-        6: { cellWidth: showHostReview ? 66 : 62 },
-        7: { cellWidth: showHostReview ? 58 : 62 },
-        8: { cellWidth: showHostReview ? 58 : 68 },
-        ...(showHostReview ? { 9: { cellWidth: 62 } } : {}),
+        0: { cellWidth: 90 }, // Visitor name
+        1: { cellWidth: 100 }, // Host / department
+        2: { cellWidth: showHostReview ? 78 : 120 },
+        3: { cellWidth: showHostReview ? 100 : 80 },
+        4: { cellWidth: 70 },
+        5: { cellWidth: 70 },
+        6: { cellWidth: 65 },
+        7: { cellWidth: 65 },
+        ...(showHostReview ? { 8: { cellWidth: 70 } } : {}),
       },
       didDrawPage: () => {
         const pageNumber = doc.getCurrentPageInfo().pageNumber;

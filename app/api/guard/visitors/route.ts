@@ -66,6 +66,35 @@ function toGuardVisitor(visitor: Record<string, unknown>) {
   };
 }
 
+async function hydrateHostNames(
+  supabaseAdmin: Awaited<ReturnType<typeof requireRole>>["supabaseAdmin"],
+  visitors: Record<string, unknown>[]
+) {
+  const missingHostIds = Array.from(new Set(
+    visitors
+      .filter((visitor) => visitor.host_id && !visitor.host_name)
+      .map((visitor) => String(visitor.host_id))
+  ));
+
+  if (missingHostIds.length === 0) return visitors;
+
+  const { data: hosts, error } = await supabaseAdmin
+    .from("hosts")
+    .select("id, name")
+    .in("id", missingHostIds);
+
+  if (error) {
+    console.error("Guard visitor host-name hydration failed:", error);
+    return visitors;
+  }
+
+  const hostNames = new Map((hosts || []).map((host) => [host.id, host.name]));
+  return visitors.map((visitor) => ({
+    ...visitor,
+    host_name: visitor.host_name || hostNames.get(String(visitor.host_id)) || null,
+  }));
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -120,9 +149,8 @@ export async function GET(request: Request) {
       metadata: { recordCount: data?.length || 0, activeOnly: true },
     });
 
-    return NextResponse.json({
-      data: ((data || []) as unknown as Record<string, unknown>[]).map(toGuardVisitor),
-    });
+    const hydratedVisitors = await hydrateHostNames(auth.supabaseAdmin, (data || []) as unknown as Record<string, unknown>[]);
+    return NextResponse.json({ data: hydratedVisitors.map(toGuardVisitor) });
   } catch (error) {
     console.error("Guard visitors fetch failed:", error);
     const safeError = getSafeErrorResponse(error, "Active visitors could not be loaded.");

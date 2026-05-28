@@ -132,11 +132,6 @@ export default function GuardDashboard() {
         askHost={dashboard.askHost}
         askPurpose={dashboard.askPurpose}
         askVehicle={dashboard.askVehicle}
-        requirePhone={dashboard.requirePhone}
-        requireId={dashboard.requireId}
-        requireHost={dashboard.requireHost}
-        requirePurpose={dashboard.requirePurpose}
-        requireVehicle={dashboard.requireVehicle}
         guardGateId={dashboard.guardGateId}
         verificationMethod={dashboard.verificationMethod}
         qrPassEnabled={!dashboard.qrPassSetupWarning}

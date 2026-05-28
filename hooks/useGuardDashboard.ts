@@ -44,11 +44,6 @@ export function useGuardDashboard() {
   const [askHost, setAskHost] = useState(false);
   const [askPurpose, setAskPurpose] = useState(false);
   const [askVehicle, setAskVehicle] = useState(false);
-  const [requirePhone, setRequirePhone] = useState(false);
-  const [requireId, setRequireId] = useState(false);
-  const [requireHost, setRequireHost] = useState(false);
-  const [requirePurpose, setRequirePurpose] = useState(false);
-  const [requireVehicle, setRequireVehicle] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [sendingOtpId, setSendingOtpId] = useState<string | null>(null);
@@ -65,11 +60,6 @@ export function useGuardDashboard() {
     ask_host?: boolean | null;
     ask_purpose?: boolean | null;
     ask_vehicle?: boolean | null;
-    require_phone?: boolean | null;
-    require_id?: boolean | null;
-    require_host?: boolean | null;
-    require_purpose?: boolean | null;
-    require_vehicle?: boolean | null;
     custom_fields?: unknown;
     is_locked?: boolean | null;
     subscription_ends_at?: string | null;
@@ -95,11 +85,6 @@ export function useGuardDashboard() {
     setAskHost(companyData.ask_host || false);
     setAskPurpose(companyData.ask_purpose || false);
     setAskVehicle(companyData.ask_vehicle || false);
-    setRequirePhone(companyData.require_phone || false);
-    setRequireId(companyData.require_id || false);
-    setRequireHost(companyData.require_host || false);
-    setRequirePurpose(companyData.require_purpose || false);
-    setRequireVehicle(companyData.require_vehicle || false);
     setIsLocked(companyData.is_locked || (companyData.subscription_ends_at ? new Date(companyData.subscription_ends_at) < new Date() : false));
 
     if (companyData.custom_fields) {
@@ -117,7 +102,7 @@ export function useGuardDashboard() {
 
     const { data: companyData, error } = await supabase
       .from("companies")
-      .select("name, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, require_phone, require_id, require_host, require_purpose, require_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier, visitor_verification_method")
+      .select("name, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier, visitor_verification_method")
       .eq("id", targetCompanyId)
       .single();
 
@@ -223,7 +208,7 @@ export function useGuardDashboard() {
       setLoading(false);
 
       const channel = supabase
-        .channel("guard-dashboard")
+        .channel(`guard-dashboard-${currentCompanyId}-${Date.now()}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "visitors" }, (payload) => {
           void refreshCompanySettings(currentCompanyId);
 
@@ -437,11 +422,6 @@ export function useGuardDashboard() {
     askHost,
     askPurpose,
     askVehicle,
-    requirePhone,
-    requireId,
-    requireHost,
-    requirePurpose,
-    requireVehicle,
     isLocked,
     verifyingId,
     sendingOtpId,

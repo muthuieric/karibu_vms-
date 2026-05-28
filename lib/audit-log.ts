@@ -22,7 +22,7 @@ export async function writeAuditLog({
   resourceId = null,
   metadata = {},
 }: AuditLogInput) {
-  const { error } = await supabaseAdmin.from("audit_logs").insert({
+  const payload = {
     company_id: companyId,
     actor_profile_id: actor?.id ?? null,
     actor_role: actor?.role ?? null,
@@ -30,7 +30,19 @@ export async function writeAuditLog({
     resource_type: resourceType,
     resource_id: resourceId,
     metadata,
-  });
+  };
+
+  const { error } = await supabaseAdmin.from("audit_logs").insert(payload);
+
+  if (error && /actor_role/i.test(error.message || "")) {
+    const fallbackPayload = { ...payload };
+    delete (fallbackPayload as Partial<typeof payload>).actor_role;
+    const retry = await supabaseAdmin.from("audit_logs").insert(fallbackPayload);
+    if (!retry.error) return;
+
+    console.error("Audit log write failed:", { action, resourceType, resourceId, error: retry.error });
+    return;
+  }
 
   if (error) {
     console.error("Audit log write failed:", { action, resourceType, resourceId, error });

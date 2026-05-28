@@ -71,11 +71,6 @@ function validatePublicRegistration({
     askHost: boolean;
     askPurpose: boolean;
     askVehicle: boolean;
-    requirePhone: boolean;
-    requireId: boolean;
-    requireHost: boolean;
-    requirePurpose: boolean;
-    requireVehicle: boolean;
   };
   hasSelfie: boolean;
   agreedToTerms: boolean;
@@ -89,9 +84,7 @@ function validatePublicRegistration({
   }
 
   if (rules.askPhone) {
-    if (rules.requirePhone && !phoneDigits) {
-      errors.phone = "Phone number is required.";
-    } else if (phoneDigits && (phoneDigits.length < 8 || phoneDigits.length > 15)) {
+    if (phoneDigits && (phoneDigits.length < 8 || phoneDigits.length > 15)) {
       errors.phone = "Phone number should have 8 to 15 digits.";
     } else if (phoneDigits.startsWith("254") && !/^254[71]\d{8}$/.test(phoneDigits)) {
       errors.phone = "Kenyan numbers should use 2547XXXXXXXX or 2541XXXXXXXX.";
@@ -100,23 +93,8 @@ function validatePublicRegistration({
 
   if (rules.askId) {
     const idNumber = visitor.id_number.trim();
-    if (rules.requireId && !idNumber) {
-      errors.id_number = "ID or passport number is required.";
-    }
     const documentError = idNumber ? validateDocumentNumber(visitor.doc_type, visitor.id_number) : null;
     if (documentError) errors.id_number = documentError;
-  }
-
-  if (rules.askHost && rules.requireHost && !visitor.host_id) {
-    errors.host_id = "Please select a host from the list.";
-  }
-
-  if (rules.askPurpose && rules.requirePurpose && !visitor.purpose.trim()) {
-    errors.purpose = "Purpose of visit is required.";
-  }
-
-  if (rules.askVehicle && rules.requireVehicle && !visitor.vehicle_reg.trim()) {
-    errors.vehicle_reg = "Vehicle registration is required.";
   }
 
   if (rules.requirePhoto && !hasSelfie) {
@@ -154,11 +132,6 @@ export function usePublicGateCheckIn() {
     askHost: false,
     askPurpose: false,
     askVehicle: false,
-    requirePhone: false,
-    requireId: false,
-    requireHost: false,
-    requirePurpose: false,
-    requireVehicle: false,
   });
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [verifiedGateId, setVerifiedGateId] = useState<string | null>(null);
@@ -245,11 +218,6 @@ export function usePublicGateCheckIn() {
         askHost: company.ask_host || false,
         askPurpose: company.ask_purpose || false,
         askVehicle: company.ask_vehicle || false,
-        requirePhone: company.require_phone || false,
-        requireId: company.require_id || false,
-        requireHost: company.require_host || false,
-        requirePurpose: company.require_purpose || false,
-        requireVehicle: company.require_vehicle || false,
       });
 
       if (company.custom_fields) {

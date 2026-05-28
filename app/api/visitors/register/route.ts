@@ -53,14 +53,6 @@ type CompanyRegistrationSettings = {
   ask_host?: boolean | null;
   ask_purpose?: boolean | null;
   ask_vehicle?: boolean | null;
-  require_phone?: boolean | null;
-  phone_required?: boolean | null;
-  require_id?: boolean | null;
-  id_required?: boolean | null;
-  require_vehicle?: boolean | null;
-  require_host?: boolean | null;
-  require_purpose?: boolean | null;
-  vehicle_required?: boolean | null;
 };
 
 function isMissingColumnError(error: unknown) {
@@ -126,7 +118,7 @@ export async function POST(request: Request) {
 
     let companyResult = await supabaseAdmin
       .from("companies")
-        .select("id, is_locked, plan_tier, visitor_verification_method, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, require_phone, phone_required, require_id, id_required, require_host, require_purpose, require_vehicle, vehicle_required")
+        .select("id, is_locked, plan_tier, visitor_verification_method, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle")
       .eq("id", companyId)
       .single();
 
@@ -154,27 +146,6 @@ export async function POST(request: Request) {
     const hostEnabled = companySettings.ask_host === true;
     const purposeEnabled = companySettings.ask_purpose === true;
     const vehicleRegEnabled = companySettings.ask_vehicle === true;
-    const phoneRequired = phoneEnabled && Boolean(companySettings.require_phone || companySettings.phone_required);
-    const idNumberRequired = idNumberEnabled && Boolean(companySettings.require_id || companySettings.id_required);
-    const hostRequired = hostEnabled && Boolean(companySettings.require_host);
-    const purposeRequired = purposeEnabled && Boolean(companySettings.require_purpose);
-    const vehicleRegRequired = vehicleRegEnabled && Boolean(companySettings.require_vehicle || companySettings.vehicle_required);
-
-    if (phoneRequired && !phoneFields.normalized) {
-      return NextResponse.json({ error: "Phone number is required." }, { status: 400 });
-    }
-    if (idNumberRequired && !idNumberFields.normalized) {
-      return NextResponse.json({ error: "ID or passport number is required." }, { status: 400 });
-    }
-    if (vehicleRegRequired && !vehicleRegFields.normalized) {
-      return NextResponse.json({ error: "Vehicle registration is required." }, { status: 400 });
-    }
-    if (hostRequired && !payload.host_id) {
-      return NextResponse.json({ error: "Host selection is required." }, { status: 400 });
-    }
-    if (purposeRequired && !optionalText(payload.purpose, 240)) {
-      return NextResponse.json({ error: "Purpose of visit is required." }, { status: 400 });
-    }
 
     const safePhoneFields = phoneEnabled ? phoneFields : { encrypted: null, hash: null, last4: null, normalized: "" };
     const safeIdNumberFields = idNumberEnabled ? idNumberFields : { encrypted: null, hash: null, last4: null, normalized: "" };

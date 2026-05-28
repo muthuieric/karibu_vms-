@@ -15,11 +15,6 @@ const PUBLIC_COMPANY_FIELDS = [
   "ask_host",
   "ask_purpose",
   "ask_vehicle",
-  "require_phone",
-  "require_id",
-  "require_host",
-  "require_purpose",
-  "require_vehicle",
   "custom_fields",
   "enable_geofence",
   "lat",
@@ -31,7 +26,7 @@ const PUBLIC_COMPANY_FIELDS = [
 
 const PUBLIC_COMPANY_FIELDS_FALLBACK = PUBLIC_COMPANY_FIELDS
   .split(", ")
-  .filter((field) => !["visitor_verification_method", "require_phone", "require_id", "require_host", "require_purpose", "require_vehicle"].includes(field))
+  .filter((field) => field !== "visitor_verification_method")
   .join(", ");
 
 const PRIVATE_ACCESS_FIELDS = [
@@ -53,11 +48,6 @@ type PublicCompany = {
   ask_host: boolean | null;
   ask_purpose: boolean | null;
   ask_vehicle: boolean | null;
-  require_phone?: boolean | null;
-  require_id?: boolean | null;
-  require_host?: boolean | null;
-  require_purpose?: boolean | null;
-  require_vehicle?: boolean | null;
   custom_fields: unknown;
   enable_geofence: boolean | null;
   lat: number | null;
@@ -96,11 +86,6 @@ function publicCompanyPayload(company: PublicCompany) {
     ask_host: company.ask_host,
     ask_purpose: company.ask_purpose,
     ask_vehicle: company.ask_vehicle,
-    require_phone: company.require_phone || false,
-    require_id: company.require_id || false,
-    require_host: company.require_host || false,
-    require_purpose: company.require_purpose || false,
-    require_vehicle: company.require_vehicle || false,
     custom_fields: company.custom_fields,
     enable_geofence: company.enable_geofence,
     lat: company.lat,
