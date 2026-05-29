@@ -8,12 +8,6 @@ import Image from "next/image";
 
 const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
 
-const seoLinks = [
-  { href: "/visitor-management-system-kenya", label: "VMS Kenya" },
-  { href: "/digital-visitor-logbook-kenya", label: "Digital Logbook" },
-  { href: "/visitor-management-system-nairobi", label: "VMS Nairobi" },
-];
-
 export default function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -40,21 +34,13 @@ export default function PublicNavbar() {
             <Link href="/contact" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Contact</Link>
           </nav>
 
-          <div className="hidden xl:flex items-center gap-4 border-l border-zinc-100 pl-4">
-            {seoLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="text-xs font-bold text-blue-700 hover:text-blue-900 transition-colors">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
           <div className="hidden md:flex items-center gap-4">
             <Link href="/login" className="text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors">
               Sign In
             </Link>
             <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 h-9 text-sm shadow-sm">
-                Book Visitor Management Demo
+                Book Demo
               </Button>
             </a>
           </div>
@@ -78,18 +64,13 @@ export default function PublicNavbar() {
             <Link href="/features" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Features</Link>
             <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Pricing</Link>
             <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-zinc-600 py-2 border-b border-zinc-50">Contact</Link>
-            {seoLinks.map((link) => (
-              <Link key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)} className="text-sm font-bold text-blue-700 py-2 border-b border-zinc-50">
-                {link.label}
-              </Link>
-            ))}
             <div className="flex flex-col gap-3 mt-2">
               <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-center text-sm font-medium text-zinc-600 py-2 border border-zinc-200 rounded-lg">
                 Sign In
               </Link>
               <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)}>
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-10 text-sm">
-                  Book Visitor Management Demo
+                  Book Demo
                 </Button>
               </a>
             </div>

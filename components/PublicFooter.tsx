@@ -9,23 +9,20 @@ const footerLinkGroups = [
       { href: "/features", label: "Features" },
       { href: "/pricing", label: "Pricing" },
       { href: "/why-us", label: "Why Karibu VMS" },
-      { href: "/contact", label: "Book a Demo" },
+      { href: "/contact", label: "Contact" },
     ],
   },
   {
-    title: "Kenya visitor management",
+    title: "Solutions",
     links: [
       { href: "/visitor-management-system-kenya", label: "Visitor Management System Kenya" },
-      { href: "/visitor-management-system-nairobi", label: "Visitor Management System Nairobi" },
       { href: "/digital-visitor-logbook-kenya", label: "Digital Visitor Logbook Kenya" },
       { href: "/qr-code-visitor-management-system", label: "QR Code Visitor Management" },
-      { href: "/visitor-management-for-office-buildings", label: "Office Building Visitor Management" },
     ],
   },
   {
-    title: "Company",
+    title: "Legal",
     links: [
-      { href: "/about", label: "About" },
       { href: "/privacy", label: "Privacy" },
       { href: "/terms", label: "Terms" },
     ],
@@ -34,9 +31,9 @@ const footerLinkGroups = [
 
 export default function PublicFooter() {
   return (
-    <footer className="bg-white py-14 border-t border-zinc-100">
+    <footer className="bg-white py-16 border-t border-zinc-100">
       <div className="container mx-auto px-6 max-w-6xl">
-        <div className="grid gap-10 lg:grid-cols-[1.1fr_1.9fr]">
+        <div className="grid gap-12 lg:grid-cols-[1.15fr_1.85fr]">
           <div>
             <Link href="/" className="inline-flex items-center gap-2">
               <Image
@@ -47,16 +44,16 @@ export default function PublicFooter() {
                 className="h-9 w-auto"
               />
             </Link>
-            <p className="mt-4 max-w-sm text-sm leading-6 text-zinc-500">
-              Karibu VMS is a visitor management system in Kenya for digital visitor check-in, QR visitor passes, guard dashboards, checkout, and searchable records.
+            <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
+              Karibu VMS helps Kenyan teams manage visitor check-in, QR passes, guard workflows, checkout, and searchable records from one clean platform.
             </p>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-3">
+          <div className="grid gap-10 sm:grid-cols-3">
             {footerLinkGroups.map((group) => (
               <div key={group.title}>
-                <h2 className="text-sm font-bold text-zinc-900 mb-4">{group.title}</h2>
-                <div className="grid gap-3 text-sm font-medium text-zinc-500">
+                <h2 className="text-sm font-semibold text-zinc-950 mb-4">{group.title}</h2>
+                <div className="grid gap-3 text-sm text-zinc-500">
                   {group.links.map((link) => (
                     <Link key={link.href} href={link.href} className="hover:text-zinc-900 transition-colors">
                       {link.label}
@@ -72,7 +69,7 @@ export default function PublicFooter() {
           <p className="text-sm text-zinc-500">
             &copy; {new Date().getFullYear()} Karibu VMS.
           </p>
-          <p className="text-sm text-zinc-500">Built for visitor management workflows in Kenya.</p>
+          <p className="text-sm text-zinc-500">Built for visitor management workflows in Kenya and Nairobi.</p>
         </div>
       </div>
     </footer>

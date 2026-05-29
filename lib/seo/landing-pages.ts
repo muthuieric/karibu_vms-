@@ -1,11 +1,5 @@
 import type { SeoLandingPageContent } from "@/components/seo/SeoLandingPage";
 
-const coreLinks = [
-  { href: "/features", label: "Karibu VMS Features", description: "See QR pass verification, guard dashboards, visitor rules, checkout, and admin records." },
-  { href: "/pricing", label: "Visitor Management Pricing in Kenya", description: "Compare Basic, Premium, and Custom visitor management plans in Kenyan shillings." },
-  { href: "/contact", label: "Book a Karibu VMS Demo", description: "Contact sales on WhatsApp to discuss a Kenya visitor management setup for your site." },
-];
-
 export const kenyaVisitorManagementContent: SeoLandingPageContent = {
   eyebrow: "Visitor management system Kenya",
   title: "Visitor Management System in Kenya for Offices, Schools, Apartments, and Buildings",
@@ -28,7 +22,6 @@ export const kenyaVisitorManagementContent: SeoLandingPageContent = {
     { title: "School visitor management Kenya", description: "Support safer school reception by recording parent visits, suppliers, appointments, and gate activity." },
   ],
   internalLinks: [
-    ...coreLinks,
     { href: "/digital-visitor-logbook-kenya", label: "Digital Visitor Logbook Kenya", description: "Learn how digital logs improve search, checkout, and visitor history." },
     { href: "/qr-code-visitor-management-system", label: "QR Code Visitor Management", description: "See how QR visitor passes and visitor codes support controlled entry." },
     { href: "/visitor-management-system-nairobi", label: "Visitor Management System Nairobi", description: "A Nairobi-focused page for CBD, Westlands, Parklands, Upper Hill, and other busy locations." },
@@ -62,7 +55,6 @@ export const nairobiVisitorManagementContent: SeoLandingPageContent = {
     { title: "Nairobi schools and institutions", description: "Record parents, suppliers, interview guests, contractors, and authorized visits at the gate." },
   ],
   internalLinks: [
-    ...coreLinks,
     { href: "/visitor-management-system-kenya", label: "Visitor Management System Kenya", description: "Read the broader Kenya page for offices, schools, apartments, and buildings." },
     { href: "/visitor-management-for-office-buildings", label: "Office Building Visitor Management", description: "See how Karibu VMS supports building receptions and office towers." },
     { href: "/digital-visitor-logbook-kenya", label: "Digital Visitor Logbook Kenya", description: "Move from paper records to searchable digital visitor logs." },
@@ -96,7 +88,6 @@ export const digitalLogbookContent: SeoLandingPageContent = {
     { title: "Institution visitor records", description: "Support schools, hospitals, campuses, and offices that need reliable visitor history." },
   ],
   internalLinks: [
-    ...coreLinks,
     { href: "/visitor-management-system-kenya", label: "Visitor Management System Kenya", description: "See the full Kenya-focused visitor management system page." },
     { href: "/qr-code-visitor-management-system", label: "QR Code Visitor Management", description: "Add QR registration and QR visitor passes to the digital logbook flow." },
     { href: "/visitor-management-for-office-buildings", label: "Office Building Visitor Management", description: "Use digital logs in commercial buildings and offices." },
@@ -122,7 +113,7 @@ export const qrVisitorManagementContent: SeoLandingPageContent = {
     "Give guards a dashboard to approve, review, and check out visitors.",
     "Keep visitor pass status clear after checkout or expiry.",
     "Use visitor rules to decide what details are requested before entry.",
-    "Support Kenya-focused visitor management pages and internal SEO linking.",
+    "Support practical visitor management workflows for Kenyan teams.",
   ],
   useCases: [
     { title: "QR check-in at reception", description: "Visitors scan a posted QR code, enter details, and wait for guard or host workflow." },
@@ -130,7 +121,6 @@ export const qrVisitorManagementContent: SeoLandingPageContent = {
     { title: "QR visitor checkout", description: "Checkout closes the visit so the pass no longer represents an active entry." },
   ],
   internalLinks: [
-    ...coreLinks,
     { href: "/visitor-management-system-kenya", label: "Visitor Management System Kenya", description: "See how QR workflows fit into the wider visitor management system." },
     { href: "/digital-visitor-logbook-kenya", label: "Digital Visitor Logbook Kenya", description: "Understand how QR check-in improves digital visitor records." },
     { href: "/visitor-management-system-nairobi", label: "Visitor Management System Nairobi", description: "Explore QR visitor management for busy Nairobi facilities." },
@@ -164,7 +154,6 @@ export const officeBuildingContent: SeoLandingPageContent = {
     { title: "Multi-tenant buildings", description: "Support guard workflows where visitors need host or department context before entry." },
   ],
   internalLinks: [
-    ...coreLinks,
     { href: "/visitor-management-system-kenya", label: "Visitor Management System Kenya", description: "Read the main Kenya page for all facility types." },
     { href: "/visitor-management-system-nairobi", label: "Visitor Management System Nairobi", description: "A Nairobi-focused page for commercial buildings and offices." },
     { href: "/qr-code-visitor-management-system", label: "QR Code Visitor Management", description: "Use QR check-in and QR visitor passes in office buildings." },
