@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
+import MicrosoftClarity from "@/components/analytics/MicrosoftClarity";
 
 const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
 
@@ -13,6 +14,8 @@ export default function PublicNavbar() {
 
   return (
     <>
+        <MicrosoftClarity />
+
       <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-zinc-100 bg-white/90 backdrop-blur-md">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between max-w-6xl">
           <Link href="/" className="flex items-center gap-2">
