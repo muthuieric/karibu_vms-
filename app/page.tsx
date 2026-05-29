@@ -9,8 +9,8 @@ import { publicMetadata } from "@/lib/seo/site";
 import { BadgeCheck, ClipboardList, DoorOpen, FileSearch, LockKeyhole, QrCode, ShieldCheck, SlidersHorizontal, UsersRound, WalletCards } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
-  title: "Karibu VMS | Visitor Management System in Kenya",
-  description: "Karibu VMS is a digital visitor management system for secure check-ins, QR Pass verification, SMS OTP verification, guard dashboards, host confirmation, and visitor checkout.",
+  title: "Karibu VMS | Visitor Management System Kenya & Nairobi",
+  description: "Karibu VMS helps Kenyan offices, apartments and schools manage visitor check-in, QR passes, guard dashboards, host approval and checkout.",
   path: "/",
 });
 
@@ -28,7 +28,7 @@ const softwareApplicationJsonLd = {
     lowPrice: "1500",
     priceCurrency: "KES",
     offerCount: "2",
-    url: "https://karibuvms.com/pricing",
+    url: "https://www.karibuvms.com/pricing",
   },
 };
 
@@ -87,6 +87,21 @@ const roleDetails = [
 
 const facilityTypes = ["Corporate offices", "Schools and campuses", "Apartments", "Gated estates", "Clinics", "Warehouses", "Co-working spaces", "Events and temporary sites"];
 
+const kenyaUseCases = [
+  {
+    title: "Office visitor management in Kenya",
+    description: "Record clients, interview candidates, suppliers, contractors, and tenant visitors with host, department, gate, and checkout context.",
+  },
+  {
+    title: "Apartment and estate visitor logs",
+    description: "Give guards a cleaner way to track residents' visitors, delivery riders, vehicles, service providers, and repeat visits.",
+  },
+  {
+    title: "School and institution check-in",
+    description: "Support reception and gate teams handling parents, suppliers, consultants, maintenance teams, interviews, and scheduled guests.",
+  },
+];
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
@@ -102,10 +117,6 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 max-w-6xl relative z-10">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="max-w-xl">
-              {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold mb-6">
-                <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                Digital Visitor Management
-              </div> */}
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-zinc-900 tracking-tight leading-[1.1] mb-6">
                 A visitor management system built for modern Kenyan facilities.
               </h1>
@@ -136,7 +147,6 @@ export default function LandingPage() {
                 </div>
                 
                 <div className="space-y-4">
-                  {/* Row 1 */}
                   <div className="flex items-center gap-4 p-3 rounded-2xl bg-zinc-50 border border-zinc-100">
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">AJ</div>
                     <div className="flex-1">
@@ -148,7 +158,6 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  {/* Row 2 */}
                   <div className="flex items-center gap-4 p-3 rounded-2xl bg-white border border-zinc-100 shadow-sm">
                     <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold text-sm">MK</div>
                     <div className="flex-1">
@@ -160,7 +169,6 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  {/* Row 3 */}
                   <div className="flex items-center gap-4 p-3 rounded-2xl bg-zinc-50 border border-zinc-100 opacity-60">
                     <div className="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-600 font-bold text-sm">SD</div>
                     <div className="flex-1">
@@ -259,7 +267,6 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Step 1 */}
             <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
               <div aria-hidden="true" data-step="01" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-blue-50" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Visitor arrives</h3>
@@ -268,7 +275,6 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Step 2 */}
             <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
               <div aria-hidden="true" data-step="02" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-orange-50" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Capture details</h3>
@@ -277,7 +283,6 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Step 3 */}
             <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
               <div aria-hidden="true" data-step="03" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-green-50" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Entry reviewed</h3>
@@ -286,7 +291,6 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Step 4 */}
             <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
               <div aria-hidden="true" data-step="04" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-zinc-100" />
               <h3 className="text-xl font-bold text-zinc-900 mb-3">Visit recorded</h3>
@@ -381,12 +385,47 @@ export default function LandingPage() {
                   <span className="text-sm font-semibold text-green-300">Included</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                  <span className="text-sm text-zinc-300">Blacklist workflows</span>
+                  <span className="text-sm text-zinc-300">Restricted visitor workflows</span>
                   <span className="text-sm font-semibold text-green-300">Included</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-300">M-Pesa billing support</span>
                   <span className="text-sm font-semibold text-green-300">Included</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- KENYA SEO CONTENT --- */}
+      <section className="py-24 bg-zinc-50 border-b border-zinc-100">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-14 items-start">
+            <div>
+              <p className="text-sm font-bold text-blue-600 uppercase tracking-wide mb-3">Visitor management system Kenya</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-5 tracking-tight">A digital visitor logbook for Kenyan buildings that need better records.</h2>
+              <p className="text-lg text-zinc-600 leading-relaxed mb-5">
+                Many facilities in Kenya still depend on paper visitor books, WhatsApp messages, and manual sign-out sheets. That can work for a small entrance, but it becomes difficult when an office, apartment, school, clinic, warehouse, or gated estate needs to search visitor history after an incident or confirm who is still inside.
+              </p>
+              <p className="text-lg text-zinc-600 leading-relaxed">
+                Karibu VMS gives Kenyan teams a practical visitor check-in system with guard workflows, QR visitor passes, visitor rules, host details, checkout, restricted visitor records, and billing visibility. It is built for everyday security teams that need a simple system at the gate and a clear record for admins later.
+              </p>
+            </div>
+
+            <div className="grid gap-5">
+              {kenyaUseCases.map((item) => (
+                <div key={item.title} className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
+                  <h3 className="text-lg font-bold text-zinc-900 mb-2">{item.title}</h3>
+                  <p className="text-sm text-zinc-600 leading-relaxed">{item.description}</p>
+                </div>
+              ))}
+              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
+                <h3 className="text-lg font-bold text-zinc-900 mb-2">Explore Kenya-focused visitor management pages</h3>
+                <div className="grid gap-2 text-sm font-medium text-blue-700">
+                  <Link href="/visitor-management-system-kenya" className="hover:text-blue-900">Visitor Management System Kenya</Link>
+                  <Link href="/visitor-management-system-nairobi" className="hover:text-blue-900">Visitor Management System Nairobi</Link>
+                  <Link href="/digital-visitor-logbook-kenya" className="hover:text-blue-900">Digital Visitor Logbook Kenya</Link>
                 </div>
               </div>
             </div>
