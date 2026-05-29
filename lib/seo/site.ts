@@ -5,6 +5,11 @@ export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
 
 export const publicPages = [
   { path: "/", priority: 1, changeFrequency: "weekly" as const },
+  { path: "/visitor-management-system-kenya", priority: 0.95, changeFrequency: "weekly" as const },
+  { path: "/visitor-management-system-nairobi", priority: 0.9, changeFrequency: "weekly" as const },
+  { path: "/digital-visitor-logbook-kenya", priority: 0.9, changeFrequency: "weekly" as const },
+  { path: "/qr-code-visitor-management-system", priority: 0.88, changeFrequency: "weekly" as const },
+  { path: "/visitor-management-for-office-buildings", priority: 0.88, changeFrequency: "weekly" as const },
   { path: "/features", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/pricing", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/about", priority: 0.7, changeFrequency: "monthly" as const },
@@ -39,7 +44,7 @@ export function publicMetadata({
       url: absoluteUrl(path),
       siteName: "Karibu VMS",
       type: "website",
-      images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Karibu VMS" }],
+      images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Karibu VMS visitor management system in Kenya" }],
     },
     twitter: {
       card: "summary_large_image",
@@ -67,6 +72,9 @@ export const organizationJsonLd = {
   name: "Karibu VMS",
   url: siteUrl,
   logo: absoluteUrl("/logo.svg"),
+  sameAs: [
+    "https://www.karibuvms.com",
+  ],
 };
 
 export const websiteJsonLd = {
@@ -74,4 +82,9 @@ export const websiteJsonLd = {
   "@type": "WebSite",
   name: "Karibu VMS",
   url: siteUrl,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${siteUrl}/?q={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
 };
