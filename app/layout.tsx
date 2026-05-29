@@ -18,14 +18,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://karibuvms.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.karibuvms.com"),
   manifest: "/manifest.webmanifest",
   title: {
-    default: "Karibu VMS | Visitor Management System in Kenya",
+    default: "Karibu VMS | Visitor Management System Kenya & Nairobi",
     template: "%s | Karibu VMS",
   },
   description:
-    "Karibu VMS is a visitor management system in Kenya for offices, apartments, schools, QR check-in, QR visitor passes, guard dashboards, host confirmation, checkout, and digital visitor logs.",
+    "Karibu VMS helps Kenyan offices, apartments and schools manage visitor check-in, QR passes, guard dashboards, host approval and checkout.",
   keywords: [
     "visitor management system Kenya",
     "visitor management system Nairobi",
@@ -52,18 +52,18 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.svg",
   },
   openGraph: {
-    title: "Karibu VMS | Visitor Management System in Kenya",
+    title: "Karibu VMS | Visitor Management System Kenya & Nairobi",
     description:
-      "A digital visitor management system in Kenya for secure check-ins, QR visitor passes, guard dashboards, host confirmation, visitor checkout, and searchable records.",
+      "Karibu VMS helps Kenyan offices, apartments and schools manage visitor check-in, QR passes, guard dashboards, host approval and checkout.",
     siteName: "Karibu VMS",
     type: "website",
     images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Karibu VMS visitor management system in Kenya" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Karibu VMS | Visitor Management System in Kenya",
+    title: "Karibu VMS | Visitor Management System Kenya & Nairobi",
     description:
-      "Visitor management system in Kenya for QR check-in, guard dashboards, host confirmation, visitor checkout, and digital visitor logs.",
+      "Karibu VMS helps Kenyan offices, apartments and schools manage visitor check-in, QR passes, guard dashboards, host approval and checkout.",
     images: ["/og-image.svg"],
   },
   robots: {
