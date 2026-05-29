@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://karibuvms.com");
+  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://www.karibuvms.com");
 
 export const publicPages = [
   { path: "/", priority: 1, changeFrequency: "weekly" as const },
