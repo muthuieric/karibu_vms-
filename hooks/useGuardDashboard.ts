@@ -6,12 +6,14 @@ import { getAuthHeaders } from "@/lib/client-auth";
 import { filterGuardVisitors, getDynamicGateQrUrl, printGateQrPoster } from "@/lib/guard-dashboard";
 import { getBasePlan } from "@/lib/billing/pricing";
 import { isQrPassFrontendEnabled, resolveVisitorVerificationMethod, type VisitorVerificationMethod } from "@/lib/visitor-verification";
-import type { CustomField, Visitor } from "@/types/guard";
+import type { CustomField, GuardStats, GuardVisitorsResponse, Visitor } from "@/types/guard";
 
-function addVisitorOnce(visitors: Visitor[], visitor: Visitor) {
-  if (visitors.some((existing) => existing.id === visitor.id)) return visitors;
-  return [visitor, ...visitors];
-}
+const EMPTY_GUARD_STATS: GuardStats = {
+  totalToday: 0,
+  pendingCount: 0,
+  checkedInCount: 0,
+  checkedOutCount: 0,
+};
 
 async function fetchGuardVisitors(companyId: string, visitorId?: string) {
   const params = new URLSearchParams({ company_id: companyId });
@@ -22,7 +24,10 @@ async function fetchGuardVisitors(companyId: string, visitorId?: string) {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || "Active visitors could not be loaded.");
-  return (result.data || []) as Visitor[];
+  return {
+    data: (result.data || []) as Visitor[],
+    stats: { ...EMPTY_GUARD_STATS, ...(result.stats || {}) },
+  } satisfies GuardVisitorsResponse;
 }
 
 export function useGuardDashboard() {
@@ -50,8 +55,16 @@ export function useGuardDashboard() {
   const [approvingPassId, setApprovingPassId] = useState<string | null>(null);
   const [otpInput, setOtpInput] = useState("");
   const [qrTimestamp, setQrTimestamp] = useState(0);
+  const [guardStats, setGuardStats] = useState<GuardStats>(EMPTY_GUARD_STATS);
 
   const tickQrTimestamp = () => setQrTimestamp(Date.now());
+
+  const refreshGuardVisitors = useCallback(async (targetCompanyId: string) => {
+    const result = await fetchGuardVisitors(targetCompanyId);
+    setVisitors(result.data);
+    setGuardStats(result.stats);
+    return result;
+  }, []);
 
   const applyCompanySettings = useCallback((companyData: {
     require_photo?: boolean | null;
@@ -140,9 +153,7 @@ export function useGuardDashboard() {
     if (!companyId || visitor.company_id !== companyId) return;
     if (guardGateId && visitor.gate_id && visitor.gate_id !== guardGateId) return;
 
-    setVisitors((prev) => {
-      return addVisitorOnce(prev, visitor);
-    });
+    void refreshGuardVisitors(companyId);
   };
 
   useEffect(() => {
@@ -181,27 +192,8 @@ export function useGuardDashboard() {
 
       await refreshCompanySettings(currentCompanyId);
 
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
       try {
-        const rolloverAt = new Date().toISOString();
-        await supabase
-          .from("visitors")
-          .update({
-            status: "checked_out",
-            checked_out_at: rolloverAt,
-            pass_expired_at: rolloverAt,
-            otp_code: null,
-          })
-          .eq("company_id", currentCompanyId)
-          .in("status", ["pending", "checked_in"])
-          .lt("created_at", startOfToday.toISOString());
-      } catch (err) {
-        console.error("Visitor status rollover failed:", err);
-      }
-
-      try {
-        setVisitors(await fetchGuardVisitors(currentCompanyId));
+        await refreshGuardVisitors(currentCompanyId);
       } catch (visitorError) {
         console.error("Could not load active guard visitors:", visitorError);
       }
@@ -212,40 +204,24 @@ export function useGuardDashboard() {
         .on("postgres_changes", { event: "*", schema: "public", table: "visitors" }, (payload) => {
           void refreshCompanySettings(currentCompanyId);
 
-          if (payload.eventType === "INSERT") {
-            const newVisitor = payload.new as Visitor;
-            if (newVisitor.company_id !== currentCompanyId) return;
-            if (!currentGateId || newVisitor.gate_id === currentGateId || !newVisitor.gate_id) {
-              fetchGuardVisitors(currentCompanyId, newVisitor.id)
-                .then((records) => {
-                  const visitor = records[0];
-                  if (visitor) setVisitors((prev) => addVisitorOnce(prev, visitor));
-                })
-                .catch((error) => console.error("Could not hydrate inserted guard visitor:", error));
-            }
-          } else if (payload.eventType === "UPDATE") {
-            const updatedVisitor = payload.new as Visitor;
-            if (updatedVisitor.company_id !== currentCompanyId) return;
-            if (currentGateId && updatedVisitor.gate_id && updatedVisitor.gate_id !== currentGateId) {
-              setVisitors((prev) => prev.filter((visitor) => visitor.id !== updatedVisitor.id));
-              return;
-            }
-            if (payload.new.status === "checked_out") {
-              setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.new.id));
-            } else {
-              fetchGuardVisitors(currentCompanyId, updatedVisitor.id)
-                .then((records) => {
-                  const visitor = records[0];
-                  setVisitors((prev) => {
-                    if (!visitor) return prev.filter((item) => item.id !== updatedVisitor.id);
-                    return prev.map((item) => (item.id === visitor.id ? visitor : item));
-                  });
-                })
-                .catch((error) => console.error("Could not hydrate updated guard visitor:", error));
-            }
-          } else if (payload.eventType === "DELETE") {
-            setVisitors((prev) => prev.filter((visitor) => visitor.id !== payload.old.id));
-          }
+          const newVisitor = payload.new as Partial<Visitor>;
+          const oldVisitor = payload.old as Partial<Visitor>;
+          const eventCompanyId = newVisitor.company_id || oldVisitor.company_id;
+          if (eventCompanyId !== currentCompanyId) return;
+
+          const newGateId = newVisitor.gate_id;
+          const oldGateId = oldVisitor.gate_id;
+          const eventCouldAffectGate = !currentGateId
+            || !newGateId
+            || newGateId === currentGateId
+            || !oldGateId
+            || oldGateId === currentGateId;
+
+          if (!eventCouldAffectGate) return;
+
+          refreshGuardVisitors(currentCompanyId).catch((error) => {
+            console.error("Could not refresh guard visitors after realtime event:", error);
+          });
         })
         .subscribe();
 
@@ -256,11 +232,12 @@ export function useGuardDashboard() {
     return () => {
       cleanup.then((fn) => fn && fn());
     };
-  }, [applyCompanySettings, refreshCompanySettings]);
+  }, [applyCompanySettings, refreshCompanySettings, refreshGuardVisitors]);
 
   useEffect(() => {
     const handleFocus = () => {
       void refreshCompanySettings(companyId);
+      if (companyId) void refreshGuardVisitors(companyId);
     };
 
     window.addEventListener("focus", handleFocus);
@@ -270,7 +247,7 @@ export function useGuardDashboard() {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleFocus);
     };
-  }, [companyId, refreshCompanySettings]);
+  }, [companyId, refreshCompanySettings, refreshGuardVisitors]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -369,9 +346,7 @@ export function useGuardDashboard() {
       }
 
       if (result.data) {
-        const refreshedVisitors = await fetchGuardVisitors(visitor.company_id, visitor.id);
-        const refreshedVisitor = refreshedVisitors[0] || (result.data as Visitor);
-        setVisitors((prev) => prev.map((item) => (item.id === visitor.id ? refreshedVisitor : item)));
+        await refreshGuardVisitors(visitor.company_id);
       }
     } catch (error) {
       console.error("Failed to approve visitor pass:", error);
@@ -395,7 +370,8 @@ export function useGuardDashboard() {
       }
 
       if (result.data) {
-        setVisitors((prev) => prev.filter((visitor) => visitor.id !== id));
+        const targetCompanyId = companyId || result.data.company_id;
+        if (targetCompanyId) await refreshGuardVisitors(targetCompanyId);
       }
     } catch (error) {
       console.error("Failed to check out visitor:", error);
@@ -428,9 +404,9 @@ export function useGuardDashboard() {
     approvingPassId,
     otpInput,
     filteredVisitors: filterGuardVisitors(visitors, searchTerm, statusFilter),
-    totalToday: visitors.length,
-    checkedInCount: visitors.filter((visitor) => visitor.status === "checked_in").length,
-    pendingCount: visitors.filter((visitor) => visitor.status === "pending").length,
+    totalToday: guardStats.totalToday,
+    checkedInCount: guardStats.checkedInCount,
+    pendingCount: guardStats.pendingCount,
     setSearchTerm,
     setStatusFilter,
     setOtpInput,

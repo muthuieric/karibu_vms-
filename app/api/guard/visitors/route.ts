@@ -5,6 +5,13 @@ import { writeAuditLog } from "@/lib/audit-log";
 
 const ACTIVE_STATUSES = ["pending", "checked_in"];
 
+const EMPTY_STATS = {
+  totalToday: 0,
+  pendingCount: 0,
+  checkedInCount: 0,
+  checkedOutCount: 0,
+};
+
 const GUARD_VISITOR_SELECT = [
   "id",
   "company_id",
@@ -36,6 +43,22 @@ const GUARD_VISITOR_SELECT = [
 
 function decryptOrLegacy(encrypted?: string | null, legacy?: string | null) {
   return decryptValue(encrypted || null) || legacy || "";
+}
+
+function getKenyaDayRange(now = new Date()) {
+  const kenyaOffsetMs = 3 * 60 * 60 * 1000;
+  const kenyaNow = new Date(now.getTime() + kenyaOffsetMs);
+  const startUtcMs = Date.UTC(
+    kenyaNow.getUTCFullYear(),
+    kenyaNow.getUTCMonth(),
+    kenyaNow.getUTCDate()
+  ) - kenyaOffsetMs;
+  const endUtcMs = startUtcMs + 24 * 60 * 60 * 1000;
+
+  return {
+    startIso: new Date(startUtcMs).toISOString(),
+    endIso: new Date(endUtcMs).toISOString(),
+  };
 }
 
 function toGuardVisitor(visitor: Record<string, unknown>) {
@@ -125,10 +148,14 @@ export async function GET(request: Request) {
       guardGateId = guardProfile?.gate_id || null;
     }
 
+    const { startIso, endIso } = getKenyaDayRange();
+
     let query = auth.supabaseAdmin
       .from("visitors")
       .select(GUARD_VISITOR_SELECT)
       .eq("company_id", companyId)
+      .gte("created_at", startIso)
+      .lt("created_at", endIso)
       .in("status", ACTIVE_STATUSES)
       .order("created_at", { ascending: false })
       .limit(visitorId ? 1 : 500);
@@ -136,8 +163,26 @@ export async function GET(request: Request) {
     if (visitorId) query = query.eq("id", visitorId);
     if (guardGateId) query = query.or(`gate_id.eq.${guardGateId},gate_id.is.null`);
 
-    const { data, error } = await query;
+    let statsQuery = auth.supabaseAdmin
+      .from("visitors")
+      .select("status")
+      .eq("company_id", companyId)
+      .gte("created_at", startIso)
+      .lt("created_at", endIso);
+
+    if (guardGateId) statsQuery = statsQuery.or(`gate_id.eq.${guardGateId},gate_id.is.null`);
+
+    const [{ data, error }, { data: statsData, error: statsError }] = await Promise.all([query, statsQuery]);
     if (error) throw error;
+    if (statsError) throw statsError;
+
+    const stats = (statsData || []).reduce((counts, visitor) => {
+      counts.totalToday += 1;
+      if (visitor.status === "pending") counts.pendingCount += 1;
+      if (visitor.status === "checked_in") counts.checkedInCount += 1;
+      if (visitor.status === "checked_out") counts.checkedOutCount += 1;
+      return counts;
+    }, { ...EMPTY_STATS });
 
     await writeAuditLog({
       supabaseAdmin: auth.supabaseAdmin,
@@ -151,7 +196,7 @@ export async function GET(request: Request) {
     });
 
     const hydratedVisitors = await hydrateHostNames(auth.supabaseAdmin, (data || []) as unknown as Record<string, unknown>[]);
-    return NextResponse.json({ data: hydratedVisitors.map(toGuardVisitor) });
+    return NextResponse.json({ data: hydratedVisitors.map(toGuardVisitor), stats });
   } catch (error) {
     console.error("Guard visitors fetch failed:", error);
     const safeError = getSafeErrorResponse(error, "Active visitors could not be loaded.");

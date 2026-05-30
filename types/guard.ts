@@ -31,3 +31,15 @@ export type CustomField = {
   id: string;
   label: string;
 };
+
+export type GuardStats = {
+  totalToday: number;
+  pendingCount: number;
+  checkedInCount: number;
+  checkedOutCount: number;
+};
+
+export type GuardVisitorsResponse = {
+  data: Visitor[];
+  stats: GuardStats;
+};
