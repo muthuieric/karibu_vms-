@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
-export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://www.karibuvms.com");
+export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.karibuvms.com";
 
 export const publicPages = [
   { path: "/", priority: 1, changeFrequency: "weekly" as const },
@@ -72,9 +71,40 @@ export const organizationJsonLd = {
   name: "Karibu VMS",
   url: siteUrl,
   logo: absoluteUrl("/logo.svg"),
+  email: "karibuvms@gmail.com",
+  telephone: "+254702104690",
   sameAs: [
     "https://www.karibuvms.com",
   ],
+};
+
+export const localBusinessJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Karibu VMS by Luffi Tech",
+  url: siteUrl,
+  logo: absoluteUrl("/logo.svg"),
+  image: absoluteUrl("/og-image.svg"),
+  description:
+    "Karibu VMS is a visitor management system for offices, apartments, schools, gated facilities, and organizations in Nairobi and across Kenya.",
+  telephone: "+254702104690",
+  email: "karibuvms@gmail.com",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Nairobi",
+    addressCountry: "KE",
+  },
+  areaServed: [
+    {
+      "@type": "City",
+      name: "Nairobi",
+    },
+    {
+      "@type": "Country",
+      name: "Kenya",
+    },
+  ],
+  priceRange: "KES",
 };
 
 export const websiteJsonLd = {
