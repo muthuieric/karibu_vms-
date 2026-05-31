@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { BadgeCheck, CheckCircle2, Loader2, UserCheck } from "lucide-react";
 
@@ -24,7 +24,7 @@ function PublicActionShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LogoHeader({ subtitle }: { subtitle: string }) {
+function LogoHeader({ subtitle }: { subtitle?: string }) {
   return (
     <div className="mb-8 text-center">
       <Image
@@ -35,7 +35,7 @@ function LogoHeader({ subtitle }: { subtitle: string }) {
         className="mx-auto mb-6 h-11 w-auto object-contain"
         priority
       />
-      <p className="text-sm font-semibold text-zinc-500">{subtitle}</p>
+      {subtitle ? <p className="text-sm font-semibold text-zinc-500">{subtitle}</p> : null}
     </div>
   );
 }
@@ -45,8 +45,29 @@ function HostConfirmContent() {
   const companyId = params.companyId as string;
   const [code, setCode] = useState("");
   const [visitor, setVisitor] = useState<ConfirmedVisitor | null>(null);
+  const [companyName, setCompanyName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      if (!companyId) return;
+
+      try {
+        const response = await fetch(`/api/public/company?company_id=${companyId}`);
+        const result = await response.json().catch(() => ({}));
+        const company = result.data;
+
+        if (response.ok && company?.name) {
+          setCompanyName(company.name);
+        }
+      } catch {
+        setCompanyName("");
+      }
+    };
+
+    fetchCompanyData();
+  }, [companyId]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -81,7 +102,7 @@ function HostConfirmContent() {
   return (
     <Card className="mx-auto w-full max-w-md rounded-3xl border-zinc-100 bg-white shadow-sm">
       <CardHeader className="pb-6 text-center">
-        <LogoHeader subtitle="Karibu VMS" />
+        <LogoHeader subtitle={companyName || undefined} />
 
         <CardTitle className="text-3xl font-semibold tracking-tight text-zinc-950">Host confirmation</CardTitle>
 
@@ -153,7 +174,7 @@ export default function HostConfirmWrapper() {
       <Suspense
         fallback={
           <div className="mx-auto flex w-full max-w-md flex-col items-center rounded-3xl border border-zinc-100 bg-white p-8 text-center shadow-sm" role="status" aria-live="polite">
-            <LogoHeader subtitle="Host confirmation" />
+            <LogoHeader />
             <Loader2 className="mb-4 h-8 w-8 animate-spin text-blue-600" aria-hidden="true" />
             <p className="font-semibold text-zinc-950">Loading visit confirmation...</p>
             <p className="mt-2 text-sm leading-6 text-zinc-500">Please wait while we prepare the host confirmation form.</p>
