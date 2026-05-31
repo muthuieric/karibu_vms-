@@ -163,6 +163,7 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
   ::selection {
     @apply bg-primary/15 text-text-main;
@@ -177,5 +178,101 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .animate-page-in {
+    animation: page-in 520ms ease-out both;
+  }
+
+  .animate-soft-rise {
+    animation: soft-rise 640ms ease-out both;
+  }
+
+  .animate-soft-rise-delay-1 {
+    animation: soft-rise 680ms ease-out 90ms both;
+  }
+
+  .animate-soft-rise-delay-2 {
+    animation: soft-rise 720ms ease-out 160ms both;
+  }
+
+  .animate-soft-scale {
+    animation: soft-scale 520ms ease-out both;
+  }
+
+  .hover-lift {
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-3px);
+  }
+
+  .cta-breathe {
+    animation: cta-breathe 2.8s ease-in-out infinite;
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes soft-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cta-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .hover-lift:hover {
+    transform: none;
   }
 }
