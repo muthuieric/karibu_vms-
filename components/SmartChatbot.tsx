@@ -124,26 +124,22 @@ export default function SmartChatbot() {
     { id: 1, text: "Hi, I can answer public questions about Karibu VMS, visitor check-in, guard workflows, admin tools, pricing, privacy, or support.", sender: "bot" }
   ]);
   const [inputValue, setInputValue] = useState("");
-  
-  // Advanced State Machine for Routing
   const [flowState, setFlowState] = useState<
-    "idle" | 
-    "awaiting_problem_company" | 
+    "idle" |
+    "awaiting_problem_company" |
     "awaiting_problem_desc" |
     "awaiting_reg_name" |
     "awaiting_reg_company" |
     "awaiting_reg_location" |
     "awaiting_reg_industry"
   >("idle");
-  
-  const [tempData, setTempData] = useState({ 
-    name: "", 
-    company: "", 
-    location: "", 
-    industry: "", 
-    problem: "" 
+  const [tempData, setTempData] = useState({
+    name: "",
+    company: "",
+    location: "",
+    industry: "",
+    problem: ""
   });
-  
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -154,16 +150,10 @@ export default function SmartChatbot() {
     const text = messageText.trim();
     if (!text) return;
 
-    // Add User Message immediately
     setMessages(prev => [...prev, { id: Date.now(), text, sender: "user" }]);
     setInputValue("");
 
-    // Simulate thinking delay
     setTimeout(() => {
-      
-      // ==========================================
-      // FLOW 1: SUPPORT TICKET (High Priority)
-      // ==========================================
       if (flowState === "awaiting_problem_company") {
         setTempData(prev => ({ ...prev, company: text }));
         setFlowState("awaiting_problem_desc");
@@ -173,14 +163,13 @@ export default function SmartChatbot() {
 
       if (flowState === "awaiting_problem_desc") {
         const problem = text;
-        setFlowState("idle"); // Reset flow
-        
+        setFlowState("idle");
         const waText = encodeURIComponent(`*Support Ticket*\nCompany: ${tempData.company}\nIssue: ${problem}`);
         const waLink = `https://wa.me/254702104690?text=${waText}`;
-        
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          text: "I've drafted your support ticket. Click the button below to send it directly to our technical team on WhatsApp so we can resolve this immediately.", 
+
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: "I've drafted your support ticket. Click the button below to send it directly to our technical team on WhatsApp so we can resolve this immediately.",
           sender: "bot",
           action: { label: "Send Ticket to Support", url: waLink }
         }]);
@@ -188,9 +177,6 @@ export default function SmartChatbot() {
         return;
       }
 
-      // ==========================================
-      // FLOW 2: REGISTRATION & SALES QUALIFICATION
-      // ==========================================
       if (flowState === "awaiting_reg_name") {
         setTempData(prev => ({ ...prev, name: text }));
         setFlowState("awaiting_reg_company");
@@ -214,14 +200,13 @@ export default function SmartChatbot() {
 
       if (flowState === "awaiting_reg_industry") {
         const industry = text;
-        setFlowState("idle"); // Reset flow
-        
+        setFlowState("idle");
         const waText = encodeURIComponent(`*New Setup Request*\nName: ${tempData.name}\nOrganization: ${tempData.company}\nLocation: ${tempData.location}\nType: ${industry}\n\n*Note:* Client completed the chatbot intake. Let's get them set up!`);
         const waLink = `https://wa.me/254702104690?text=${waText}`;
-        
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          text: "Perfect! I have all your details. Click the button below to connect directly with our team on WhatsApp to finalize your setup.", 
+
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: "Perfect! I have all your details. Click the button below to connect directly with our team on WhatsApp to finalize your setup.",
           sender: "bot",
           action: { label: "Chat with Team", url: waLink }
         }]);
@@ -229,18 +214,14 @@ export default function SmartChatbot() {
         return;
       }
 
-      // ==========================================
-      // FLOW 3: IDLE KEYWORD RECOGNITION & FALLBACK
-      // ==========================================
       const lowerInput = text.toLowerCase();
       const productAnswer = getProductAnswer(lowerInput);
-      
-      // Catch Greetings first
+
       if (lowerInput.match(/\b(hi|hello|hey|hii|heya|greetings)\b/)) {
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          text: "Hello. I can help with public Karibu VMS questions about self check-in, guards, admins, pricing, privacy, or support.", 
-          sender: "bot" 
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: "Hello. I can help with public Karibu VMS questions about self check-in, guards, admins, pricing, privacy, or support.",
+          sender: "bot"
         }]);
       }
       else if (productAnswer) {
@@ -252,33 +233,31 @@ export default function SmartChatbot() {
       }
       else if (lowerInput.includes("problem") || lowerInput.includes("issue") || lowerInput.includes("ticket") || lowerInput.includes("error")) {
         setFlowState("awaiting_problem_company");
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          text: "I can help with that. Let's create a support ticket. First, what is your organization's name?", 
-          sender: "bot" 
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: "I can help with that. Let's create a support ticket. First, what is your organization's name?",
+          sender: "bot"
         }]);
       }
       else if (lowerInput.includes("setup") || lowerInput.includes("register") || lowerInput.includes("buy") || lowerInput.includes("trial") || lowerInput.includes("sales") || lowerInput.includes("start")) {
         setFlowState("awaiting_reg_name");
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          text: "Let's get your organization set up! To start, what is your name?", 
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: "Let's get your organization set up! To start, what is your name?",
           sender: "bot"
         }]);
-      } 
-      // FALLBACK: WhatsApp Routing for unknown questions
+      }
       else {
         const waText = encodeURIComponent(`Hi, I have a question from the website: "${text}"`);
         const waLink = `https://wa.me/254702104690?text=${waText}`;
 
-        setMessages(prev => [...prev, { 
-          id: Date.now(), 
-          text: "I might need a human to help with that. Please click the button below to ask our team directly on WhatsApp.", 
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: "I might need a human to help with that. Please click the button below to ask our team directly on WhatsApp.",
           sender: "bot",
           action: { label: "Ask on WhatsApp", url: waLink }
         }]);
       }
-
     }, 600);
   };
 
@@ -300,13 +279,11 @@ export default function SmartChatbot() {
           role="dialog"
           aria-modal="false"
           aria-labelledby="karibu-support-chat-title"
-          className="w-[calc(100vw-3rem)] sm:w-[380px] h-[500px] max-h-[calc(100vh-8rem)] bg-white border border-zinc-100 shadow-xl rounded-3xl flex flex-col overflow-hidden mb-4 animate-in slide-in-from-bottom-5 duration-300"
+          className="mb-4 flex h-[500px] max-h-[calc(100vh-8rem)] w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-xl duration-300 animate-in slide-in-from-bottom-5 sm:w-[380px]"
         >
-          
-          {/* Chat Header */}
-          <div className="bg-white border-b border-zinc-100 p-5 flex items-center justify-between">
+          <div className="flex items-center justify-between border-b border-zinc-100 bg-white p-5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100 p-1.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-100 bg-blue-50 p-1.5">
                 <Image
                   src="/icon.svg"
                   alt="Karibu VMS logo"
@@ -316,7 +293,7 @@ export default function SmartChatbot() {
                 />
               </div>
               <div>
-                <h2 id="karibu-support-chat-title" className="font-semibold text-sm text-zinc-900">karibu-vms Support</h2>
+                <h2 id="karibu-support-chat-title" className="text-sm font-semibold text-zinc-900">karibu-vms Support</h2>
                 <p className="text-[12px] text-zinc-500">We reply instantly</p>
               </div>
             </div>
@@ -324,30 +301,29 @@ export default function SmartChatbot() {
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label="Close support chat"
-              className="text-zinc-400 hover:text-zinc-700 hover:bg-zinc-50 p-2 rounded-full transition-colors"
+              className="rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-50 hover:text-zinc-700"
             >
               <X size={18} />
             </button>
           </div>
 
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-zinc-50/50" aria-live="polite">
+          <div className="flex-1 space-y-4 overflow-y-auto bg-zinc-50/50 p-5" aria-live="polite">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] flex flex-col gap-2 ${msg.sender === "user" ? "items-end" : "items-start"}`}>
+                <div className={`flex max-w-[85%] flex-col gap-2 ${msg.sender === "user" ? "items-end" : "items-start"}`}>
                   <div className={`px-4 py-3 text-sm leading-relaxed ${
-                    msg.sender === "user" 
-                    ? "bg-blue-600 text-white rounded-2xl rounded-br-sm shadow-sm" 
-                    : "bg-white border border-zinc-100 text-zinc-700 rounded-2xl rounded-bl-sm shadow-sm"
+                    msg.sender === "user"
+                      ? "rounded-2xl rounded-br-sm bg-blue-600 text-white shadow-sm"
+                      : "rounded-2xl rounded-bl-sm border border-zinc-100 bg-white text-zinc-700 shadow-sm"
                   }`}>
                     <span>{msg.text}</span>
                   </div>
                   {msg.action && (
-                    <a 
-                      href={msg.action.url} 
-                      target="_blank" 
+                    <a
+                      href={msg.action.url}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-blue-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm hover:bg-blue-700 transition-colors inline-flex items-center gap-2 mt-1"
+                      className="mt-1 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
                     >
                       <HelpCircle size={14} /> {msg.action.label}
                     </a>
@@ -358,19 +334,17 @@ export default function SmartChatbot() {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input Area */}
-          <div className="p-4 bg-white border-t border-zinc-100">
-            {/* Quick Actions (Only show if bot is idle) */}
+          <div className="border-t border-zinc-100 bg-white p-4">
             {flowState === "idle" && (
-              <div className="flex gap-2 overflow-x-auto pb-3 mb-1 no-scrollbar">
+              <div className="no-scrollbar mb-1 flex gap-2 overflow-x-auto pb-3">
                 {quickActions.map((action, i) => (
-                  <button 
-                    key={i} 
+                  <button
+                    key={i}
                     type="button"
                     onClick={() => {
                       sendMessage(action.text);
                     }}
-                    className="whitespace-nowrap px-3.5 py-1.5 bg-blue-50 border border-blue-100 hover:border-blue-200 hover:bg-blue-100 text-blue-700 text-xs font-medium rounded-full transition-all"
+                    className="whitespace-nowrap rounded-full border border-blue-100 bg-blue-50 px-3.5 py-1.5 text-xs font-medium text-blue-700 transition-all hover:border-blue-200 hover:bg-blue-100"
                   >
                     {action.label}
                   </button>
@@ -380,15 +354,15 @@ export default function SmartChatbot() {
 
             <form onSubmit={handleSendMessage} className="relative mt-2">
               <label htmlFor="support-chat-message" className="sr-only">Support chat message</label>
-              <input 
+              <input
                 id="support-chat-message"
-                type="text" 
+                type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type your message..." 
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-zinc-900"
+                placeholder="Type your message..."
+                className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-3 pl-4 pr-12 text-sm text-zinc-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
-              <button type="submit" aria-label="Send support message" disabled={!inputValue.trim()} className="absolute right-1.5 top-1.5 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors">
+              <button type="submit" aria-label="Send support message" disabled={!inputValue.trim()} className="absolute right-1.5 top-1.5 rounded-xl bg-blue-600 p-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
                 <Send size={16} />
               </button>
             </form>
@@ -396,19 +370,18 @@ export default function SmartChatbot() {
         </section>
       )}
 
-      {/* Floating Toggle Button */}
-      <button 
+      <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label={isOpen ? "Close Karibu VMS assistant" : "Open Karibu VMS assistant"}
         aria-controls="karibu-support-chat"
         aria-expanded={isOpen}
-        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg border transition-all duration-300 hover:scale-105 active:scale-95 ${
-          isOpen ? "bg-white border-blue-100 rotate-90" : "bg-blue-600 border-transparent shadow-blue-500/30"
+        className={`flex h-14 w-14 items-center justify-center rounded-full border shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 ${
+          isOpen ? "rotate-90 border-blue-100 bg-white" : "border-transparent bg-blue-600 shadow-blue-500/30"
         }`}
       >
         {isOpen ? (
-          <X className="text-blue-700 w-6 h-6" />
+          <X className="h-6 w-6 text-blue-700" />
         ) : (
           <Image
             src="/icon.svg"
@@ -420,12 +393,6 @@ export default function SmartChatbot() {
           />
         )}
       </button>
-
-      {/* Tailwind utility to hide scrollbars cleanly */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
     </div>
   );
 }
