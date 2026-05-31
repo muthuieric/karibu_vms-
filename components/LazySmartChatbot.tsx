@@ -19,8 +19,8 @@ export default function LazySmartChatbot() {
       return () => window.cancelIdleCallback(idleId);
     }
 
-    const timer = window.setTimeout(loadChatbot, 8000);
-    return () => window.clearTimeout(timer);
+    const timer = globalThis.setTimeout(loadChatbot, 8000);
+    return () => globalThis.clearTimeout(timer);
   }, []);
 
   return shouldLoad ? <SmartChatbot /> : null;
