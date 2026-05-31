@@ -47,6 +47,16 @@ export default function PublicFooter() {
             <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
               Karibu VMS helps Kenyan teams manage visitor check-in, QR passes, guard workflows, checkout, and searchable records from one clean platform.
             </p>
+            <div className="mt-5 grid gap-2 text-sm leading-6 text-zinc-500">
+              <p>Karibu VMS by Luffi Tech</p>
+              <p>Serving offices, apartments, schools, and organizations across Nairobi, Kenya.</p>
+              <p>
+                Phone: <a className="font-medium text-zinc-700 hover:text-zinc-950" href="tel:+254702104690">+254 702 104 690</a>
+              </p>
+              <p>
+                Email: <a className="font-medium text-zinc-700 hover:text-zinc-950" href="mailto:karibuvms@gmail.com">karibuvms@gmail.com</a>
+              </p>
+            </div>
           </div>
 
           <div className="grid gap-10 sm:grid-cols-3">
