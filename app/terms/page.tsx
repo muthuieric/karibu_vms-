@@ -56,56 +56,90 @@ const terms = [
   },
 ];
 
+const summaryPoints = [
+  "Use the platform only for lawful visitor management and related business operations.",
+  "Facilities remain responsible for their visitor data choices, notices, users, and retention settings.",
+  "Billing, audit, and operational records may be handled separately from visitor personal data.",
+];
+
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden flex flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-white font-sans text-zinc-900 selection:bg-blue-100 selection:text-blue-900">
       <PublicNavbar />
 
       <main id="main-content" className="flex-1">
-        <section className="py-24 bg-zinc-950 text-white border-b border-zinc-800">
-          <div className="container mx-auto px-6 max-w-4xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-zinc-200 text-xs font-semibold mb-6">
-              Terms of Service
+        <section className="relative overflow-hidden border-b border-blue-100 bg-gradient-to-b from-blue-50 via-white to-white py-24 md:py-28">
+          <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full bg-blue-100/70 blur-3xl" aria-hidden="true" />
+          <div className="container relative z-10 mx-auto max-w-6xl px-6">
+            <div className="grid items-start gap-12 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+              <div>
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
+                  <Scale className="h-4 w-4" aria-hidden="true" />
+                  Terms of Service
+                </div>
+                <h1 className="max-w-3xl text-4xl font-black tracking-tight text-zinc-950 md:text-5xl md:leading-tight">Terms for using Karibu VMS.</h1>
+                <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-600">
+                  These terms describe the basic rules for using Karibu VMS as a visitor management, guard workflow, billing, privacy management, and facility administration platform.
+                </p>
+                <p className="mt-6 text-sm font-semibold text-zinc-500">Last updated: May 28, 2026</p>
+              </div>
+
+              <div className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-2xl shadow-blue-950/10">
+                <div className="rounded-[1.5rem] bg-zinc-50 p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-blue-600">Terms summary</p>
+                  <div className="mt-5 grid gap-3">
+                    {summaryPoints.map((point) => (
+                      <div key={point} className="flex items-start gap-3 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
+                        <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                        <p className="text-sm font-medium leading-6 text-zinc-700">{point}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">Terms for using Karibu VMS.</h1>
-            <p className="text-lg text-zinc-300 leading-relaxed">
-              These terms describe the basic rules for using Karibu VMS as a visitor management, guard workflow, billing, privacy management, and facility administration platform.
-            </p>
-            <p className="text-sm text-zinc-400 mt-6">Last updated: May 28, 2026</p>
           </div>
         </section>
 
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-6 max-w-5xl">
-            <div className="grid gap-6">
+        <section className="bg-white py-24">
+          <div className="container mx-auto max-w-6xl px-6">
+            <div className="mb-12 max-w-3xl">
+              <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-600">Terms details</p>
+              <h2 className="text-3xl font-black tracking-tight text-zinc-950 md:text-4xl">Rules for accounts, visitor records, billing, and responsible use.</h2>
+              <p className="mt-4 text-lg leading-8 text-zinc-600">
+                These terms explain how organizations should use Karibu VMS and what responsibilities remain with the facility using the workspace.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
               {terms.map((term) => {
                 const Icon = term.icon;
                 return (
-                  <div key={term.title} className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
+                  <article key={term.title} className="rounded-3xl border border-zinc-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
                     <div className="flex items-start gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-                        <Icon className="w-5 h-5" aria-hidden="true" />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                        <Icon className="h-5 w-5" aria-hidden="true" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold mb-2">{term.title}</h2>
-                        <p className="text-sm text-zinc-600 leading-relaxed">{term.description}</p>
+                        <h2 className="text-lg font-black text-zinc-950">{term.title}</h2>
+                        <p className="mt-2 text-sm leading-7 text-zinc-600">{term.description}</p>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
 
-            <div className="mt-10 rounded-3xl border border-zinc-100 bg-zinc-50 p-6 md:p-8">
-              <div className="grid md:grid-cols-[1fr_auto] gap-6 items-center">
+            <div className="mt-10 rounded-[2rem] border border-blue-100 bg-blue-50 p-8 md:p-10">
+              <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
                 <div>
-                  <h2 className="text-2xl font-bold tracking-tight mb-2">Questions about these terms?</h2>
-                  <p className="text-sm text-zinc-600 leading-relaxed">
+                  <h2 className="text-2xl font-black tracking-tight text-zinc-950 md:text-3xl">Questions about these terms?</h2>
+                  <p className="mt-3 text-sm leading-7 text-zinc-700">
                     Contact the Karibu VMS team if you need clarification about service use, billing, account setup, visitor data, retention settings, anonymisation, or facility responsibilities.
                   </p>
                 </div>
                 <Link href="/contact">
-                  <Button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white h-12 px-7 rounded-xl">Contact Us</Button>
+                  <Button className="h-12 w-full rounded-xl bg-blue-600 px-7 font-bold text-white hover:bg-blue-700 lg:w-auto">Contact Us</Button>
                 </Link>
               </div>
             </div>
