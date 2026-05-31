@@ -6,15 +6,28 @@ import LazySmartChatbot from "@/components/LazySmartChatbot";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import { publicMetadata } from "@/lib/seo/site";
-import { BadgeCheck, ClipboardList, DoorOpen, FileSearch, LockKeyhole, QrCode, ShieldCheck, SlidersHorizontal, UsersRound, WalletCards } from "lucide-react";
+import {
+  BadgeCheck,
+  ClipboardList,
+  DoorOpen,
+  FileSearch,
+  LockKeyhole,
+  QrCode,
+  ShieldCheck,
+  SlidersHorizontal,
+  UsersRound,
+  WalletCards,
+} from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
   title: "Karibu VMS | Visitor Management System Kenya & Nairobi",
-  description: "Karibu VMS helps Kenyan offices, apartments and schools manage visitor check-in, QR passes, guard dashboards, host approval and checkout.",
+  description:
+    "Karibu VMS helps Kenyan offices, apartments and schools manage visitor check-in, QR passes, guard dashboards, host approval and checkout.",
   path: "/",
 });
 
-const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
+const demoWhatsAppUrl =
+  "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20I%20would%20like%20to%20book%20a%20demo%20for%20my%20organization.";
 
 const softwareApplicationJsonLd = {
   "@context": "https://schema.org",
@@ -22,7 +35,8 @@ const softwareApplicationJsonLd = {
   name: "Karibu VMS",
   applicationCategory: "SecurityApplication",
   operatingSystem: "Web",
-  description: "Visitor management system in Kenya for secure check-ins, digital visitor passes, guard dashboards, host confirmation, and checkout.",
+  description:
+    "Visitor management system in Kenya for secure check-ins, digital visitor passes, guard dashboards, host confirmation, and checkout.",
   offers: {
     "@type": "AggregateOffer",
     lowPrice: "1500",
@@ -35,427 +49,400 @@ const softwareApplicationJsonLd = {
 const platformHighlights = [
   {
     title: "Guard desk check-in",
-    description: "Register walk-in visitors at reception or the guard desk with the details your organization chooses to collect.",
+    description:
+      "Register walk-in visitors at reception or the gate using a structured form instead of a paper book.",
     icon: ClipboardList,
   },
   {
-    title: "QR Pass Verification",
-    description: "Premium teams can choose QR Pass Verification so approved visitors receive a secure QR visitor pass and visitor code.",
+    title: "QR visitor flow",
+    description:
+      "Let visitors scan a QR code, submit their details, and move through a cleaner approval process.",
     icon: QrCode,
   },
   {
-    title: "Entry points and gates",
-    description: "Set up entry points where needed and assign guards to specific gates or reception points.",
+    title: "Gates and entry points",
+    description:
+      "Create entry points and assign guards to the exact gates or reception areas where they work.",
     icon: DoorOpen,
   },
   {
-    title: "Visitor intake rules",
-    description: "Choose whether to ask for phone numbers, ID details, visit purpose, vehicle registration, photos, host selection, or custom questions.",
+    title: "Custom visitor rules",
+    description:
+      "Choose what to collect, including host, purpose, phone number, vehicle details, ID details, and custom questions.",
     icon: SlidersHorizontal,
   },
   {
     title: "Host confirmation",
-    description: "Let hosts confirm that a visitor reached them while guards remain responsible for entry approval.",
+    description:
+      "Help hosts confirm visitor arrival while guards stay in control of entry and checkout actions.",
     icon: UsersRound,
   },
   {
-    title: "Records and review",
-    description: "Review visitor history, checkout status, gate activity, and restricted visitor records without searching through paper books.",
+    title: "Searchable records",
+    description:
+      "Find visitor history, gate activity, checkout status, restricted records, and billing information faster.",
     icon: FileSearch,
   },
+];
+
+const steps = [
   {
-    title: "Billing and payment tracking",
-    description: "Choose a Basic or Premium plan, then track visitor usage, monthly billing summaries, M-Pesa initiation, and payment history.",
-    icon: WalletCards,
+    label: "01",
+    title: "Visitor arrives",
+    description: "The visitor reaches a reception desk, gate, or QR check-in poster.",
+  },
+  {
+    label: "02",
+    title: "Details are captured",
+    description: "A guard or QR form collects the information your organization requires.",
+  },
+  {
+    label: "03",
+    title: "Entry is reviewed",
+    description: "Security checks host, department, gate, and restricted visitor information.",
+  },
+  {
+    label: "04",
+    title: "Visit is recorded",
+    description: "The visit stays in the dashboard with arrival, approval, and checkout records.",
   },
 ];
 
 const roleDetails = [
   {
-    role: "Company admins",
-    details: ["Manage gates, guards, departments, and hosts", "Configure visitor intake rules for your organization", "Review the full visitor log, restricted list, and payment history"],
+    role: "Admins",
+    details: ["Configure visitor rules", "Manage guards, hosts, gates, and departments", "Review records and billing history"],
   },
   {
-    role: "Security guards",
-    details: ["Register walk-in visitors quickly", "Work from assigned gates or reception points", "Confirm visit details and checkout times"],
+    role: "Guards",
+    details: ["Register walk-in visitors", "Review submitted details", "Approve entry and manage checkout"],
   },
   {
     role: "Visitors",
-    details: ["Use QR registration when enabled", "Receive a digital visitor pass after approval", "Check out with a visitor code when leaving"],
+    details: ["Scan QR codes when enabled", "Submit visit details", "Receive digital pass or verification instructions"],
   },
 ];
 
-const facilityTypes = ["Corporate offices", "Schools and campuses", "Apartments", "Gated estates", "Clinics", "Warehouses", "Co-working spaces", "Events and temporary sites"];
+const facilityTypes = [
+  "Corporate offices",
+  "Apartments",
+  "Schools",
+  "Gated estates",
+  "Clinics",
+  "Warehouses",
+  "Co-working spaces",
+  "Events",
+];
 
 const kenyaUseCases = [
   {
     title: "Office visitor management in Kenya",
-    description: "Record clients, interview candidates, suppliers, contractors, and tenant visitors with host, department, gate, and checkout context.",
+    description:
+      "Record clients, suppliers, contractors, interview candidates, and investor meetings with host and department context.",
   },
   {
     title: "Apartment and estate visitor logs",
-    description: "Give guards a cleaner way to track residents' visitors, delivery riders, vehicles, service providers, and repeat visits.",
+    description:
+      "Help guards track residents' visitors, delivery riders, vehicles, service providers, and repeat visits more clearly.",
   },
   {
     title: "School and institution check-in",
-    description: "Support reception and gate teams handling parents, suppliers, consultants, maintenance teams, interviews, and scheduled guests.",
+    description:
+      "Support gate teams handling parents, suppliers, interviews, consultants, and scheduled guests.",
   },
+];
+
+const trustPoints = [
+  "Built for Nairobi and Kenyan facility workflows",
+  "Works for guard desks, receptions, and QR check-in points",
+  "Designed for visitor records, access accountability, and faster reviews",
 ];
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
-      
+    <div className="min-h-screen overflow-x-hidden bg-white font-sans text-zinc-900 selection:bg-blue-100 selection:text-blue-900">
       <PublicNavbar />
 
-      {/* --- HERO SECTION --- */}
       <main id="main-content">
-      <section className="relative pt-20 pb-32 overflow-hidden bg-zinc-50">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white rounded-full mix-blend-normal opacity-50 blur-3xl pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-50/50 rounded-full mix-blend-normal opacity-50 blur-3xl pointer-events-none -translate-x-1/3 translate-y-1/3"></div>
+        <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white py-20 md:py-28">
+          <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full bg-blue-100/70 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute bottom-10 left-0 h-64 w-64 rounded-full bg-emerald-100/50 blur-3xl" aria-hidden="true" />
 
-        <div className="container mx-auto px-6 max-w-6xl relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="max-w-xl">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-zinc-900 tracking-tight leading-[1.1] mb-6">
-                A visitor management system built for modern Kenyan facilities.
-              </h1>
-              <p className="text-lg text-zinc-600 mb-8 leading-relaxed">
-                Karibu VMS helps offices, apartments, schools, and gated spaces manage visitor check-in, guard review, digital visitor passes, host confirmation, and checkout from one clear system.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-                  <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white h-12 px-8 rounded-xl text-base font-medium transition-all">
-                    Book a Demo
-                  </Button>
-                </a>
-                <Link href="/features" className="w-full sm:w-auto">
-                  <Button variant="outline" className="w-full sm:w-auto bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50 h-12 px-8 rounded-xl text-base font-medium transition-all">
-                    View Features
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Hero Mockup Card */}
-            <div className="relative mx-auto w-full max-w-md">
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-100 to-green-50 rounded-3xl transform rotate-3 scale-105 opacity-50"></div>
-              <div className="relative bg-white border border-zinc-100 rounded-3xl p-6 shadow-xl">
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-50">
-                  <span className="text-sm font-semibold text-zinc-900">Today&apos;s Activity</span>
-                  <span className="text-xs font-medium text-zinc-500">Live</span>
+          <div className="container relative z-10 mx-auto max-w-6xl px-6">
+            <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="max-w-2xl">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
+                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                  Visitor management system for Kenya
                 </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-3 rounded-2xl bg-zinc-50 border border-zinc-100">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">AJ</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-zinc-900">Alice Johnson</p>
-                      <p className="text-xs text-zinc-500">Arrived at 09:00 AM</p>
-                    </div>
-                    <div className="px-2 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded uppercase tracking-wide">
-                      Inside
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-4 p-3 rounded-2xl bg-white border border-zinc-100 shadow-sm">
-                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold text-sm">MK</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-zinc-900">Michael Klein</p>
-                      <p className="text-xs text-zinc-500">SMS OTP verification</p>
-                    </div>
-                    <div className="px-2 py-1 bg-orange-50 text-orange-700 text-[10px] font-bold rounded uppercase tracking-wide">
-                      Pending
-                    </div>
-                  </div>
+                <h1 className="text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl lg:leading-[1.05]">
+                  Replace paper visitor books with a cleaner digital gate flow.
+                </h1>
 
-                  <div className="flex items-center gap-4 p-3 rounded-2xl bg-zinc-50 border border-zinc-100 opacity-60">
-                    <div className="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-600 font-bold text-sm">SD</div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-zinc-900">Sarah Davis</p>
-                      <p className="text-xs text-zinc-500">Left at 08:30 AM</p>
+                <p className="mt-6 max-w-xl text-lg leading-8 text-zinc-600">
+                  Karibu VMS helps offices, apartments, schools, and gated spaces manage visitor check-in, guard review, host confirmation, digital passes, and checkout from one simple system.
+                </p>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                    <Button className="h-12 w-full rounded-xl bg-blue-600 px-8 text-base font-semibold text-white shadow-lg shadow-blue-600/20 transition-colors hover:bg-blue-700 sm:w-auto">
+                      Book a Demo
+                    </Button>
+                  </a>
+                  <Link href="/features" className="w-full sm:w-auto">
+                    <Button variant="outline" className="h-12 w-full rounded-xl border-zinc-200 bg-white px-8 text-base font-semibold text-zinc-800 transition-colors hover:bg-zinc-50 sm:w-auto">
+                      View Features
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="mt-8 grid gap-3 text-sm text-zinc-600 sm:grid-cols-3">
+                  {trustPoints.map((point) => (
+                    <div key={point} className="flex items-start gap-2">
+                      <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                      <span>{point}</span>
                     </div>
-                    <div className="px-2 py-1 bg-zinc-200 text-zinc-600 text-[10px] font-bold rounded uppercase tracking-wide">
-                      Checkout
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* --- PRODUCT DETAILS --- */}
-      <section className="py-24 bg-white border-b border-zinc-50">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="max-w-3xl mb-14">
-            <p className="text-sm font-bold text-blue-600 uppercase tracking-wide mb-3">What Karibu VMS gives you</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-4 tracking-tight">More control at the gate, better records after the visit.</h2>
-            <p className="text-lg text-zinc-600 leading-relaxed">
-              Karibu VMS replaces scattered notebooks, message threads, and delayed visitor updates with one shared visitor check-in system for guard registration, QR Pass Verification, SMS OTP visitor verification, visitor rules, checkout, billing, and reporting.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {platformHighlights.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.title} className="bg-white p-7 rounded-2xl border border-zinc-100 shadow-sm">
-                  <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center mb-5">
-                    <Icon className="w-5 h-5" aria-hidden="true" />
-                  </div>
-                  <h3 className="text-lg font-bold text-zinc-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-zinc-600 leading-relaxed">{item.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* --- INTAKE SETUP --- */}
-      <section className="py-24 bg-zinc-50 border-b border-zinc-100">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-14 items-start">
-            <div>
-              <p className="text-sm font-bold text-blue-600 uppercase tracking-wide mb-3">Visitor setup</p>
-              <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-5 tracking-tight">Configure how visitors enter your building.</h2>
-              <p className="text-lg text-zinc-600 leading-relaxed">
-                Set up entry points, choose the details visitors should provide, and let guards manage arrivals from one clean workspace. Premium teams choose one active verification method: QR Pass Verification or SMS OTP Verification.
-              </p>
-            </div>
-
-            <div className="grid gap-5">
-              <div className="bg-white rounded-2xl border border-zinc-100 p-6 shadow-sm">
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
-                    <SlidersHorizontal className="w-5 h-5" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-zinc-900 mb-2">Visitor intake rules</h3>
-                    <p className="text-sm text-zinc-600 leading-relaxed">
-                      Decide whether to ask for phone numbers, ID details, visit purpose, vehicle registration, photos, host selection, or custom questions.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl border border-zinc-100 p-6 shadow-sm">
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-green-50 text-green-700 flex items-center justify-center shrink-0">
-                    <BadgeCheck className="w-5 h-5" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-zinc-900 mb-2">Digital visitor pass and verification controls</h3>
-                    <p className="text-sm text-zinc-600 leading-relaxed">
-                      Add digital visitor passes, host confirmation, custom questions, restricted visitor checks, and department routing where your workflow needs them.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* --- HOW IT WORKS --- */}
-      <section className="py-24 bg-white border-b border-zinc-50">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="mb-16">
-            <h2 className="text-3xl font-bold text-zinc-900 mb-4 tracking-tight">How the flow works</h2>
-            <p className="text-lg text-zinc-600">A clear and simple process for every person entering your gates.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
-              <div aria-hidden="true" data-step="01" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-blue-50" />
-              <h3 className="text-xl font-bold text-zinc-900 mb-3">Visitor arrives</h3>
-              <p className="text-zinc-600 text-sm leading-relaxed">
-                The visitor approaches a reception point, gate, or QR check-in poster.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
-              <div aria-hidden="true" data-step="02" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-orange-50" />
-              <h3 className="text-xl font-bold text-zinc-900 mb-3">Capture details</h3>
-              <p className="text-zinc-600 text-sm leading-relaxed">
-                A guard or QR form captures the details required by your visitor intake rules.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
-              <div aria-hidden="true" data-step="03" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-green-50" />
-              <h3 className="text-xl font-bold text-zinc-900 mb-3">Entry reviewed</h3>
-              <p className="text-zinc-600 text-sm leading-relaxed">
-                Guards approve entry after reviewing host, department, gate, or restricted visitor records.
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm relative overflow-hidden group">
-              <div aria-hidden="true" data-step="04" className="mb-6 text-5xl font-black text-zinc-100 transition-colors before:content-[attr(data-step)] group-hover:text-zinc-100" />
-              <h3 className="text-xl font-bold text-zinc-900 mb-3">Visit recorded</h3>
-              <p className="text-zinc-600 text-sm leading-relaxed">
-                The visit is logged to the dashboard, hosts can confirm arrival, and checkout closes the record later.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* --- ROLE DETAILS --- */}
-      <section className="py-24 bg-zinc-50 border-b border-zinc-100">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-14 items-start">
-            <div>
-              <p className="text-sm font-bold text-blue-600 uppercase tracking-wide mb-3">Built for the whole visit flow</p>
-              <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-5 tracking-tight">Each person sees the tools they need.</h2>
-              <p className="text-lg text-zinc-600 leading-relaxed mb-8">
-                The system separates admin, guard, and visitor responsibilities so your team can move quickly while sensitive controls stay with the right people.
-              </p>
-              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-white text-blue-700 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="w-5 h-5" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-zinc-900 mb-2">Designed for accountable access</h3>
-                    <p className="text-sm text-zinc-600 leading-relaxed">
-                      Every visit can carry a clear trail: visitor identity, host destination, guard action, arrival time, checkout time, and provider payment reference when billing applies.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-5">
-              {roleDetails.map((item) => (
-                <div key={item.role} className="bg-white rounded-2xl border border-zinc-100 p-6 shadow-sm">
-                  <h3 className="text-lg font-bold text-zinc-900 mb-4">{item.role}</h3>
-                  <div className="grid gap-3">
-                    {item.details.map((detail) => (
-                      <div key={detail} className="flex items-start gap-3 text-sm text-zinc-600">
-                        <BadgeCheck className="w-4 h-4 text-green-600 mt-0.5 shrink-0" aria-hidden="true" />
-                        <span>{detail}</span>
+              <div className="mx-auto w-full max-w-md lg:max-w-lg">
+                <div className="rounded-[2rem] border border-blue-100 bg-white p-4 shadow-2xl shadow-blue-950/10">
+                  <div className="rounded-[1.5rem] border border-zinc-100 bg-zinc-50 p-5">
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-blue-600">Today&apos;s Activity</p>
+                        <h2 className="mt-1 text-lg font-black text-zinc-950">Main Gate</h2>
                       </div>
-                    ))}
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Live</span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-2xl bg-white p-4 text-center shadow-sm">
+                        <p className="text-2xl font-black text-zinc-950">24</p>
+                        <p className="mt-1 text-xs text-zinc-500">Checked in</p>
+                      </div>
+                      <div className="rounded-2xl bg-white p-4 text-center shadow-sm">
+                        <p className="text-2xl font-black text-zinc-950">7</p>
+                        <p className="mt-1 text-xs text-zinc-500">Pending</p>
+                      </div>
+                      <div className="rounded-2xl bg-white p-4 text-center shadow-sm">
+                        <p className="text-2xl font-black text-zinc-950">18</p>
+                        <p className="mt-1 text-xs text-zinc-500">Checked out</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 space-y-3">
+                      <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-black text-blue-700">AJ</div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-zinc-950">Alice Johnson</p>
+                          <p className="text-xs text-zinc-500">Host: Finance Office</p>
+                        </div>
+                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-700">Inside</span>
+                      </div>
+
+                      <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-sm font-black text-orange-700">MK</div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-zinc-950">Michael Klein</p>
+                          <p className="text-xs text-zinc-500">Waiting for host confirmation</p>
+                        </div>
+                        <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-orange-700">Pending</span>
+                      </div>
+
+                      <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3 opacity-70 shadow-sm">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200 text-sm font-black text-zinc-600">SD</div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-zinc-950">Sarah Davis</p>
+                          <p className="text-xs text-zinc-500">Checked out at 08:30 AM</p>
+                        </div>
+                        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-600">Closed</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* --- FACILITY FIT --- */}
-      <section className="py-24 bg-white border-b border-zinc-50">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-14 items-center">
-            <div>
-              <p className="text-sm font-bold text-blue-600 uppercase tracking-wide mb-3">Where it fits</p>
-              <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-5 tracking-tight">Useful for busy entrances and controlled spaces.</h2>
-              <p className="text-lg text-zinc-600 leading-relaxed mb-8">
-                Whether you run one reception desk or several gates, Karibu VMS helps standardize the way people enter, get reviewed, and leave.
+        <section className="border-y border-zinc-100 bg-white py-8">
+          <div className="container mx-auto grid max-w-6xl gap-4 px-6 sm:grid-cols-3">
+            <div className="rounded-2xl bg-zinc-50 p-5">
+              <p className="text-2xl font-black text-zinc-950">3</p>
+              <p className="mt-1 text-sm text-zinc-600">Main users: admins, guards, and visitors</p>
+            </div>
+            <div className="rounded-2xl bg-zinc-50 p-5">
+              <p className="text-2xl font-black text-zinc-950">QR</p>
+              <p className="mt-1 text-sm text-zinc-600">Visitor self check-in and digital pass support</p>
+            </div>
+            <div className="rounded-2xl bg-zinc-50 p-5">
+              <p className="text-2xl font-black text-zinc-950">KES</p>
+              <p className="mt-1 text-sm text-zinc-600">Plans and billing designed for local teams</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white py-24">
+          <div className="container mx-auto max-w-6xl px-6">
+            <div className="mb-14 max-w-3xl">
+              <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-600">What Karibu VMS gives you</p>
+              <h2 className="text-3xl font-black tracking-tight text-zinc-950 md:text-4xl">More control at the gate, better records after the visit.</h2>
+              <p className="mt-4 text-lg leading-8 text-zinc-600">
+                Replace scattered notebooks, message threads, and delayed updates with one visitor check-in system for registration, QR passes, visitor rules, checkout, and reporting.
               </p>
-              <div className="flex flex-wrap gap-3">
-                {facilityTypes.map((facility) => (
-                  <span key={facility} className="rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-medium text-zinc-700">
-                    {facility}
-                  </span>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {platformHighlights.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.title} className="rounded-3xl border border-zinc-100 bg-white p-7 shadow-sm transition-shadow hover:shadow-md">
+                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <h3 className="text-lg font-black text-zinc-950">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-zinc-600">{item.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-zinc-50 py-24">
+          <div className="container mx-auto max-w-6xl px-6">
+            <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+              <div>
+                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-600">How it works</p>
+                <h2 className="text-3xl font-black tracking-tight text-zinc-950 md:text-4xl">A simple visit flow your team can follow every day.</h2>
+                <p className="mt-5 text-lg leading-8 text-zinc-600">
+                  The flow is designed for busy entrances where guards need speed, admins need accurate records, and visitors need clear instructions.
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  {facilityTypes.map((facility) => (
+                    <span key={facility} className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700">
+                      {facility}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {steps.map((step) => (
+                  <div key={step.label} className="rounded-3xl border border-zinc-100 bg-white p-6 shadow-sm">
+                    <p className="text-4xl font-black text-blue-100">{step.label}</p>
+                    <h3 className="mt-4 text-lg font-black text-zinc-950">{step.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-zinc-600">{step.description}</p>
+                  </div>
                 ))}
               </div>
             </div>
+          </div>
+        </section>
 
-            <div className="bg-zinc-950 rounded-3xl p-6 md:p-8 text-white shadow-xl">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-green-400/15 text-green-300 flex items-center justify-center">
-                  <LockKeyhole className="w-5 h-5" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold">Security-first records</h3>
-                  <p className="text-sm text-zinc-400">Structured logs your team can actually use.</p>
+        <section className="bg-white py-24">
+          <div className="container mx-auto max-w-6xl px-6">
+            <div className="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+              <div>
+                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-600">Built for the whole visit flow</p>
+                <h2 className="text-3xl font-black tracking-tight text-zinc-950 md:text-4xl">Each person sees the tools they need.</h2>
+                <p className="mt-5 text-lg leading-8 text-zinc-600">
+                  Karibu VMS separates admin, guard, and visitor responsibilities so your team can move quickly while sensitive controls stay with the right people.
+                </p>
+
+                <div className="mt-8 rounded-3xl border border-blue-100 bg-blue-50 p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-blue-700">
+                      <LockKeyhole className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-zinc-950">Designed for accountable access</h3>
+                      <p className="mt-2 text-sm leading-6 text-zinc-600">
+                        Every visit can carry a clear trail: visitor identity, host destination, guard action, arrival time, checkout time, and billing reference where applicable.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
+
               <div className="grid gap-4">
-                <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                  <span className="text-sm text-zinc-300">Visitor status tracking</span>
-                  <span className="text-sm font-semibold text-green-300">Included</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                  <span className="text-sm text-zinc-300">Guard and admin dashboards</span>
-                  <span className="text-sm font-semibold text-green-300">Included</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                  <span className="text-sm text-zinc-300">Restricted visitor workflows</span>
-                  <span className="text-sm font-semibold text-green-300">Included</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-300">M-Pesa billing support</span>
-                  <span className="text-sm font-semibold text-green-300">Included</span>
+                {roleDetails.map((item) => (
+                  <div key={item.role} className="rounded-3xl border border-zinc-100 bg-white p-6 shadow-sm">
+                    <h3 className="text-lg font-black text-zinc-950">{item.role}</h3>
+                    <div className="mt-4 grid gap-3">
+                      {item.details.map((detail) => (
+                        <div key={detail} className="flex items-start gap-3 text-sm text-zinc-600">
+                          <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                          <span>{detail}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-zinc-950 py-24 text-white">
+          <div className="container mx-auto max-w-6xl px-6">
+            <div className="grid gap-14 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+              <div>
+                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-300">Visitor management system Kenya</p>
+                <h2 className="text-3xl font-black tracking-tight md:text-4xl">A digital visitor logbook for facilities that need better records.</h2>
+                <p className="mt-5 text-lg leading-8 text-zinc-300">
+                  Many facilities still depend on paper books, WhatsApp messages, and manual sign-out sheets. That becomes difficult when teams need to confirm who entered, who approved them, and who is still inside.
+                </p>
+                <p className="mt-5 text-lg leading-8 text-zinc-300">
+                  Karibu VMS gives Kenyan teams a practical visitor check-in system with guard workflows, QR visitor passes, visitor rules, host details, checkout, restricted visitor records, and billing visibility.
+                </p>
+              </div>
+
+              <div className="grid gap-4">
+                {kenyaUseCases.map((item) => (
+                  <div key={item.title} className="rounded-3xl border border-white/10 bg-white/5 p-6">
+                    <h3 className="text-lg font-black text-white">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-zinc-300">{item.description}</p>
+                  </div>
+                ))}
+                <div className="rounded-3xl border border-blue-400/20 bg-blue-500/10 p-6">
+                  <h3 className="text-lg font-black text-white">Explore Kenya-focused pages</h3>
+                  <div className="mt-4 grid gap-2 text-sm font-semibold text-blue-200">
+                    <Link href="/visitor-management-system-kenya" className="hover:text-white">Visitor Management System Kenya</Link>
+                    <Link href="/visitor-management-system-nairobi" className="hover:text-white">Visitor Management System Nairobi</Link>
+                    <Link href="/digital-visitor-logbook-kenya" className="hover:text-white">Digital Visitor Logbook Kenya</Link>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* --- KENYA SEO CONTENT --- */}
-      <section className="py-24 bg-zinc-50 border-b border-zinc-100">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-14 items-start">
-            <div>
-              <p className="text-sm font-bold text-blue-600 uppercase tracking-wide mb-3">Visitor management system Kenya</p>
-              <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 mb-5 tracking-tight">A digital visitor logbook for Kenyan buildings that need better records.</h2>
-              <p className="text-lg text-zinc-600 leading-relaxed mb-5">
-                Many facilities in Kenya still depend on paper visitor books, WhatsApp messages, and manual sign-out sheets. That can work for a small entrance, but it becomes difficult when an office, apartment, school, clinic, warehouse, or gated estate needs to search visitor history after an incident or confirm who is still inside.
-              </p>
-              <p className="text-lg text-zinc-600 leading-relaxed">
-                Karibu VMS gives Kenyan teams a practical visitor check-in system with guard workflows, QR visitor passes, visitor rules, host details, checkout, restricted visitor records, and billing visibility. It is built for everyday security teams that need a simple system at the gate and a clear record for admins later.
-              </p>
-            </div>
-
-            <div className="grid gap-5">
-              {kenyaUseCases.map((item) => (
-                <div key={item.title} className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
-                  <h3 className="text-lg font-bold text-zinc-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-zinc-600 leading-relaxed">{item.description}</p>
-                </div>
-              ))}
-              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
-                <h3 className="text-lg font-bold text-zinc-900 mb-2">Explore Kenya-focused visitor management pages</h3>
-                <div className="grid gap-2 text-sm font-medium text-blue-700">
-                  <Link href="/visitor-management-system-kenya" className="hover:text-blue-900">Visitor Management System Kenya</Link>
-                  <Link href="/visitor-management-system-nairobi" className="hover:text-blue-900">Visitor Management System Nairobi</Link>
-                  <Link href="/digital-visitor-logbook-kenya" className="hover:text-blue-900">Digital Visitor Logbook Kenya</Link>
-                </div>
-              </div>
+        <section className="bg-blue-600 py-20 text-white">
+          <div className="container mx-auto max-w-4xl px-6 text-center">
+            <WalletCards className="mx-auto mb-5 h-10 w-10 text-blue-100" aria-hidden="true" />
+            <h2 className="text-3xl font-black tracking-tight md:text-5xl">Ready to improve your gate flow?</h2>
+            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/90">
+              Book a demo on WhatsApp and see how Karibu VMS can support office visitor management, apartment visitor management, school visitor management, or gated access workflows.
+            </p>
+            <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                <Button className="h-14 w-full rounded-xl bg-white px-8 text-base font-black text-blue-600 shadow-lg transition-colors hover:bg-zinc-50 sm:w-auto">
+                  Book Demo
+                </Button>
+              </a>
+              <a href="tel:+254702104690" className="text-sm font-semibold text-white/90 transition-colors hover:text-white">
+                Call Sales: +254 702 104 690
+              </a>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* --- FINAL CTA --- */}
-      <section className="py-24 bg-blue-600 text-white text-center">
-        <div className="container mx-auto px-6 max-w-3xl">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">Ready to improve your gate flow?</h2>
-          <p className="text-white/90 text-lg mb-10 leading-relaxed">
-            Book a demo on WhatsApp and see how Karibu VMS can support office visitor management, apartment visitor management, or school visitor management.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-              <Button className="w-full sm:w-auto bg-white text-blue-600 hover:bg-zinc-50 h-14 px-8 rounded-xl text-base font-bold shadow-lg transition-all">
-                Book Demo
-              </Button>
-            </a>
-            <a href="tel:+254702104690" className="w-full sm:w-auto mt-2 sm:mt-0 sm:ml-4 text-white/90 hover:text-white font-medium text-sm transition-colors">
-              Call Sales: +254 702 104 690
-            </a>
-          </div>
-        </div>
-      </section>
-
+        </section>
       </main>
-      <PublicFooter />
 
+      <PublicFooter />
       <LazySmartChatbot />
 
       <Script
