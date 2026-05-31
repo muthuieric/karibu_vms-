@@ -14,7 +14,7 @@ export default function PublicNavbar() {
 
   return (
     <>
-        <MicrosoftClarity />
+      <MicrosoftClarity />
 
       <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-zinc-100 bg-white/90 backdrop-blur-md">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between max-w-6xl">
@@ -24,7 +24,7 @@ export default function PublicNavbar() {
               alt="Karibu VMS visitor management system Kenya logo"
               width={120}
               height={40}
-              className="h-10 w-auto"
+              className="h-10 w-auto object-contain"
               priority
             />
           </Link>
@@ -48,7 +48,7 @@ export default function PublicNavbar() {
             </a>
           </div>
 
-          <button 
+          <button
             className="md:hidden p-2 -mr-2 text-zinc-600"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             type="button"
