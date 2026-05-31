@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import InstallPrompt from "@/components/InstallPrompt";
-import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/site";
+import { localBusinessJsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -92,7 +92,7 @@ export default function RootLayout({
         </a>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd, websiteJsonLd]) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd, localBusinessJsonLd, websiteJsonLd]) }}
         />
         {children}
         <InstallPrompt />
