@@ -95,7 +95,6 @@ export default function WhyUsPage() {
             <div className="grid items-center gap-14 lg:grid-cols-[1fr_0.95fr]">
               <div>
                 <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
-                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                   Why Karibu VMS
                 </div>
                 <h1 className="max-w-3xl text-4xl font-black tracking-tight text-zinc-950 md:text-5xl md:leading-tight">

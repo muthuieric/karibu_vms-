@@ -15,7 +15,6 @@ import {
   LogOut,
   QrCode,
   ShieldAlert,
-  ShieldCheck,
   SlidersHorizontal,
   Smartphone,
   UsersRound,
@@ -97,7 +96,6 @@ export default function FeaturesPage() {
             <div className="grid items-center gap-14 lg:grid-cols-[1.02fr_0.98fr]">
               <div>
                 <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
-                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                   Karibu VMS features
                 </div>
                 <h1 className="max-w-3xl text-4xl font-black tracking-tight text-zinc-950 md:text-5xl md:leading-tight">

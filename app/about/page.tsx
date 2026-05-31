@@ -5,7 +5,7 @@ import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
 import { publicMetadata } from "@/lib/seo/site";
-import { BadgeCheck, Building2, ClipboardCheck, DoorOpen, FileSearch, ShieldCheck, UsersRound } from "lucide-react";
+import { BadgeCheck, Building2, ClipboardCheck, DoorOpen, FileSearch } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
   title: "About Karibu VMS | Digital Visitor Management",
@@ -74,7 +74,6 @@ export default function AboutPage() {
             <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
               <div>
                 <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
-                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                   About Karibu VMS
                 </div>
                 <h1 className="max-w-3xl text-4xl font-black tracking-tight text-zinc-950 md:text-5xl md:leading-tight">
@@ -97,11 +96,9 @@ export default function AboutPage() {
                 <div className="mb-5 flex items-center justify-between border-b border-zinc-100 pb-5">
                   <div>
                     <p className="text-sm font-black text-zinc-950">Facility overview</p>
-                    <p className="text-xs text-zinc-500">Example operating snapshot</p>
+                    <p className="text-xs text-zinc-500">Example snapshot</p>
                   </div>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-                    <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-                  </div>
+               
                 </div>
                 <div className="grid gap-4">
                   <div className="flex items-center justify-between rounded-2xl border border-zinc-100 bg-zinc-50 p-4"><span className="text-sm text-zinc-600">Visitors inside</span><span className="text-xl font-black text-zinc-950">24</span></div>

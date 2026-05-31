@@ -13,7 +13,6 @@ import {
   FileSearch,
   LockKeyhole,
   QrCode,
-  ShieldCheck,
   SlidersHorizontal,
   UsersRound,
   WalletCards,
@@ -170,12 +169,7 @@ export default function LandingPage() {
 
           <div className="container relative z-10 mx-auto max-w-6xl px-6">
             <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="max-w-2xl">
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
-                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                  Visitor management system for Kenya
-                </div>
-
+              <div className="max-w-2xl">    
                 <h1 className="text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl lg:leading-[1.05]">
                   Replace paper visitor books with a cleaner digital gate flow.
                 </h1>
@@ -220,15 +214,15 @@ export default function LandingPage() {
 
                     <div className="grid grid-cols-3 gap-3">
                       <div className="rounded-2xl bg-white p-4 text-center shadow-sm">
-                        <p className="text-2xl font-black text-zinc-950">24</p>
+                        <p className="text-2xl font-black text-zinc-950">26</p>
                         <p className="mt-1 text-xs text-zinc-500">Checked in</p>
                       </div>
                       <div className="rounded-2xl bg-white p-4 text-center shadow-sm">
-                        <p className="text-2xl font-black text-zinc-950">7</p>
+                        <p className="text-2xl font-black text-zinc-950">8</p>
                         <p className="mt-1 text-xs text-zinc-500">Pending</p>
                       </div>
                       <div className="rounded-2xl bg-white p-4 text-center shadow-sm">
-                        <p className="text-2xl font-black text-zinc-950">18</p>
+                        <p className="text-2xl font-black text-zinc-950">20</p>
                         <p className="mt-1 text-xs text-zinc-500">Checked out</p>
                       </div>
                     </div>
@@ -246,19 +240,19 @@ export default function LandingPage() {
                       <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-sm font-black text-orange-700">MK</div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-zinc-950">Michael Klein</p>
+                          <p className="truncate text-sm font-bold text-zinc-950">Michael Kipchoge</p>
                           <p className="text-xs text-zinc-500">Waiting for host confirmation</p>
                         </div>
                         <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-orange-700">Pending</span>
                       </div>
 
                       <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3 opacity-70 shadow-sm">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200 text-sm font-black text-zinc-600">SD</div>
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200 text-sm font-black text-zinc-600">SW</div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-zinc-950">Sarah Davis</p>
+                          <p className="truncate text-sm font-bold text-zinc-950">Sarah Wanjiku</p>
                           <p className="text-xs text-zinc-500">Checked out at 08:30 AM</p>
                         </div>
-                        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-600">Closed</span>
+                        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-600">Departed</span>
                       </div>
                     </div>
                   </div>
@@ -394,7 +388,7 @@ export default function LandingPage() {
                 <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-300">Visitor management system Kenya</p>
                 <h2 className="text-3xl font-black tracking-tight md:text-4xl">A digital visitor logbook for facilities that need better records.</h2>
                 <p className="mt-5 text-lg leading-8 text-zinc-300">
-                  Many facilities still depend on paper books, WhatsApp messages, and manual sign-out sheets. That becomes difficult when teams need to confirm who entered, who approved them, and who is still inside.
+                  Many facilities still depend on paper books and manual sign-out sheets. That becomes difficult when teams need to confirm who entered, who approved them, and who is still inside.
                 </p>
                 <p className="mt-5 text-lg leading-8 text-zinc-300">
                   Karibu VMS gives Kenyan teams a practical visitor check-in system with guard workflows, QR visitor passes, visitor rules, host details, checkout, restricted visitor records, and billing visibility.

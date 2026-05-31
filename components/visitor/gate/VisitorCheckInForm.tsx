@@ -1,16 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import type { ElementType, FormEvent, RefObject } from "react";
+import type { FormEvent, RefObject } from "react";
 import {
   Building2,
   Camera,
   CheckCircle2,
-  ClipboardCheck,
   Loader2,
   MapPin,
   Search,
-  ShieldCheck,
   UserCircle,
 } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
@@ -48,7 +46,19 @@ type VisitorFormData = {
   vehicle_reg: string;
 };
 
-type ValidationErrors = Partial<Record<"name" | "phone" | "id_number" | "host_id" | "purpose" | "vehicle_reg" | "selfie" | "terms", string>>;
+type ValidationErrors = Partial<
+  Record<
+    | "name"
+    | "phone"
+    | "id_number"
+    | "host_id"
+    | "purpose"
+    | "vehicle_reg"
+    | "selfie"
+    | "terms",
+    string
+  >
+>;
 
 type Rules = {
   requirePhoto: boolean;
@@ -91,29 +101,24 @@ function RequiredMark() {
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-
   return <p className="mt-1.5 text-sm font-medium text-red-600">{message}</p>;
 }
 
-function SectionHeader({
-  step,
-  title,
-  icon: Icon,
-}: {
-  step: number;
-  title: string;
-  icon: ElementType;
-}) {
+function NumberedSectionHeader({ step, title }: { step: number; title: string }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-zinc-50 p-3">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold text-white">
         {step}
       </span>
+      <h2 className="break-words text-base font-semibold text-zinc-950">{title}</h2>
+    </div>
+  );
+}
 
-      <div className="flex min-w-0 items-center gap-2">
-        <Icon className="h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
-        <h2 className="break-words text-base font-semibold text-zinc-950">{title}</h2>
-      </div>
+function PlainSectionHeader({ title }: { title: string }) {
+  return (
+    <div className="rounded-2xl bg-zinc-50 p-3">
+      <h2 className="break-words text-base font-semibold text-zinc-950">{title}</h2>
     </div>
   );
 }
@@ -144,16 +149,7 @@ export default function VisitorCheckInForm({
   onAgreedToTermsChange,
 }: VisitorCheckInFormProps) {
   const hasVisitDetails =
-    rules.askHost ||
-    rules.askPurpose ||
-    rules.askVehicle ||
-    customFields.length > 0;
-
-  let sectionCounter = 1;
-  const visitorDetailsStep = sectionCounter++;
-  const visitDetailsStep = hasVisitDetails ? sectionCounter++ : null;
-  const verificationStep = rules.requirePhoto ? sectionCounter++ : null;
-  const agreementStep = sectionCounter++;
+    rules.askHost || rules.askPurpose || rules.askVehicle || customFields.length > 0;
 
   return (
     <div className="mx-auto w-full max-w-xl">
@@ -178,21 +174,20 @@ export default function VisitorCheckInForm({
 
           <div className="mt-3 flex items-center justify-center gap-1.5 text-sm font-medium text-zinc-500">
             <MapPin className="h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" />
-            <span className="break-words">{gateName ? gateName : "Visitor Registration"}</span>
+            <span className="break-words">{gateName || "Visitor Registration"}</span>
           </div>
         </div>
 
         <CardContent className="p-5 sm:p-6">
           <form onSubmit={onSubmit} className="space-y-6" noValidate>
-            <section className="space-y-4" aria-labelledby="visitor-details-heading">
-              <SectionHeader step={visitorDetailsStep} title="Visitor details" icon={UserCircle} />
+            <section className="space-y-4">
+              <NumberedSectionHeader step={1} title="Visitor details" />
 
               <div className="grid gap-4">
                 <div>
                   <Label htmlFor="visitor-name" className="mb-1.5 block text-sm font-medium text-zinc-700">
                     Full Name <RequiredMark />
                   </Label>
-
                   <Input
                     id="visitor-name"
                     required
@@ -210,7 +205,6 @@ export default function VisitorCheckInForm({
                     <Label htmlFor="visitor-phone" className="mb-1.5 block text-sm font-medium text-zinc-700">
                       Phone Number
                     </Label>
-
                     <PhoneInput
                       inputProps={{ id: "visitor-phone", autoComplete: "tel" }}
                       country="ke"
@@ -230,7 +224,6 @@ export default function VisitorCheckInForm({
                       <Label htmlFor="visitor-doc-type" className="mb-1.5 block text-sm font-medium text-zinc-700">
                         Document Type
                       </Label>
-
                       <select
                         id="visitor-doc-type"
                         className="flex h-12 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-base text-zinc-900 transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -247,7 +240,6 @@ export default function VisitorCheckInForm({
                       <Label htmlFor="visitor-id-number" className="mb-1.5 block text-sm font-medium text-zinc-700">
                         ID Number
                       </Label>
-
                       <Input
                         id="visitor-id-number"
                         value={newVisitor.id_number}
@@ -264,8 +256,8 @@ export default function VisitorCheckInForm({
             </section>
 
             {hasVisitDetails && (
-              <section className="space-y-4" aria-labelledby="visit-details-heading">
-                <SectionHeader step={visitDetailsStep || 2} title="Visit details" icon={ClipboardCheck} />
+              <section className="space-y-4">
+                <PlainSectionHeader title="Visit details" />
 
                 <div className="grid gap-4">
                   {rules.askHost && (
@@ -276,7 +268,6 @@ export default function VisitorCheckInForm({
 
                       <div className="relative">
                         <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
-
                         <Input
                           id="visitor-host-search"
                           type="text"
@@ -299,7 +290,9 @@ export default function VisitorCheckInForm({
                       {isHostDropdownOpen && (
                         <div className="absolute z-10 mt-2 max-h-60 w-full overflow-y-auto overflow-x-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
                           {filteredDepartments.length === 0 ? (
-                            <div className="p-4 text-center text-sm font-medium text-zinc-500">No matching hosts found.</div>
+                            <div className="p-4 text-center text-sm font-medium text-zinc-500">
+                              No matching hosts found.
+                            </div>
                           ) : (
                             filteredDepartments.map((dept) => (
                               <div key={dept.id}>
@@ -335,7 +328,6 @@ export default function VisitorCheckInForm({
                       <Label htmlFor="visitor-purpose" className="mb-1.5 block text-sm font-medium text-zinc-700">
                         Purpose of Visit
                       </Label>
-
                       <Input
                         id="visitor-purpose"
                         value={newVisitor.purpose}
@@ -352,7 +344,6 @@ export default function VisitorCheckInForm({
                       <Label htmlFor="visitor-vehicle" className="mb-1.5 block text-sm font-medium text-zinc-700">
                         Vehicle Registration
                       </Label>
-
                       <Input
                         id="visitor-vehicle"
                         value={newVisitor.vehicle_reg}
@@ -369,7 +360,6 @@ export default function VisitorCheckInForm({
                       <Label htmlFor={`custom-field-${field.id}`} className="mb-1.5 block text-sm font-medium text-zinc-700">
                         {field.label}
                       </Label>
-
                       <Input
                         id={`custom-field-${field.id}`}
                         value={customAnswers[field.id] || ""}
@@ -384,17 +374,20 @@ export default function VisitorCheckInForm({
             )}
 
             {rules.requirePhoto && (
-              <section className="space-y-4" aria-labelledby="verification-heading">
-                <SectionHeader step={verificationStep || 3} title="Verification" icon={Camera} />
+              <section className="space-y-4">
+                <PlainSectionHeader title="Verification" />
 
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
                   <div className="mb-3">
                     <Label className="flex items-center justify-between text-sm font-medium text-zinc-700">
                       Security Photo
-                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-500">Required</span>
+                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-500">
+                        Required
+                      </span>
                     </Label>
-
-                    <p className="mt-1 text-xs font-medium text-zinc-500">Provide a clear face photo for security review.</p>
+                    <p className="mt-1 text-xs font-medium text-zinc-500">
+                      Provide a clear face photo for security review.
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-3">
@@ -440,36 +433,48 @@ export default function VisitorCheckInForm({
               </section>
             )}
 
-            <section className="space-y-4" aria-labelledby="entry-agreement-heading">
-              <SectionHeader step={agreementStep} title="Entry agreement" icon={ShieldCheck} />
+            <section className="space-y-4">
+              <NumberedSectionHeader step={2} title="Entry agreement" />
 
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">
-                <p className="mb-3 font-semibold text-zinc-800">Please review this notice before submitting your visit request.</p>
+                <p className="mb-3 font-semibold text-zinc-800">
+                  Please review this notice before submitting your visit request.
+                </p>
 
                 <div className="max-h-48 space-y-4 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-4 pr-3">
                   <div>
                     <strong className="mb-1 block text-zinc-800">Information collected</strong>
-                    <p className="leading-relaxed">We may collect your name, phone number, identification details, visit purpose, host details, vehicle registration, photo, and any extra information required by this building.</p>
+                    <p className="leading-relaxed">
+                      This facility may collect your name, phone number, identification details, visit purpose, host details, vehicle registration, photo, and any additional information required for visitor registration.
+                    </p>
                   </div>
 
                   <div>
-                    <strong className="mb-1 block text-zinc-800">Why this information is needed</strong>
-                    <p className="leading-relaxed">Your details are used to verify your visit, support building access control, help the security team manage visitor records, and contact the relevant host where required.</p>
+                    <strong className="mb-1 block text-zinc-800">Purpose of collection</strong>
+                    <p className="leading-relaxed">
+                      Your information is used to verify your visit, support access control, maintain visitor records, contact your host, manage security procedures, and confirm check-in or checkout where required.
+                    </p>
                   </div>
 
                   <div>
-                    <strong className="mb-1 block text-zinc-800">Who can access it</strong>
-                    <p className="leading-relaxed">Visitor information is available only to authorized security personnel, building administrators, and approved staff who need it for visitor management.</p>
+                    <strong className="mb-1 block text-zinc-800">Access to your information</strong>
+                    <p className="leading-relaxed">
+                      Your visitor details may be accessed by authorized security staff, building administrators, approved hosts, and other responsible personnel who need the information for visitor management and safety.
+                    </p>
                   </div>
 
                   <div>
                     <strong className="mb-1 block text-zinc-800">Data protection</strong>
-                    <p className="leading-relaxed">The information should be handled securely and used only for legitimate visitor management, safety, and access control purposes in line with applicable data protection requirements.</p>
+                    <p className="leading-relaxed">
+                      Visitor information should be handled securely and used only for legitimate visitor management, safety, access control, audit, and compliance purposes in line with applicable data protection requirements.
+                    </p>
                   </div>
 
                   <div>
                     <strong className="mb-1 block text-zinc-800">Your confirmation</strong>
-                    <p className="leading-relaxed">By ticking the checkbox, you confirm that the information you have provided is accurate and that you consent to its use for this visit.</p>
+                    <p className="leading-relaxed">
+                      By submitting this form, you confirm that the information provided is accurate and that you consent to its use for visitor registration, security verification, access control, and related visitor management purposes.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -485,7 +490,7 @@ export default function VisitorCheckInForm({
                 />
 
                 <Label htmlFor="terms" className="cursor-pointer select-none text-sm font-medium leading-relaxed text-zinc-800">
-                  I confirm that the information provided is accurate and I consent to the collection and use of my details for visitor management and security purposes. <RequiredMark />
+                  I confirm that the information provided is accurate and I consent to the collection and use of my details for visitor registration, security verification, access control, and related visitor management purposes. <RequiredMark />
                 </Label>
               </div>
               <FieldError message={validationErrors.terms} />

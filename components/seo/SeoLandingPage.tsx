@@ -3,7 +3,7 @@ import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BadgeCheck, Building2, CheckCircle2, ExternalLink, HelpCircle, MapPin, QrCode, ShieldCheck, UserCheck } from "lucide-react";
+import { ArrowRight, BadgeCheck, CheckCircle2, ExternalLink, HelpCircle } from "lucide-react";
 
 export type SeoLandingPageContent = {
   eyebrow: string;
@@ -57,7 +57,6 @@ export default function SeoLandingPage({ content }: { content: SeoLandingPageCon
             <div className="grid items-center gap-14 lg:grid-cols-[1.02fr_0.98fr]">
               <div>
                 <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
-                  <MapPin className="h-4 w-4" aria-hidden="true" />
                   Built for Kenya
                 </div>
                 <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-600">{content.eyebrow}</p>
@@ -84,9 +83,7 @@ export default function SeoLandingPage({ content }: { content: SeoLandingPageCon
                       <p className="text-sm font-black text-zinc-950">Karibu VMS visitor flow</p>
                       <p className="mt-1 text-sm text-zinc-500">Designed for {content.audience.toLowerCase()}.</p>
                     </div>
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                      <UserCheck className="h-5 w-5" aria-hidden="true" />
-                    </div>
+            
                   </div>
 
                   <div className="mt-6 space-y-3">
@@ -124,7 +121,7 @@ export default function SeoLandingPage({ content }: { content: SeoLandingPageCon
               <div className="grid gap-4 sm:grid-cols-2">
                 {content.benefits.slice(0, 4).map((benefit) => (
                   <div key={benefit} className="rounded-3xl border border-zinc-100 bg-zinc-50 p-5">
-                    <BadgeCheck className="mb-3 h-5 w-5 text-blue-600" aria-hidden="true" />
+                    <BadgeCheck className="mb-3 h-5 w-5 text-green-600" aria-hidden="true" />
                     <p className="text-sm font-semibold leading-6 text-zinc-700">{benefit}</p>
                   </div>
                 ))}
@@ -163,7 +160,6 @@ export default function SeoLandingPage({ content }: { content: SeoLandingPageCon
             <div className="grid gap-6 md:grid-cols-3">
               {content.useCases.map((useCase) => (
                 <div key={useCase.title} className="rounded-3xl border border-zinc-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                  <Building2 className="mb-4 h-6 w-6 text-blue-600" aria-hidden="true" />
                   <h3 className="mb-2 text-lg font-black text-zinc-950">{useCase.title}</h3>
                   <p className="text-sm leading-6 text-zinc-600">{useCase.description}</p>
                 </div>
@@ -210,7 +206,6 @@ export default function SeoLandingPage({ content }: { content: SeoLandingPageCon
             <div className="grid gap-6 md:grid-cols-3">
               {relatedLinks.map((link) => (
                 <Link key={link.href} href={link.href} className="group rounded-3xl border border-zinc-100 bg-white p-6 shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/40">
-                  <QrCode className="mb-4 h-6 w-6 text-blue-600" aria-hidden="true" />
                   <h3 className="mb-2 text-lg font-black text-zinc-950 group-hover:text-blue-700">{link.label}</h3>
                   <p className="mb-4 text-sm leading-6 text-zinc-600">{link.description}</p>
                   <span className="inline-flex items-center gap-2 text-sm font-black text-blue-700">
@@ -233,11 +228,9 @@ export default function SeoLandingPage({ content }: { content: SeoLandingPageCon
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <a href="https://www.odpc.go.ke/" target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-zinc-100 p-4 transition-colors hover:border-blue-200 hover:bg-blue-50/40">
-                    <ShieldCheck className="mb-3 h-5 w-5 text-blue-600" aria-hidden="true" />
                     <span className="flex items-center gap-2 text-sm font-black text-zinc-900">ODPC Kenya <ExternalLink className="h-4 w-4" aria-hidden="true" /></span>
                   </a>
                   <a href="https://www.ca.go.ke/" target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-zinc-100 p-4 transition-colors hover:border-blue-200 hover:bg-blue-50/40">
-                    <QrCode className="mb-3 h-5 w-5 text-blue-600" aria-hidden="true" />
                     <span className="flex items-center gap-2 text-sm font-black text-zinc-900">Communications Authority <ExternalLink className="h-4 w-4" aria-hidden="true" /></span>
                   </a>
                 </div>

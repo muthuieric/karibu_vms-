@@ -6,7 +6,7 @@ import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
 import { BILLING_PLANS } from "@/lib/billing/pricing";
 import { publicMetadata } from "@/lib/seo/site";
-import { BadgeCheck, Building2, CheckCircle2, CreditCard, ShieldCheck, Sparkles, XCircle } from "lucide-react";
+import { BadgeCheck, Building2, CheckCircle2, CreditCard, ShieldCheck, XCircle } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
   title: "Karibu VMS Pricing | Visitor Management Plans",
@@ -64,12 +64,10 @@ const comparisonRows = [
   { feature: "Extra visitors at KES 3 each", basic: "Not included", premium: "Included" },
   { feature: "QR Pass Verification", basic: "Not included", premium: "Included" },
   { feature: "SMS OTP Verification", basic: "Not included", premium: "Included" },
-  { feature: "Choose one active verification method", basic: "Not included", premium: "Included" },
   { feature: "Digital visitor passes", basic: "Not included", premium: "Included" },
   { feature: "Host confirmation", basic: "Not included", premium: "Included" },
   { feature: "Visitor checkout", basic: "Included", premium: "Included" },
   { feature: "Advanced visitor rules", basic: "Not included", premium: "Included" },
-  { feature: "Priority support", basic: "Not included", premium: "Included" },
 ];
 
 function formatKes(amount: number) {
@@ -87,7 +85,6 @@ export default function PricingPage() {
           <div className="container relative z-10 mx-auto max-w-6xl px-6">
             <div className="mx-auto max-w-3xl text-center">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm">
-                <CreditCard className="h-4 w-4" aria-hidden="true" />
                 Karibu VMS pricing
               </div>
               <h1 className="text-4xl font-black tracking-tight text-zinc-950 md:text-5xl md:leading-tight">Simple visitor management plans that scale with volume.</h1>
@@ -217,7 +214,6 @@ export default function PricingPage() {
 
         <section className="bg-blue-600 py-20 text-white">
           <div className="container mx-auto max-w-4xl px-6 text-center">
-            <Sparkles className="mx-auto mb-5 h-10 w-10 text-blue-100" aria-hidden="true" />
             <h2 className="text-3xl font-black tracking-tight md:text-5xl">Choose the plan that matches your visitor flow.</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/90">
               Start with Basic for simple visitor records or use Premium for advanced verification, higher capacity, host confirmation, and digital visitor passes.
