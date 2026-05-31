@@ -2,6 +2,8 @@
 
 Karibu VMS is a Next.js visitor management system for public QR check-in, guard workflows, host confirmation, billing, M-Pesa payments, and superadmin operations.
 
+Live website: https://www.karibuvms.com
+
 ## Local Development
 
 ```bash
@@ -18,7 +20,7 @@ Use `.env.example` as the template. Keep real secrets in Vercel Project Settings
 
 Required groups:
 
-- `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_APP_URL`: public HTTPS domain, for example `https://karibuvms.com`.
+- `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_APP_URL`: public HTTPS domain, for example `https://www.karibuvms.com`.
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`.
 - PayHero: `PAYHERO_API_USERNAME`, `PAYHERO_API_PASSWORD`, `PAYHERO_CHANNEL_ID`, and `PAYHERO_CALLBACK_URL`.
 - Resend: `RESEND_API_KEY` and `RESEND_FROM_EMAIL`. `RESEND_FROM_EMAIL` must be a verified sender/domain in Resend.
@@ -45,7 +47,7 @@ Never prefix backend secrets with `NEXT_PUBLIC_`. PayHero, Resend, Africa's Talk
 ## PayHero Setup
 
 - Use the production channel ID in `PAYHERO_CHANNEL_ID`.
-- Set the PayHero callback URL to `https://your-domain.example/api/payhero/callback`.
+- Set the PayHero callback URL to `https://www.karibuvms.com/api/payhero/callback`.
 - Confirm the callback reaches the live Vercel domain, not a preview deployment.
 - Confirm the PayHero/M-Pesa prompt displays the correct expected merchant or collection name before accepting customer payments.
 - PayHero callback/status handling marks reversed, refunded, or chargeback statuses as `reversed`, reconciles billing, restores the balance due, and excludes the transaction from revenue.
