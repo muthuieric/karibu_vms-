@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import InstallPrompt from "@/components/InstallPrompt";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { localBusinessJsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/site";
 import "./globals.css";
 
@@ -94,6 +95,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd, localBusinessJsonLd, websiteJsonLd]) }}
         />
+        <ServiceWorkerRegister />
         {children}
         <InstallPrompt />
 
