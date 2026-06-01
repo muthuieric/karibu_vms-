@@ -8,7 +8,7 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 };
 
-const DISMISSED_KEY = "karibu-vms-install-prompt-dismissed-v2";
+const DISMISSED_KEY = "karibu-vms-install-prompt-dismissed-v3";
 const DISMISS_DAYS = 7;
 
 function isIosSafari() {
@@ -44,49 +44,32 @@ function wasRecentlyDismissed() {
 
 export default function InstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showManualPrompt, setShowManualPrompt] = useState(false);
   const [showIosPrompt, setShowIosPrompt] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     if (isStandalone() || wasRecentlyDismissed()) return;
 
     if (isIosSafari()) {
-      const iosTimer = window.setTimeout(() => {
-        setShowIosPrompt(true);
-        setIsVisible(true);
-      }, 2500);
-
+      const iosTimer = window.setTimeout(() => setShowIosPrompt(true), 2500);
       return () => window.clearTimeout(iosTimer);
     }
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallEvent(event as BeforeInstallPromptEvent);
-      setShowManualPrompt(false);
-      setIsVisible(true);
     };
 
     const handleInstalled = () => {
       setInstallEvent(null);
-      setShowManualPrompt(false);
-      setIsVisible(false);
+      setShowIosPrompt(false);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleInstalled);
 
-    const manualTimer = window.setTimeout(() => {
-      if (!isStandalone()) {
-        setShowManualPrompt(true);
-        setIsVisible(true);
-      }
-    }, 5000);
-
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleInstalled);
-      window.clearTimeout(manualTimer);
     };
   }, []);
 
@@ -96,27 +79,15 @@ export default function InstallPrompt() {
     await installEvent.prompt();
     await installEvent.userChoice;
     setInstallEvent(null);
-    setShowManualPrompt(false);
-    setIsVisible(false);
   };
 
   const handleDismiss = () => {
     window.localStorage.setItem(DISMISSED_KEY, String(Date.now()));
     setInstallEvent(null);
     setShowIosPrompt(false);
-    setShowManualPrompt(false);
-    setIsVisible(false);
   };
 
-  if (!isVisible || (!installEvent && !showIosPrompt && !showManualPrompt)) return null;
-
-  const message = showIosPrompt
-    ? "On iPhone, tap Share, then Add to Home Screen."
-    : installEvent
-      ? "Install Karibu VMS for faster access to visitor check-ins."
-      : "Add Karibu VMS to your home screen from your browser menu for faster access.";
-
-  const manualHelp = showManualPrompt && !installEvent && !showIosPrompt;
+  if (!installEvent && !showIosPrompt) return null;
 
   return (
     <div className="fixed inset-x-3 bottom-4 z-50 mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl shadow-slate-900/10 sm:bottom-5 sm:left-auto sm:right-5 sm:mx-0">
@@ -130,13 +101,11 @@ export default function InstallPrompt() {
         />
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold leading-5">{message}</p>
-
-          {manualHelp ? (
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              In Chrome, open the three-dot menu and choose Install app or Add to Home screen.
-            </p>
-          ) : null}
+          <p className="text-sm font-bold leading-5">
+            {showIosPrompt
+              ? "Install Karibu VMS: tap Share, then Add to Home Screen."
+              : "Install Karibu VMS for faster access to visitor check-ins."}
+          </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
             {installEvent ? (
