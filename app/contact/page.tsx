@@ -4,7 +4,7 @@ import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
 import { publicMetadata } from "@/lib/seo/site";
-import { BadgeCheck, Mail, MessageCircle, Phone } from "lucide-react";
+import { BadgeCheck, MessageCircle, Phone } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
   title: "Contact Karibu VMS | Book a Visitor Management Demo",
@@ -23,18 +23,7 @@ const contactOptions = [
     button: "Start Demo Request",
     href: demoWhatsAppUrl,
     icon: MessageCircle,
-    tone: "bg-blue-50 text-blue-700",
     external: true,
-  },
-  {
-    title: "Email Support",
-    detail: "karibuvms@gmail.com",
-    description: "Send questions about setup, features, billing, or visitor management workflows for your organization.",
-    button: "Send Email",
-    href: "mailto:karibuvms@gmail.com",
-    icon: Mail,
-    tone: "bg-emerald-50 text-emerald-700",
-    external: false,
   },
   {
     title: "Call Sales",
@@ -43,8 +32,16 @@ const contactOptions = [
     button: "Call Now",
     href: "tel:+254702104690",
     icon: Phone,
-    tone: "bg-orange-50 text-orange-700",
     external: false,
+  },
+  {
+    title: "Send a Message",
+    detail: "Use the contact form request",
+    description: "Use the demo request option to send questions about setup, features, billing, or visitor management workflows.",
+    button: "Request Support",
+    href: demoWhatsAppUrl,
+    icon: MessageCircle,
+    external: true,
   },
 ];
 
@@ -111,8 +108,8 @@ export default function ContactPage() {
                       <a href="tel:+254702104690" className="mt-2 block text-lg font-black text-blue-700 hover:text-blue-900">+254 702 104 690</a>
                     </div>
                     <div className="rounded-2xl border border-zinc-100 bg-white p-5">
-                      <p className="text-sm font-bold text-zinc-950">Email</p>
-                      <a href="mailto:karibuvms@gmail.com" className="mt-2 block break-all text-lg font-black text-blue-700 hover:text-blue-900">karibuvms@gmail.com</a>
+                      <p className="text-sm font-bold text-zinc-950">Message</p>
+                      <p className="mt-2 text-sm leading-6 text-zinc-600">Use the demo request button to send setup, billing, or support questions.</p>
                     </div>
                     <div className="rounded-2xl border border-zinc-100 bg-white p-5">
                       <p className="text-sm font-bold text-zinc-950">Service area</p>
@@ -140,7 +137,7 @@ export default function ContactPage() {
                 const Icon = option.icon;
                 return (
                   <div key={option.title} className="flex flex-col rounded-3xl border border-zinc-100 bg-white p-7 shadow-sm transition-shadow hover:shadow-md">
-                    <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl ${option.tone}`}>
+                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <h3 className="text-xl font-black text-zinc-950">{option.title}</h3>
@@ -221,7 +218,7 @@ export default function ContactPage() {
               <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
                 <Button className="h-14 w-full rounded-xl bg-white px-8 text-base font-black text-blue-600 shadow-lg hover:bg-zinc-50 sm:w-auto">Book Demo</Button>
               </a>
-              <a href="mailto:karibuvms@gmail.com" className="text-sm font-semibold text-white/90 transition-colors hover:text-white">Email: karibuvms@gmail.com</a>
+              <a href="tel:+254702104690" className="text-sm font-semibold text-white/90 transition-colors hover:text-white">Call Sales: +254 702 104 690</a>
             </div>
           </div>
         </section>
