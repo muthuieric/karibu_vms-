@@ -71,11 +71,8 @@ export const organizationJsonLd = {
   name: "Karibu VMS",
   url: siteUrl,
   logo: absoluteUrl("/logo.svg"),
-  email: "karibuvms@gmail.com",
   telephone: "+254702104690",
-  sameAs: [
-    "https://www.karibuvms.com",
-  ],
+  sameAs: ["https://www.karibuvms.com"],
 };
 
 export const localBusinessJsonLd = {
@@ -88,10 +85,10 @@ export const localBusinessJsonLd = {
   description:
     "Karibu VMS is a visitor management system for offices, apartments, schools, gated facilities, and organizations in Nairobi and across Kenya.",
   telephone: "+254702104690",
-  email: "karibuvms@gmail.com",
   address: {
     "@type": "PostalAddress",
     addressLocality: "Nairobi",
+    addressRegion: "Nairobi County",
     addressCountry: "KE",
   },
   areaServed: [
