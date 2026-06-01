@@ -305,18 +305,18 @@ export function usePublicGateCheckIn() {
             if (accuracyMeters > radiusMeters) {
               setGeofenceDebugDetails(geofenceDebug);
               setGeofenceFailureDetails({ distanceMeters, radiusMeters, accuracyMeters });
-              setGeofenceError("Your device location is not accurate enough. Move near the entrance, enable precise location, then try again.");
+              setGeofenceError("We could not verify that you are near the entrance. Move closer to the building entrance and try again, or ask the guard to register you manually.");
             } else if (distanceMeters > radiusMeters) {
               setGeofenceDebugDetails(geofenceDebug);
               setGeofenceFailureDetails({ distanceMeters, radiusMeters, accuracyMeters });
-              setGeofenceError("You appear to be outside the allowed check-in area.");
+              setGeofenceError("You are outside the check-in area. Move closer to the building entrance and try again, or ask the guard to register you manually.");
             }
             setLoading(false);
           },
           (err) => {
             console.error("Geolocation error:", err);
             if (err.code === err.PERMISSION_DENIED) {
-              setGeofenceError("Please allow location access to continue.");
+              setGeofenceError("Please allow location once so we can confirm you are near the building entrance before check-in.");
             } else {
               setGeofenceError("We could not confirm your location. Move near the entrance, enable precise location, then try again.");
             }

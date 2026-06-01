@@ -318,18 +318,18 @@ export default function BuildingRulesPage() {
                   <span className="rounded-2xl bg-teal-50 p-2 text-teal-600">
                     <MapPin className="h-5 w-5" />
                   </span>
-                  Location verification
+                  Check-in area verification
                 </CardTitle>
-                <CardDescription>Limit public check-in to visitors who are near your building.</CardDescription>
+                <CardDescription>Allow public check-in only when the visitor is near the building entrance.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
                 <div className={`flex items-center justify-between p-4 rounded-xl border border-slate-200 ${rules.planTier === "basic" ? "bg-slate-100 opacity-80" : "bg-slate-50"}`}>
                   <div>
                     <p className="font-bold text-slate-900 flex items-center gap-2">
-                      Enable location verification
+                    Enable check-in area verification
                       {rules.planTier === "basic" && <Lock className="w-4 h-4 text-amber-600" />}
                     </p>
-                    <p className="text-sm text-slate-700 mt-0.5">Visitors must be physically present.</p>
+                    <p className="text-sm text-slate-700 mt-0.5">Visitors must be near the entrance to submit a check-in request.</p>
                     {rules.planTier === "basic" && (
                       <p className="text-[11px] font-bold text-amber-900 mt-1 uppercase tracking-wider">Premium feature</p>
                     )}

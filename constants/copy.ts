@@ -1,7 +1,7 @@
 export const APP_COPY = {
   guardDashboard: {
     title: "Security Command Center",
-    subtitle: "Live Gate Monitoring",
+    subtitle: "Gate Access Dashboard",
     buttons: {
       approve: "Grant Access",
       verifyOtp: "Input Security Code",
@@ -15,7 +15,7 @@ export const APP_COPY = {
     },
     status: {
       pending: "Awaiting Verification",
-      checkedIn: "Inside Building",
+      checkedIn: "On Premises",
       override: "Manual Entry Logged",
     },
     stats: {
@@ -56,7 +56,7 @@ export const APP_COPY = {
       sent: "Registration Sent",
       unavailable: "Check-in Unavailable",
       expired: "QR Code Expired",
-      locationRequired: "Location Required",
+      locationRequired: "Check-in Area Verification Needed",
     },
   },
 } as const;

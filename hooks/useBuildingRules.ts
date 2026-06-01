@@ -243,14 +243,14 @@ export function useBuildingRules() {
         setLongitude(position.coords.longitude.toString());
         setLocationAccuracy(position.coords.accuracy);
         setDistanceTest(null);
-        setMessage({ type: "success", text: "Location coordinates updated from this device. Review them below, then save." });
+        setMessage({ type: "success", text: "Building entrance location updated from this device. Review it below, then save." });
       },
       (error) => {
         console.error("Error getting location:", error);
         if (error.code === error.PERMISSION_DENIED) {
           setMessage({ type: "error", text: "Please allow location access to continue." });
         } else {
-          setMessage({ type: "error", text: "Failed to get location. Move near the entrance, enable precise location, then try again." });
+          setMessage({ type: "error", text: "Failed to save the entrance location. Stand near the entrance, allow location once, then try again."});
         }
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -325,7 +325,7 @@ export function useBuildingRules() {
         Number.isNaN(parsedLongitude)
       )
     ) {
-      setMessage({ type: "error", text: "Add valid latitude and longitude before enabling location verification." });
+      setMessage({ type: "error", text: "Add a valid building entrance location before enabling check-in area verification." });
       setUpdatingRules(false);
       return;
     }
@@ -343,7 +343,7 @@ export function useBuildingRules() {
     if (error) {
       setMessage({ type: "error", text: "Failed to save location settings." });
     } else {
-      setMessage({ type: "success", text: "Location settings saved successfully." });
+      setMessage({ type: "success", text: "Check-in area settings saved successfully." });
     }
     setUpdatingRules(false);
   };
