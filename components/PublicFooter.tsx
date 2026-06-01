@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
+import { MapPin, MessageCircle, Phone, ShieldCheck } from "lucide-react";
 
 const footerLinkGroups = [
   {
@@ -41,10 +41,10 @@ const contactItems = [
     icon: Phone,
   },
   {
-    label: "Email",
-    value: "karibuvms@gmail.com",
-    href: "mailto:karibuvms@gmail.com",
-    icon: Mail,
+    label: "Message",
+    value: "Use the contact page",
+    href: "/contact",
+    icon: MessageCircle,
   },
   {
     label: "Service area",
@@ -112,7 +112,7 @@ export default function PublicFooter() {
                 {contactItems.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <a key={item.label} href={item.href} className="group flex items-start gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 transition-colors hover:border-blue-100 hover:bg-blue-50">
+                    <Link key={item.label} href={item.href} className="group flex items-start gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 transition-colors hover:border-blue-100 hover:bg-blue-50">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700">
                         <Icon className="h-4 w-4" aria-hidden="true" />
                       </div>
@@ -120,7 +120,7 @@ export default function PublicFooter() {
                         <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">{item.label}</p>
                         <p className="mt-1 break-words text-sm font-bold text-zinc-800 group-hover:text-blue-800">{item.value}</p>
                       </div>
-                    </a>
+                    </Link>
                   );
                 })}
               </div>
