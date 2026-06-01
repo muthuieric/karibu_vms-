@@ -4,9 +4,7 @@ import { useEffect } from "react";
 
 export default function ServiceWorkerRegister() {
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) {
-      return;
-    }
+    if (!("serviceWorker" in navigator)) return;
 
     const registerServiceWorker = async () => {
       try {
@@ -14,17 +12,14 @@ export default function ServiceWorkerRegister() {
           scope: "/",
         });
 
+        await navigator.serviceWorker.ready;
         registration.update();
       } catch (error) {
         console.error("Service worker registration failed:", error);
       }
     };
 
-    window.addEventListener("load", registerServiceWorker);
-
-    return () => {
-      window.removeEventListener("load", registerServiceWorker);
-    };
+    registerServiceWorker();
   }, []);
 
   return null;
