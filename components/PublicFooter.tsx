@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, MessageCircle, Phone, ShieldCheck } from "lucide-react";
+import { MessageCircle, Phone, ShieldCheck } from "lucide-react";
 
 const footerLinkGroups = [
   {
@@ -33,27 +33,6 @@ const footerLinkGroups = [
   },
 ];
 
-const contactItems = [
-  {
-    label: "Phone",
-    value: "+254 702 104 690",
-    href: "tel:+254702104690",
-    icon: Phone,
-  },
-  {
-    label: "Message",
-    value: "Use the contact page",
-    href: "/contact",
-    icon: MessageCircle,
-  },
-  {
-    label: "Service area",
-    value: "Nairobi, Kenya",
-    href: "/contact",
-    icon: MapPin,
-  },
-];
-
 const trustPoints = [
   "Digital visitor check-in",
   "Guard and admin workflows",
@@ -65,24 +44,24 @@ export default function PublicFooter() {
 
   return (
     <footer className="border-t border-zinc-100 bg-white">
-      <div className="container mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-12 lg:grid-cols-[1.05fr_1.95fr]">
+      <div className="container mx-auto max-w-6xl px-6 py-14">
+        <div className="grid gap-10 lg:grid-cols-[1.15fr_1.85fr]">
           <div>
-            <Link href="/" className="inline-flex items-center gap-2" aria-label="Karibu VMS home">
+            <Link href="/" className="inline-flex items-center" aria-label="Karibu VMS home">
               <Image
                 src="/logo.svg"
                 alt="Karibu VMS visitor management system Kenya logo"
-                width={120}
-                height={40}
-                className="h-9 w-auto object-contain"
+                width={128}
+                height={42}
+                className="h-10 w-auto object-contain"
               />
             </Link>
 
             <p className="mt-5 max-w-md text-sm leading-7 text-zinc-600">
-              Karibu VMS helps Kenyan teams manage visitor check-in, guard review, QR visitor flows, checkout, and searchable records from one clean platform.
+              Karibu VMS helps teams across Kenya manage visitor check-in, guard review, QR visitor flows, checkout, and searchable records from one clean platform.
             </p>
 
-            <div className="mt-6 grid gap-3">
+            <div className="mt-6 grid gap-2">
               {trustPoints.map((point) => (
                 <div key={point} className="flex items-start gap-3 text-sm font-medium text-zinc-700">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
@@ -92,7 +71,7 @@ export default function PublicFooter() {
             </div>
           </div>
 
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_0.8fr_1.2fr]">
             {footerLinkGroups.map((group) => (
               <nav key={group.title} aria-label={`${group.title} footer links`}>
                 <h2 className="mb-4 text-sm font-black text-zinc-950">{group.title}</h2>
@@ -108,30 +87,33 @@ export default function PublicFooter() {
 
             <div>
               <h2 className="mb-4 text-sm font-black text-zinc-950">Contact</h2>
-              <div className="grid gap-3">
-                {contactItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link key={item.label} href={item.href} className="group flex items-start gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 transition-colors hover:border-blue-100 hover:bg-blue-50">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700">
-                        <Icon className="h-4 w-4" aria-hidden="true" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">{item.label}</p>
-                        <p className="mt-1 break-words text-sm font-bold text-zinc-800 group-hover:text-blue-800">{item.value}</p>
-                      </div>
-                    </Link>
-                  );
-                })}
+              <div className="space-y-3 text-sm text-zinc-600">
+                <a href="tel:+254702104690" className="flex items-center gap-3 font-semibold text-zinc-800 transition-colors hover:text-blue-700">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    <Phone className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <span className="whitespace-nowrap">+254 702 104 690</span>
+                </a>
+
+                <Link href="/contact" className="flex items-center gap-3 font-semibold text-zinc-800 transition-colors hover:text-blue-700">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                    <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <span>Contact page</span>
+                </Link>
+
+                <p className="pt-2 leading-6 text-zinc-500">
+                  Serving offices, apartments, schools, Airbnbs, and organizations across Kenya.
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 border-t border-zinc-100 pt-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="mt-10 border-t border-zinc-100 pt-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <p className="text-sm text-zinc-500">&copy; {currentYear} Karibu VMS. All rights reserved.</p>
-            <p className="text-sm text-zinc-500">Serving offices, apartments, schools, and organizations across Nairobi, Kenya.</p>
+            <p className="text-sm text-zinc-500">Visitor management system for Kenyan facilities.</p>
           </div>
         </div>
       </div>
