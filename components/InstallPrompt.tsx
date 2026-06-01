@@ -8,8 +8,7 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 };
 
-const DISMISSED_KEY = "karibu-vms-install-prompt-dismissed-v3";
-const DISMISS_DAYS = 7;
+const DISMISSED_KEY = "karibu-vms-install-prompt-session";
 
 function isIosSafari() {
   if (typeof window === "undefined") return false;
@@ -31,15 +30,8 @@ function isStandalone() {
   );
 }
 
-function wasRecentlyDismissed() {
-  const dismissedAt = window.localStorage.getItem(DISMISSED_KEY);
-  if (!dismissedAt) return false;
-
-  const dismissedTime = Number(dismissedAt);
-  if (Number.isNaN(dismissedTime)) return false;
-
-  const maxAge = DISMISS_DAYS * 24 * 60 * 60 * 1000;
-  return Date.now() - dismissedTime < maxAge;
+function wasDismissedInThisTab() {
+  return window.sessionStorage.getItem(DISMISSED_KEY) === "true";
 }
 
 export default function InstallPrompt() {
@@ -47,7 +39,7 @@ export default function InstallPrompt() {
   const [showIosPrompt, setShowIosPrompt] = useState(false);
 
   useEffect(() => {
-    if (isStandalone() || wasRecentlyDismissed()) return;
+    if (isStandalone() || wasDismissedInThisTab()) return;
 
     if (isIosSafari()) {
       const iosTimer = window.setTimeout(() => setShowIosPrompt(true), 2500);
@@ -77,12 +69,17 @@ export default function InstallPrompt() {
     if (!installEvent) return;
 
     await installEvent.prompt();
-    await installEvent.userChoice;
+    const choice = await installEvent.userChoice;
+
+    if (choice.outcome === "dismissed") {
+      window.sessionStorage.setItem(DISMISSED_KEY, "true");
+    }
+
     setInstallEvent(null);
   };
 
   const handleDismiss = () => {
-    window.localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+    window.sessionStorage.setItem(DISMISSED_KEY, "true");
     setInstallEvent(null);
     setShowIosPrompt(false);
   };
