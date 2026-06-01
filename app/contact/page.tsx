@@ -4,12 +4,12 @@ import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
 import { publicMetadata } from "@/lib/seo/site";
-import { BadgeCheck, MessageCircle, Phone } from "lucide-react";
+import { BadgeCheck, CalendarCheck, Headphones, MessageCircle, Phone } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
   title: "Contact Karibu VMS | Book a Visitor Management Demo",
   description:
-    "Contact Karibu VMS to book a visitor management system demo for offices, apartments, schools, gated facilities, and organizations in Nairobi and across Kenya.",
+    "Contact Karibu VMS to book a visitor management system demo for offices, apartments, schools, gated facilities, Airbnbs, and organizations across Kenya.",
   path: "/contact",
 });
 
@@ -18,29 +18,32 @@ const demoWhatsAppUrl = "https://wa.me/254702104690?text=Hi%20Karibu%20VMS%2C%20
 const contactOptions = [
   {
     title: "Book a Demo",
-    detail: "+254 702 104 690",
-    description: "Share your facility type, number of gates, and current visitor flow so we can guide you on the best setup.",
+    detail: "Plan your setup with us",
+    description: "Tell us your facility type, entry points, guard workflow, and visitor volume so we can recommend the right setup.",
     button: "Start Demo Request",
     href: demoWhatsAppUrl,
-    icon: MessageCircle,
+    icon: CalendarCheck,
+    iconClass: "bg-emerald-50 text-emerald-700",
     external: true,
   },
   {
     title: "Call Sales",
     detail: "+254 702 104 690",
-    description: "Call to discuss your organization, guard workflow, entry points, and the plan that fits your visitor volume.",
+    description: "Speak directly about pricing, rollout, gates, hosts, visitor rules, QR check-in, and checkout workflows.",
     button: "Call Now",
     href: "tel:+254702104690",
     icon: Phone,
+    iconClass: "bg-orange-50 text-orange-700",
     external: false,
   },
   {
     title: "Send a Message",
-    detail: "Use the contact form request",
-    description: "Use the demo request option to send questions about setup, features, billing, or visitor management workflows.",
+    detail: "For setup and support questions",
+    description: "Ask about features, billing, account setup, onboarding, or the best visitor flow for your organization.",
     button: "Request Support",
     href: demoWhatsAppUrl,
     icon: MessageCircle,
+    iconClass: "bg-blue-50 text-blue-700",
     external: true,
   },
 ];
@@ -48,7 +51,7 @@ const contactOptions = [
 const demoSteps = [
   {
     title: "Tell us about your facility",
-    description: "Share whether you manage an office, apartment, school, estate, clinic, warehouse, or another controlled entrance.",
+    description: "Share whether you manage an office, apartment, Airbnb, school, estate, clinic, warehouse, or another controlled entrance.",
   },
   {
     title: "Review your visitor flow",
@@ -63,9 +66,9 @@ const demoSteps = [
 const facilityFit = [
   "Offices and receptions",
   "Apartments and gated estates",
+  "Airbnbs and short stays",
   "Schools and institutions",
   "Clinics and service facilities",
-  "Warehouses and controlled sites",
   "Organizations with guards or front-desk teams",
 ];
 
@@ -87,7 +90,7 @@ export default function ContactPage() {
                   Book a visitor management demo for your organization.
                 </h1>
                 <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-600">
-                  Talk to us about your current visitor check-in process, number of gates, guard team, host approval needs, and visitor volume. We will help you choose a setup that fits your facility.
+                  Talk to us about your visitor check-in process, guard team, entry points, host approval needs, and visitor volume. We will help you choose a practical setup for your facility.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
@@ -103,17 +106,34 @@ export default function ContactPage() {
                 <div className="rounded-[1.5rem] bg-zinc-50 p-5">
                   <p className="text-xs font-bold uppercase tracking-wider text-blue-600">Quick contact</p>
                   <div className="mt-5 grid gap-4">
-                    <div className="rounded-2xl border border-zinc-100 bg-white p-5">
-                      <p className="text-sm font-bold text-zinc-950">Phone</p>
-                      <a href="tel:+254702104690" className="mt-2 block text-lg font-black text-blue-700 hover:text-blue-900">+254 702 104 690</a>
-                    </div>
-                    <div className="rounded-2xl border border-zinc-100 bg-white p-5">
-                      <p className="text-sm font-bold text-zinc-950">Message</p>
-                      <p className="mt-2 text-sm leading-6 text-zinc-600">Use the demo request button to send setup, billing, or support questions.</p>
-                    </div>
-                    <div className="rounded-2xl border border-zinc-100 bg-white p-5">
-                      <p className="text-sm font-bold text-zinc-950">Service area</p>
-                      <p className="mt-2 text-sm leading-6 text-zinc-600">Serving offices, apartments, schools, and organizations across Nairobi, Kenya.</p>
+                    <a href="tel:+254702104690" className="flex items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-5 transition-colors hover:border-orange-100 hover:bg-orange-50/40">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-700">
+                        <Phone className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-zinc-950">Phone</p>
+                        <p className="mt-1 whitespace-nowrap text-base font-black text-zinc-800">+254 702 104 690</p>
+                      </div>
+                    </a>
+
+                    <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-5 transition-colors hover:border-blue-100 hover:bg-blue-50/40">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                        <MessageCircle className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-zinc-950">Message</p>
+                        <p className="mt-1 text-sm leading-6 text-zinc-600">Use the demo request button to send questions.</p>
+                      </div>
+                    </a>
+
+                    <div className="flex items-center gap-4 rounded-2xl border border-zinc-100 bg-white p-5">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                        <Headphones className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-zinc-950">Service area</p>
+                        <p className="mt-1 text-sm leading-6 text-zinc-600">Serving organizations across Kenya.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -136,8 +156,8 @@ export default function ContactPage() {
               {contactOptions.map((option) => {
                 const Icon = option.icon;
                 return (
-                  <div key={option.title} className="flex flex-col rounded-3xl border border-zinc-100 bg-white p-7 shadow-sm transition-shadow hover:shadow-md">
-                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+                  <div key={option.title} className="flex min-h-[300px] flex-col rounded-3xl border border-zinc-100 bg-white p-7 shadow-sm transition-shadow hover:shadow-md">
+                    <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl ${option.iconClass}`}>
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <h3 className="text-xl font-black text-zinc-950">{option.title}</h3>
