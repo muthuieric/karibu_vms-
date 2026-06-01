@@ -35,7 +35,7 @@ const softwareApplicationJsonLd = {
   applicationCategory: "SecurityApplication",
   operatingSystem: "Web",
   description:
-    "Visitor management system in Kenya for secure check-ins, digital visitor passes, guard dashboards, host confirmation, and checkout.",
+    "Visitor management system in Kenya for secure check-ins, digital visitor passes, guard dashboards, host confirmation, visitor status records, and checkout.",
   offers: {
     "@type": "AggregateOffer",
     lowPrice: "1500",
@@ -49,19 +49,19 @@ const platformHighlights = [
   {
     title: "Guard desk check-in",
     description:
-      "Register walk-in visitors at reception or the gate using a structured form instead of a paper book.",
+      "Register walk-in visitors at reception or the gate using a structured form instead of a paper visitor book.",
     icon: ClipboardList,
   },
   {
     title: "QR visitor flow",
     description:
-      "Let visitors scan a QR code, submit their details, and move through a cleaner approval process.",
+      "Let visitors scan a QR code, submit their details, and move through a cleaner approval process before entry.",
     icon: QrCode,
   },
   {
     title: "Gates and entry points",
     description:
-      "Create entry points and assign guards to the exact gates or reception areas where they work.",
+      "Create entry points and assign guards to the gates, receptions, blocks, or entrances where they work.",
     icon: DoorOpen,
   },
   {
@@ -73,13 +73,13 @@ const platformHighlights = [
   {
     title: "Host confirmation",
     description:
-      "Help hosts confirm visitor arrival while guards stay in control of entry and checkout actions.",
+      "Help hosts confirm visitor arrival while guards stay in control of approval, visitor status, and checkout actions.",
     icon: UsersRound,
   },
   {
     title: "Searchable records",
     description:
-      "Find visitor history, gate activity, checkout status, restricted records, and billing information faster.",
+      "Find visitor history, gate activity, active visit status, checkout records, restricted records, and billing information faster.",
     icon: FileSearch,
   },
 ];
@@ -88,22 +88,22 @@ const steps = [
   {
     label: "01",
     title: "Visitor arrives",
-    description: "The visitor reaches a reception desk, gate, or QR check-in poster.",
+    description: "The visitor reaches a reception desk, gate, or QR check-in poster at the facility.",
   },
   {
     label: "02",
     title: "Details are captured",
-    description: "A guard or QR form collects the information your organization requires.",
+    description: "A guard or QR form collects only the information your organization requires for registration.",
   },
   {
     label: "03",
     title: "Entry is reviewed",
-    description: "Security checks host, department, gate, and restricted visitor information.",
+    description: "Security checks host, department, gate, visitor rules, and restricted visitor information where enabled.",
   },
   {
     label: "04",
-    title: "Visit is recorded",
-    description: "The visit stays in the dashboard with arrival, approval, and checkout records.",
+    title: "Visit status is recorded",
+    description: "The visit becomes active after check-in and changes to checked out after checkout is completed.",
   },
 ];
 
@@ -125,29 +125,29 @@ const roleDetails = [
 const facilityTypes = [
   "Corporate offices",
   "Apartments",
+  "Airbnb stays",
   "Schools",
   "Gated estates",
   "Clinics",
   "Warehouses",
   "Co-working spaces",
-  "Events",
 ];
 
 const kenyaUseCases = [
   {
     title: "Office visitor management in Kenya",
     description:
-      "Record clients, suppliers, contractors, interview candidates, and investor meetings with host and department context.",
+      "Record clients, suppliers, contractors, interview candidates, and investor meetings with host and department context. The system helps reception teams replace loose paper records with searchable digital logs.",
   },
   {
-    title: "Apartment and estate visitor logs",
+    title: "Apartment, Airbnb, and estate visitor logs",
     description:
-      "Help guards track residents' visitors, delivery riders, vehicles, service providers, and repeat visits more clearly.",
+      "Help guards record residents' visitors, delivery riders, service providers, vehicles, short-stay guests, and repeat visits more clearly without creating unnecessary duplicate records.",
   },
   {
     title: "School and institution check-in",
     description:
-      "Support gate teams handling parents, suppliers, interviews, consultants, and scheduled guests.",
+      "Support gate teams handling parents, suppliers, interviews, consultants, scheduled guests, and service providers while keeping a clearer entry and checkout trail.",
   },
 ];
 
@@ -169,13 +169,17 @@ export default function LandingPage() {
 
           <div className="container relative z-10 mx-auto max-w-6xl px-6">
             <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="max-w-2xl">    
+              <div className="max-w-2xl">
                 <h1 className="text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl lg:leading-[1.05]">
                   Replace paper visitor books with a cleaner digital gate flow.
                 </h1>
 
                 <p className="mt-6 max-w-xl text-lg leading-8 text-zinc-600">
-                  Karibu VMS helps offices, apartments, schools, and gated spaces manage visitor check-in, guard review, host confirmation, digital passes, and checkout from one simple system.
+                  Karibu VMS helps offices, apartments, schools, Airbnbs, and gated spaces manage visitor check-in, guard review, host confirmation, digital passes, active visit status, and checkout from one simple system.
+                </p>
+
+                <p className="mt-4 max-w-xl text-base leading-7 text-zinc-600">
+                  The platform is built for teams that need better visitor records without claiming to track live visitor movement. A visit is marked active after check-in and checked out when checkout is completed.
                 </p>
 
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -209,7 +213,7 @@ export default function LandingPage() {
                         <p className="text-xs font-bold uppercase tracking-wider text-blue-600">Today&apos;s Activity</p>
                         <h2 className="mt-1 text-lg font-black text-zinc-950">Main Gate</h2>
                       </div>
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Live</span>
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Open</span>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
@@ -234,7 +238,7 @@ export default function LandingPage() {
                           <p className="truncate text-sm font-bold text-zinc-950">Alice Johnson</p>
                           <p className="text-xs text-zinc-500">Host: Finance Office</p>
                         </div>
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-700">Inside</span>
+                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-700">Active</span>
                       </div>
 
                       <div className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm">
@@ -252,7 +256,7 @@ export default function LandingPage() {
                           <p className="truncate text-sm font-bold text-zinc-950">Sarah Wanjiku</p>
                           <p className="text-xs text-zinc-500">Checked out at 08:30 AM</p>
                         </div>
-                        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-600">Departed</span>
+                        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-600">Closed</span>
                       </div>
                     </div>
                   </div>
@@ -273,8 +277,8 @@ export default function LandingPage() {
               <p className="mt-1 text-sm text-zinc-600">Visitor self check-in and digital pass support</p>
             </div>
             <div className="rounded-2xl bg-zinc-50 p-5">
-              <p className="text-2xl font-black text-zinc-950">KES</p>
-              <p className="mt-1 text-sm text-zinc-600">Plans and billing designed for local teams</p>
+              <p className="text-2xl font-black text-zinc-950">Nairobi</p>
+              <p className="mt-1 text-sm text-zinc-600">Serving offices, apartments, schools, and organizations across Nairobi, Kenya</p>
             </div>
           </div>
         </section>
@@ -285,7 +289,10 @@ export default function LandingPage() {
               <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-600">What Karibu VMS gives you</p>
               <h2 className="text-3xl font-black tracking-tight text-zinc-950 md:text-4xl">More control at the gate, better records after the visit.</h2>
               <p className="mt-4 text-lg leading-8 text-zinc-600">
-                Replace scattered notebooks, message threads, and delayed updates with one visitor check-in system for registration, QR passes, visitor rules, checkout, and reporting.
+                Replace scattered notebooks, phone calls, delayed updates, and difficult record searches with one visitor check-in system for registration, QR passes, visitor rules, checkout, and reporting.
+              </p>
+              <p className="mt-4 text-base leading-7 text-zinc-600">
+                Karibu VMS supports guard teams that need speed at the entrance and administrators who need reliable data later. Instead of searching through handwritten books, teams can review who checked in, who was approved, which host was selected, what gate was used, and whether the visit was closed correctly.
               </p>
             </div>
 
@@ -313,7 +320,7 @@ export default function LandingPage() {
                 <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-600">How it works</p>
                 <h2 className="text-3xl font-black tracking-tight text-zinc-950 md:text-4xl">A simple visit flow your team can follow every day.</h2>
                 <p className="mt-5 text-lg leading-8 text-zinc-600">
-                  The flow is designed for busy entrances where guards need speed, admins need accurate records, and visitors need clear instructions.
+                  The flow is designed for busy entrances where guards need speed, admins need accurate records, and visitors need clear instructions. The system records visitor status; it does not need to claim live movement tracking to be useful.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   {facilityTypes.map((facility) => (
@@ -346,6 +353,9 @@ export default function LandingPage() {
                 <p className="mt-5 text-lg leading-8 text-zinc-600">
                   Karibu VMS separates admin, guard, and visitor responsibilities so your team can move quickly while sensitive controls stay with the right people.
                 </p>
+                <p className="mt-4 text-base leading-7 text-zinc-600">
+                  Admins configure the organization, guards manage the daily entrance process, hosts can confirm visitor arrival when enabled, and visitors only see the public check-in experience. This keeps the platform practical for offices, apartments, Airbnbs, schools, and other facilities that need better visitor records.
+                </p>
 
                 <div className="mt-8 rounded-3xl border border-blue-100 bg-blue-50 p-6">
                   <div className="flex items-start gap-4">
@@ -355,7 +365,7 @@ export default function LandingPage() {
                     <div>
                       <h3 className="text-base font-black text-zinc-950">Designed for accountable access</h3>
                       <p className="mt-2 text-sm leading-6 text-zinc-600">
-                        Every visit can carry a clear trail: visitor identity, host destination, guard action, arrival time, checkout time, and billing reference where applicable.
+                        Every visit can carry a clear trail: visitor identity, host destination, guard action, arrival time, checkout time, status change, and billing reference where applicable.
                       </p>
                     </div>
                   </div>
@@ -388,10 +398,13 @@ export default function LandingPage() {
                 <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-300">Visitor management system Kenya</p>
                 <h2 className="text-3xl font-black tracking-tight md:text-4xl">A digital visitor logbook for facilities that need better records.</h2>
                 <p className="mt-5 text-lg leading-8 text-zinc-300">
-                  Many facilities still depend on paper books and manual sign-out sheets. That becomes difficult when teams need to confirm who entered, who approved them, and who is still inside.
+                  Many facilities still depend on paper books and manual sign-out sheets. That becomes difficult when teams need to confirm who entered, who approved them, which host they visited, and whether the visit was properly checked out.
                 </p>
                 <p className="mt-5 text-lg leading-8 text-zinc-300">
-                  Karibu VMS gives Kenyan teams a practical visitor check-in system with guard workflows, QR visitor passes, visitor rules, host details, checkout, restricted visitor records, and billing visibility.
+                  Karibu VMS gives Kenyan teams a practical visitor check-in system with guard workflows, QR visitor passes, visitor rules, host details, active visit records, checkout, restricted visitor records, and billing visibility.
+                </p>
+                <p className="mt-5 text-base leading-7 text-zinc-400">
+                  For privacy and clarity, the platform should describe visitor presence as a visit status, not live visitor tracking. A visitor can be active because the visit has not been checked out, while the guard or facility team remains responsible for the physical access process.
                 </p>
               </div>
 
@@ -420,7 +433,7 @@ export default function LandingPage() {
             <WalletCards className="mx-auto mb-5 h-10 w-10 text-blue-100" aria-hidden="true" />
             <h2 className="text-3xl font-black tracking-tight md:text-5xl">Ready to improve your gate flow?</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/90">
-              Book a demo on WhatsApp and see how Karibu VMS can support office visitor management, apartment visitor management, school visitor management, or gated access workflows.
+              Book a demo and see how Karibu VMS can support office visitor management, apartment visitor management, Airbnb guest records, school visitor management, or gated access workflows across Nairobi, Kenya.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
