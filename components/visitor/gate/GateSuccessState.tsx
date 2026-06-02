@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, CloudOff } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/card";
 import VisitorPassCard, { type SafeVisitorPass } from "@/components/visitor/VisitorPassCard";
 
@@ -12,6 +12,7 @@ type GateSuccessStateProps = {
   hostName?: string | null;
   passUrl?: string | null;
   passToken?: string | null;
+  isOfflinePending?: boolean;
 };
 
 export default function GateSuccessState({
@@ -21,6 +22,7 @@ export default function GateSuccessState({
   hostName,
   passUrl,
   passToken,
+  isOfflinePending = false,
 }: GateSuccessStateProps) {
   const [livePass, setLivePass] = useState<SafeVisitorPass | null>(null);
 
@@ -72,6 +74,22 @@ export default function GateSuccessState({
           }}
           passUrl={passUrl}
         />
+      </div>
+    );
+  }
+
+  if (isOfflinePending) {
+    return (
+      <div className="relative z-10 flex w-full justify-center p-4">
+        <Card className="w-full max-w-md text-center p-8 bg-white">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-amber-200 bg-amber-50 text-amber-700">
+            <CloudOff className="w-10 h-10" />
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight mb-2">Saved Offline</CardTitle>
+          <p className="text-text-muted font-medium leading-relaxed">
+            This visitor registration has been saved on this device and will sync to the cloud when internet returns. <strong className="text-text-main">Keep this device available until sync completes.</strong>
+          </p>
+        </Card>
       </div>
     );
   }
