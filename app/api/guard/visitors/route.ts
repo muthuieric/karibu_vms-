@@ -154,9 +154,8 @@ export async function GET(request: Request) {
       .from("visitors")
       .select(GUARD_VISITOR_SELECT)
       .eq("company_id", companyId)
-      .gte("created_at", startIso)
-      .lt("created_at", endIso)
       .in("status", ACTIVE_STATUSES)
+      .or(`status.eq.checked_in,and(status.eq.pending,created_at.gte.${startIso},created_at.lt.${endIso})`)
       .order("created_at", { ascending: false })
       .limit(visitorId ? 1 : 500);
 
@@ -165,9 +164,9 @@ export async function GET(request: Request) {
 
     let statsQuery = auth.supabaseAdmin
       .from("visitors")
-      .select("status")
+      .select("status, created_at")
       .eq("company_id", companyId)
-      .gte("created_at", startIso)
+      .or(`created_at.gte.${startIso},and(status.eq.checked_in,created_at.lt.${startIso})`)
       .lt("created_at", endIso);
 
     if (guardGateId) statsQuery = statsQuery.or(`gate_id.eq.${guardGateId},gate_id.is.null`);
@@ -177,7 +176,10 @@ export async function GET(request: Request) {
     if (statsError) throw statsError;
 
     const stats = (statsData || []).reduce((counts, visitor) => {
-      counts.totalToday += 1;
+      const createdAt = new Date(visitor.created_at).getTime();
+      if (createdAt >= new Date(startIso).getTime() && createdAt < new Date(endIso).getTime()) {
+        counts.totalToday += 1;
+      }
       if (visitor.status === "pending") counts.pendingCount += 1;
       if (visitor.status === "checked_in") counts.checkedInCount += 1;
       if (visitor.status === "checked_out") counts.checkedOutCount += 1;
@@ -191,7 +193,7 @@ export async function GET(request: Request) {
       action: "guard_viewed_sensitive_visitor_details",
       resourceType: visitorId ? "visitor" : "visitor_collection",
       resourceId: visitorId || null,
-      metadata: { recordCount: data?.length || 0, activeOnly: true },
+      metadata: { recordCount: data?.length || 0, activeOnly: true, includesOverdueCheckouts: true },
       dedupeWindowSeconds: visitorId ? 300 : 60,
     });
 
