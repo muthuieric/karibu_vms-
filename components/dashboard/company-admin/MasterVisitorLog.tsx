@@ -8,7 +8,7 @@ import { DataTableShell } from "@/components/dashboard/shared/DataTableShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getVisitorStatusLabel, normalizeVisitorStatus } from "@/lib/visitor-display";
+import { getVisitorStatusLabel, isOverdueCheckout, normalizeVisitorStatus } from "@/lib/visitor-display";
 import {
   Table,
   TableBody,
@@ -67,12 +67,14 @@ type MasterVisitorLogProps = {
 const CustomStatusBadge = ({
   status,
   isOverride,
+  createdAt,
 }: {
   status: string;
   isOverride?: boolean;
+  createdAt?: string;
 }) => {
   const normalizedStatus = normalizeVisitorStatus(status);
-  const label = getVisitorStatusLabel(status, isOverride);
+  const label = getVisitorStatusLabel(status, isOverride, createdAt);
 
   if (isOverride && normalizedStatus !== "checked_out") {
     return (
@@ -82,10 +84,25 @@ const CustomStatusBadge = ({
     );
   }
 
+  if (isOverdueCheckout(status, createdAt)) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-800">
+        {label}
+      </span>
+    );
+  }
+
   switch (normalizedStatus) {
     case "pending":
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800">
+          {label}
+        </span>
+      );
+
+    case "expired":
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700">
           {label}
         </span>
       );
@@ -176,8 +193,9 @@ export default function MasterVisitorLog({
           >
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
-            <option value="checked_in">Inside</option>
+            <option value="checked_in">Inside / Overdue</option>
             <option value="checked_out">Departed</option>
+            <option value="expired">Expired</option>
           </SelectField>
         </div>
       }
@@ -247,7 +265,6 @@ export default function MasterVisitorLog({
           </div>
         ) : (
           <>
-            {/* Mobile Stacked Cards */}
             <div className="grid gap-4 p-4 sm:hidden">
               {visitors.map((visitor) => {
                 const hasCustomData =
@@ -265,7 +282,7 @@ export default function MasterVisitorLog({
                     className="rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm"
                   >
                     <div className="mb-3 flex items-start justify-between gap-3">
-                      <CustomStatusBadge status={visitor.status} isOverride={isOverride} />
+                      <CustomStatusBadge status={visitor.status} isOverride={isOverride} createdAt={visitor.created_at} />
                       <span className="shrink-0 text-xs font-bold text-slate-500">
                         {new Date(visitor.created_at).toLocaleDateString()}
                       </span>
@@ -346,7 +363,6 @@ export default function MasterVisitorLog({
               })}
             </div>
 
-            {/* Desktop Table View */}
             <div className="hidden overflow-x-auto sm:block">
               <Table>
                 <TableHeader className="border-b border-slate-200 bg-slate-50/80">
@@ -428,7 +444,7 @@ export default function MasterVisitorLog({
                         </TableCell>
 
                         <TableCell className="whitespace-nowrap">
-                          <CustomStatusBadge status={visitor.status} isOverride={isOverride} />
+                          <CustomStatusBadge status={visitor.status} isOverride={isOverride} createdAt={visitor.created_at} />
                         </TableCell>
 
                         <TableCell className="whitespace-nowrap text-sm font-medium text-slate-700">
