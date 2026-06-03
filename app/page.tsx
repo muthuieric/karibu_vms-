@@ -178,10 +178,6 @@ export default function LandingPage() {
                   Karibu VMS helps offices, apartments, schools, Airbnbs, and gated spaces manage visitor check-in, guard review, host confirmation, digital passes, active visit status, and checkout from one simple system.
                 </p>
 
-                <p className="mt-4 max-w-xl text-base leading-7 text-zinc-600">
-                  The platform is built for teams that need better visitor records without claiming to track live visitor movement. A visit is marked active after check-in and checked out when checkout is completed.
-                </p>
-
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                   <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
                     <Button className="h-12 w-full rounded-xl bg-blue-600 px-8 text-base font-semibold text-white shadow-lg shadow-blue-600/20 transition-colors hover:bg-blue-700 sm:w-auto">
@@ -320,7 +316,7 @@ export default function LandingPage() {
                 <p className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-600">How it works</p>
                 <h2 className="text-3xl font-black tracking-tight text-zinc-950 md:text-4xl">A simple visit flow your team can follow every day.</h2>
                 <p className="mt-5 text-lg leading-8 text-zinc-600">
-                  The flow is designed for busy entrances where guards need speed, admins need accurate records, and visitors need clear instructions. The system records visitor status; it does not need to claim live movement tracking to be useful.
+                  The flow is designed for busy entrances where guards need speed, admins need accurate records, and visitors need clear instructions.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   {facilityTypes.map((facility) => (
@@ -402,9 +398,6 @@ export default function LandingPage() {
                 </p>
                 <p className="mt-5 text-lg leading-8 text-zinc-300">
                   Karibu VMS gives Kenyan teams a practical visitor check-in system with guard workflows, QR visitor passes, visitor rules, host details, active visit records, checkout, restricted visitor records, and billing visibility.
-                </p>
-                <p className="mt-5 text-base leading-7 text-zinc-400">
-                  For privacy and clarity, the platform should describe visitor presence as a visit status, not live visitor tracking. A visitor can be active because the visit has not been checked out, while the guard or facility team remains responsible for the physical access process.
                 </p>
               </div>
 
