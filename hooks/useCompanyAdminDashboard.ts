@@ -95,19 +95,18 @@ export function useCompanyAdminDashboard() {
       activeCompanyId = profile.company_id;
 
       try {
-        const rolloverAt = new Date().toISOString();
+        const expiredAt = new Date().toISOString();
         await supabase
           .from("visitors")
           .update({
-            status: "checked_out",
-            checked_out_at: rolloverAt,
-            pass_expired_at: rolloverAt,
+            status: "expired",
+            pass_expired_at: expiredAt,
           })
           .eq("company_id", profile.company_id)
-          .in("status", ["pending", "checked_in"])
+          .eq("status", "pending")
           .lt("created_at", startOfToday.toISOString());
       } catch (err) {
-        console.error("Visitor status rollover failed:", err);
+        console.error("Pending visitor expiry failed:", err);
       }
 
       const { data: company } = await supabase
@@ -259,7 +258,7 @@ export function useCompanyAdminDashboard() {
 
   const hasActiveFilters = Boolean(searchQuery || startDate || statusFilter !== "all" || gateFilter !== "all");
 
-  const getStatusLabel = (status: string, isOverride?: boolean) => getVisitorStatusLabel(status, isOverride);
+  const getStatusLabel = (status: string, isOverride?: boolean, createdAt?: string) => getVisitorStatusLabel(status, isOverride, createdAt);
 
   const exportVisitorsToPdf = () => {
     if (filteredVisitors.length === 0) {
@@ -329,6 +328,7 @@ export function useCompanyAdminDashboard() {
         ["Inside", (statusCounts.checked_in || 0).toLocaleString()],
         ["Departed", (statusCounts.checked_out || 0).toLocaleString()],
         ["Pending", (statusCounts.pending || 0).toLocaleString()],
+        ["Expired", (statusCounts.expired || 0).toLocaleString()],
       ],
       columnStyles: {
         0: { fontStyle: "bold", textColor: [100, 116, 139], cellWidth: 130 },
@@ -371,7 +371,7 @@ export function useCompanyAdminDashboard() {
           ...(showHostReview ? [visitor.host_name ? getHostReviewLabel(visitor.host_confirmed) : "N/A"] : []),
           visitor.purpose || "N/A",
           getGateName(visitor.gate_id),
-          getStatusLabel(visitor.status, isOverride),
+          getStatusLabel(visitor.status, isOverride, visitor.created_at),
           new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           visitor.checked_out_at
             ? new Date(visitor.checked_out_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -399,8 +399,8 @@ export function useCompanyAdminDashboard() {
         lineWidth: 0.4,
       },
       columnStyles: {
-        0: { cellWidth: 90 }, // Visitor name
-        1: { cellWidth: 100 }, // Host / department
+        0: { cellWidth: 90 },
+        1: { cellWidth: 100 },
         2: { cellWidth: showHostReview ? 78 : 120 },
         3: { cellWidth: showHostReview ? 100 : 80 },
         4: { cellWidth: 70 },
