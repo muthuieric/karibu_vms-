@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit-log";
+import { decryptValue } from "@/lib/crypto-fields";
 import { isUuid } from "@/lib/validation";
 
 const ALLOWED_TYPES = [
@@ -15,6 +16,45 @@ const ALLOWED_TYPES = [
 
 const ALLOWED_URGENCY = ["low", "normal", "high", "critical"];
 const ALLOWED_STATUS = ["pending_review", "reviewed", "dismissed", "linked_to_restriction"];
+
+type Relation<T> = T | T[] | null;
+
+type IncidentVisitor = {
+  name: string | null;
+  phone: string | null;
+  phone_encrypted?: string | null;
+  id_number: string | null;
+  id_number_encrypted?: string | null;
+  vehicle_reg?: string | null;
+  vehicle_reg_encrypted?: string | null;
+};
+
+type IncidentReportRow = {
+  visitors: Relation<IncidentVisitor>;
+};
+
+function decryptOrLegacy(encrypted?: string | null, legacy?: string | null) {
+  return decryptValue(encrypted || null) || legacy || "";
+}
+
+function hydrateVisitor(visitor: IncidentVisitor | null) {
+  if (!visitor) return null;
+
+  return {
+    name: visitor.name || "Visitor",
+    phone: decryptOrLegacy(visitor.phone_encrypted, visitor.phone),
+    id_number: decryptOrLegacy(visitor.id_number_encrypted, visitor.id_number),
+    vehicle_reg: decryptOrLegacy(visitor.vehicle_reg_encrypted, visitor.vehicle_reg),
+  };
+}
+
+function hydrateIncidentVisitors<T extends IncidentReportRow>(report: T) {
+  const visitors = Array.isArray(report.visitors)
+    ? report.visitors.map((visitor) => hydrateVisitor(visitor))
+    : hydrateVisitor(report.visitors);
+
+  return { ...report, visitors };
+}
 
 export async function GET(request: Request) {
   try {
@@ -54,7 +94,7 @@ export async function GET(request: Request) {
         red_flag_id,
         created_at,
         reviewed_at,
-        visitors(name, phone, id_number),
+        visitors(name, phone, phone_encrypted, id_number, id_number_encrypted, vehicle_reg, vehicle_reg_encrypted),
         gates(name),
         reporter:profiles!incident_reports_reported_by_fkey(full_name, role),
         reviewer:profiles!incident_reports_reviewed_by_fkey(full_name, role)
@@ -75,7 +115,7 @@ export async function GET(request: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return NextResponse.json({ data: data || [] });
+    return NextResponse.json({ data: ((data || []) as IncidentReportRow[]).map((report) => hydrateIncidentVisitors(report)) });
   } catch (error) {
     console.error("Incident reports fetch failed:", error);
     const safeError = getSafeErrorResponse(error, "Reports could not be loaded.");

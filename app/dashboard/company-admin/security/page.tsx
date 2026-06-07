@@ -21,6 +21,7 @@ import "react-phone-input-2/lib/style.css";
 type IncidentType = "visitor_related" | "gate_issue" | "restricted_attempt" | "suspicious_activity" | "property_issue" | "emergency" | "other";
 type Urgency = "low" | "normal" | "high" | "critical";
 type ReviewStatus = "pending_review" | "reviewed" | "dismissed" | "linked_to_restriction";
+type IncidentFilter = "all" | ReviewStatus;
 type Relation<T> = T | T[] | null;
 
 type IncidentReport = {
@@ -41,6 +42,13 @@ type IncidentReport = {
 };
 
 const tabs = ["Incident Reports", "Restricted Visitors"] as const;
+const incidentFilters: { value: IncidentFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "pending_review", label: "Pending" },
+  { value: "reviewed", label: "Reviewed" },
+  { value: "dismissed", label: "Dismissed" },
+  { value: "linked_to_restriction", label: "Linked to Restriction" },
+];
 const incidentLabels: Record<IncidentType, string> = {
   visitor_related: "Visitor related",
   gate_issue: "Entry point issue",
@@ -92,9 +100,15 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
+function hasRestrictionIdentifier(form: RedFlagForm) {
+  const phoneDigits = form.phone.replace(/\D/g, "");
+  return Boolean(form.id_number.trim() || form.vehicle_reg.trim() || (phoneDigits && phoneDigits !== "254"));
+}
+
 export default function CompanyAdminSecurityPage() {
   const restrictedVisitors = useCompanyBlacklist();
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Incident Reports");
+  const [incidentFilter, setIncidentFilter] = useState<IncidentFilter>("pending_review");
   const [reports, setReports] = useState<IncidentReport[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [incidentError, setIncidentError] = useState<string | null>(null);
@@ -124,9 +138,17 @@ export default function CompanyAdminSecurityPage() {
     void loadReports();
   }, [loadReports]);
 
+  const filteredReports = useMemo(
+    () => (incidentFilter === "all" ? reports : reports.filter((report) => report.status === incidentFilter)),
+    [incidentFilter, reports]
+  );
+
   const incidentCounts = useMemo(() => ({
-    pending: reports.filter((report) => report.status === "pending_review").length,
-    linked: reports.filter((report) => report.status === "linked_to_restriction").length,
+    all: reports.length,
+    pending_review: reports.filter((report) => report.status === "pending_review").length,
+    reviewed: reports.filter((report) => report.status === "reviewed").length,
+    dismissed: reports.filter((report) => report.status === "dismissed").length,
+    linked_to_restriction: reports.filter((report) => report.status === "linked_to_restriction").length,
   }), [reports]);
 
   const updateIncident = async (report: IncidentReport, status: ReviewStatus, adminNotes?: string | null, redFlagId?: string | null) => {
@@ -175,6 +197,12 @@ export default function CompanyAdminSecurityPage() {
     event.preventDefault();
     if (!restrictionReport) return;
     setRestrictionError(null);
+
+    if (!hasRestrictionIdentifier(restrictionForm)) {
+      setRestrictionError("This visitor has missing identifier details. Add at least one identifier before restricting.");
+      return;
+    }
+
     setSubmittingRestriction(true);
     try {
       const redFlag = await restrictedVisitors.createRedFlag(restrictionForm);
@@ -205,10 +233,6 @@ export default function CompanyAdminSecurityPage() {
             {loadingReports ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Refresh
           </Button>
-          <Button type="button" variant="destructive" onClick={() => setShowAddRestriction(true)} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
-            Restrict Visitor
-          </Button>
         </PageHeader>
 
         <div className="rounded-[1.4rem] border border-slate-100 bg-white p-2 shadow-sm">
@@ -231,12 +255,29 @@ export default function CompanyAdminSecurityPage() {
                   <CardDescription>Guard-submitted access reports awaiting admin action.</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="pending">{incidentCounts.pending} pending</Badge>
-                  <Badge variant="error">{incidentCounts.linked} linked</Badge>
+                  <Badge variant="pending">{incidentCounts.pending_review} pending</Badge>
+                  <Badge variant="error">{incidentCounts.linked_to_restriction} linked</Badge>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4 p-4 sm:p-6">
+              <div className="flex flex-wrap gap-2">
+                {incidentFilters.map((filter) => (
+                  <Button
+                    key={filter.value}
+                    type="button"
+                    size="sm"
+                    variant={incidentFilter === filter.value ? "default" : "outline"}
+                    onClick={() => setIncidentFilter(filter.value)}
+                  >
+                    {filter.label}
+                    <span className="rounded-full bg-white/20 px-1.5 text-xs font-black">
+                      {filter.value === "all" ? incidentCounts.all : incidentCounts[filter.value]}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+
               {incidentError && (
                 <div className="flex gap-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -248,8 +289,10 @@ export default function CompanyAdminSecurityPage() {
                 <LoadingSkeleton rows={5} />
               ) : reports.length === 0 ? (
                 <EmptyState title="No incident reports" description="Submitted access reports will appear here for admin review." icon={ShieldAlert} />
+              ) : filteredReports.length === 0 ? (
+                <EmptyState title="No matching reports" description="Try another incident status filter." icon={ShieldAlert} />
               ) : (
-                reports.map((report) => {
+                filteredReports.map((report) => {
                   const visitor = firstRelation(report.visitors);
                   const gate = firstRelation(report.gates);
                   const reporter = firstRelation(report.reporter);
@@ -287,7 +330,7 @@ export default function CompanyAdminSecurityPage() {
                             <X className="h-4 w-4" />
                             Dismiss
                           </Button>
-                          {visitor && (
+                          {report.visitor_id && visitor && (
                             <Button type="button" variant="destructive" onClick={() => openRestrictionModal(report)} disabled={isSaving || report.status === "linked_to_restriction"} className="flex-1">
                               <Ban className="h-4 w-4" />
                               Restrict Visitor
@@ -315,6 +358,7 @@ export default function CompanyAdminSecurityPage() {
           setForm={restrictionReport ? setRestrictionForm : restrictedVisitors.setNewRedFlag}
           error={restrictionError}
           submitting={restrictionReport ? submittingRestriction : restrictedVisitors.isSubmittingRedFlag}
+          missingIdentifier={Boolean(restrictionReport && !hasRestrictionIdentifier(restrictionForm))}
           title={restrictionReport ? "Restrict visitor from incident" : "Restrict visitor"}
           description="Confirm the visitor identity and restriction details before saving."
           onClose={() => {
@@ -359,7 +403,7 @@ function RestrictedVisitorsTab({ blacklist, onAdd }: { blacklist: ReturnType<typ
           </div>
           <Button type="button" variant="destructive" onClick={onAdd} className="w-full sm:w-auto">
             <Plus className="h-4 w-4" />
-            Restrict Visitor
+            Add Restricted Visitor
           </Button>
         </div>
       </CardHeader>
@@ -417,6 +461,7 @@ function RestrictionModal({
   setForm,
   error,
   submitting,
+  missingIdentifier,
   title,
   description,
   onClose,
@@ -426,6 +471,7 @@ function RestrictionModal({
   setForm: React.Dispatch<React.SetStateAction<RedFlagForm>>;
   error: string | null;
   submitting: boolean;
+  missingIdentifier: boolean;
   title: string;
   description: string;
   onClose: () => void;
@@ -440,7 +486,7 @@ function RestrictionModal({
       footer={
         <div className="flex w-full flex-col-reverse justify-end gap-3 sm:flex-row">
           <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={onClose}>Cancel</Button>
-          <Button type="button" variant="destructive" className="w-full sm:w-auto" disabled={submitting} onClick={() => document.getElementById("restrict-form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))}>
+          <Button type="button" variant="destructive" className="w-full sm:w-auto" disabled={submitting || missingIdentifier} onClick={() => document.getElementById("restrict-form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))}>
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
             Save Restriction
           </Button>
@@ -452,6 +498,13 @@ function RestrictionModal({
           <div className="flex gap-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {missingIdentifier && (
+          <div className="flex gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-950" role="status">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <span>This visitor has missing identifier details. Add at least one identifier before restricting.</span>
           </div>
         )}
 
