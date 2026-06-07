@@ -9,9 +9,4 @@ import type { Visitor } from "@/types/guard";
 type GuardAccessNoteModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  visitor?: Visitor | null;
-  guardGateId?: string | null;
-};
-
-const reportTypes = [
-  { value: "visitor_related
+  visitor?: Visitor
