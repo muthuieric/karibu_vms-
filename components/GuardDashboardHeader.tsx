@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { LogOutIcon, RefreshCw, ScanQrCode, UserPlus2 } from "lucide-react";
+import { LogOutIcon, RefreshCw, ScanQrCode, ShieldAlert, UserPlus2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type GuardDashboardHeaderProps = {
@@ -9,6 +9,7 @@ type GuardDashboardHeaderProps = {
   onLogout: () => void;
   onShowQr: () => void;
   onShowAddVisitor: () => void;
+  onShowIncidentReport: () => void;
   onRefresh: () => void;
 };
 
@@ -17,6 +18,7 @@ export default function GuardDashboardHeader({
   onLogout,
   onShowQr,
   onShowAddVisitor,
+  onShowIncidentReport,
   onRefresh,
 }: GuardDashboardHeaderProps) {
   return (
@@ -60,6 +62,14 @@ export default function GuardDashboardHeader({
         >
           <UserPlus2 className="mr-2 h-4 w-4" />
           New Visitor
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onShowIncidentReport}
+          className="h-11 border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+        >
+          <ShieldAlert className="mr-2 h-4 w-4" />
+          Report Incident
         </Button>
         <Button
           variant="ghost"

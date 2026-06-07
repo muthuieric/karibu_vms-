@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck } from "lucide-react";
 
 const AddVisitorModal = dynamic(() => import("@/components/dashboard/guard/add-visitor/AddVisitorModal"), { ssr: false });
+const GuardAccessNoteModal = dynamic(() => import("@/components/dashboard/guard/GuardAccessNoteModal"), { ssr: false });
 const GuardQrModal = dynamic(() => import("@/components/dashboard/guard/GuardQrModal"), { ssr: false });
 const VisitInfoModal = dynamic(() => import("@/components/dashboard/guard/VisitInfoModal"), { ssr: false });
 const PhotoLightbox = dynamic(() => import("@/components/dashboard/guard/PhotoLightbox"), { ssr: false });
@@ -21,6 +22,7 @@ const PhotoLightbox = dynamic(() => import("@/components/dashboard/guard/PhotoLi
 export default function GuardDashboard() {
   const dashboard = useGuardDashboard();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [enlargedPhoto, setEnlargedPhoto] = useState<string | null>(null);
   const [infoModalVisitor, setInfoModalVisitor] = useState<Visitor | null>(null);
@@ -63,6 +65,7 @@ export default function GuardDashboard() {
             setShowQrModal(true);
           }}
           onShowAddVisitor={() => setShowAddModal(true)}
+          onShowIncidentReport={() => setShowIncidentModal(true)}
           onRefresh={dashboard.refreshCompanySettings}
         />
 
@@ -144,6 +147,13 @@ export default function GuardDashboard() {
         qrUrl={dashboard.getDynamicQrUrl()}
         guardGateName={dashboard.guardGateName}
         handlePrintQr={dashboard.handlePrintQr}
+      />
+      <GuardAccessNoteModal
+        open={showIncidentModal}
+        visitors={dashboard.visitors}
+        gateId={dashboard.guardGateId}
+        onClose={() => setShowIncidentModal(false)}
+        onSaved={dashboard.refreshCompanySettings}
       />
       <VisitInfoModal
         visitor={displayedInfoModalVisitor}

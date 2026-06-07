@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { AlertOctagon, LayoutDashboard, SquareCode, ContactRound, ClipboardList, Landmark, OctagonX, WalletCards, MessageCircleQuestion, SlidersHorizontal } from "lucide-react";
+import { AlertOctagon, LayoutDashboard, SquareCode, ContactRound, ClipboardList, Landmark, OctagonX, WalletCards, MessageCircleQuestion, ShieldAlert, SlidersHorizontal } from "lucide-react";
 
 import { DashboardSidebar, type DashboardNavItem } from "@/components/dashboard/shared/DashboardSidebar";
 import { HardLockedScreen } from "@/components/dashboard/shared/HardLockedScreen";
@@ -17,6 +17,7 @@ const adminNavItems: DashboardNavItem[] = [
   { href: "/dashboard/company-admin", label: "Admin Home", exact: true, icon: LayoutDashboard },
   { href: "/dashboard/company-admin/qr", label: "Gate QR Code", icon: SquareCode },
   { href: "/dashboard/company-admin/guards", label: "Security Team", icon: ContactRound },
+  { href: "/dashboard/company-admin/incidents", label: "Incidents", icon: ShieldAlert },
   { href: "/dashboard/company-admin/rules", label: "Building Rules", icon: ClipboardList },
   { href: "/dashboard/company-admin/departments", label: "Departments", icon: Landmark },
   { href: "/dashboard/company-admin/blacklist", label: "Restricted List", danger: true, icon: OctagonX },
