@@ -57,7 +57,7 @@ export default function BlacklistPage() {
         <Card>
           <CardHeader className="border-b border-border pb-5">
             <CardTitle className="text-xl">Restricted Visitors</CardTitle>
-            <CardDescription>These individuals will be strictly prohibited from passing the security gates.</CardDescription>
+            <CardDescription>This visitor should not be allowed entry.</CardDescription>
           </CardHeader>
           <CardContent className="p-0 sm:p-6 sm:pt-6">
             {blacklist.loading ? (
@@ -74,7 +74,7 @@ export default function BlacklistPage() {
                       <TableHead className="whitespace-nowrap">Phone Number</TableHead>
                       <TableHead className="whitespace-nowrap">Vehicle</TableHead>
                       <TableHead className="whitespace-nowrap">Reason for Restriction</TableHead>
-                      <TableHead className="whitespace-nowrap text-right pr-4 sm:pr-6">Actions</TableHead>
+                      <TableHead className="whitespace-nowrap text-right pr-4 sm:pr-6">Remove</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -95,7 +95,7 @@ export default function BlacklistPage() {
                             aria-label={`Remove ${flag.name} from restricted list`}
                           >
                             <X className="h-4 w-4 sm:mr-1" />
-                            <span className="hidden sm:inline font-semibold">Pardon</span>
+                            <span className="hidden sm:inline font-semibold">Remove</span>
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -112,7 +112,7 @@ export default function BlacklistPage() {
       {showRedFlagModal && (
         <ModalShell
           title="Restrict visitor"
-          description="Add a person who should be reviewed before entry."
+          description="This visitor should not be allowed entry."
           onClose={() => setShowRedFlagModal(false)}
           footer={
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 w-full">

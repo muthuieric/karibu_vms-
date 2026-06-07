@@ -27,6 +27,7 @@ type IncidentVisitor = {
   id_number_encrypted?: string | null;
   vehicle_reg?: string | null;
   vehicle_reg_encrypted?: string | null;
+  purpose?: string | null;
 };
 
 type IncidentReportRow = {
@@ -45,6 +46,7 @@ function hydrateVisitor(visitor: IncidentVisitor | null) {
     phone: decryptOrLegacy(visitor.phone_encrypted, visitor.phone),
     id_number: decryptOrLegacy(visitor.id_number_encrypted, visitor.id_number),
     vehicle_reg: decryptOrLegacy(visitor.vehicle_reg_encrypted, visitor.vehicle_reg),
+    purpose: visitor.purpose || null,
   };
 }
 
@@ -94,7 +96,7 @@ export async function GET(request: Request) {
         red_flag_id,
         created_at,
         reviewed_at,
-        visitors(name, phone, phone_encrypted, id_number, id_number_encrypted, vehicle_reg, vehicle_reg_encrypted),
+        visitors(name, phone, phone_encrypted, id_number, id_number_encrypted, vehicle_reg, vehicle_reg_encrypted, purpose),
         gates(name),
         reporter:profiles!incident_reports_reported_by_fkey(full_name, role),
         reviewer:profiles!incident_reports_reviewed_by_fkey(full_name, role)

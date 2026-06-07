@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Ban, CalendarClock, CheckCircle2, ClipboardCheck, Flag, Loader2, Plus, RefreshCw, ShieldAlert, ShieldCheck, UserRound, X } from "lucide-react";
+import { AlertCircle, Ban, CalendarClock, CheckCircle2, ClipboardCheck, Eye, Flag, Loader2, Plus, RefreshCw, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
@@ -36,7 +36,7 @@ type IncidentReport = {
   status: ReviewStatus;
   admin_notes: string | null;
   created_at: string;
-  visitors: Relation<{ name: string | null; phone: string | null; id_number: string | null; vehicle_reg?: string | null }>;
+  visitors: Relation<{ name: string | null; phone: string | null; id_number: string | null; vehicle_reg?: string | null; purpose?: string | null }>;
   gates: Relation<{ name: string | null }>;
   reporter: Relation<{ full_name: string | null; role: string | null }>;
 };
@@ -72,17 +72,8 @@ const blankRestriction: RedFlagForm = {
   vehicle_reg: "",
   reason: "",
   reason_category: "security_incident",
-  action: "deny_entry",
   review_months: "6",
   expires_months: "24",
-};
-
-const actionLabels: Record<string, string> = {
-  require_approval: "Require approval",
-  deny_entry: "Deny entry",
-  notify_admin: "Notify admin",
-  manager_review: "Manager review",
-  escort_required: "Escort required",
 };
 
 const redFlagStatusLabels: Record<string, string> = {
@@ -159,6 +150,7 @@ export default function CompanyAdminSecurityPage() {
   const [restrictionError, setRestrictionError] = useState<string | null>(null);
   const [submittingRestriction, setSubmittingRestriction] = useState(false);
   const [showAddRestriction, setShowAddRestriction] = useState(false);
+  const [selectedRestriction, setSelectedRestriction] = useState<RedFlag | null>(null);
 
   const loadReports = useCallback(async () => {
     setIncidentError(null);
@@ -359,7 +351,7 @@ export default function CompanyAdminSecurityPage() {
 
                           <div className="grid gap-3 lg:grid-cols-2">
                             <TextBlock label="Description" value={report.description} />
-                            <TextBlock label="Action taken" value={report.action_taken || "No action recorded"} />
+                            <TextBlock label="Guard note" value={report.action_taken || "No guard note recorded"} />
                           </div>
                         </div>
 
@@ -402,7 +394,9 @@ export default function CompanyAdminSecurityPage() {
         ) : (
           <RestrictedVisitorsTab
             blacklist={restrictedVisitors}
+            reports={reports}
             onAdd={() => setShowAddRestriction(true)}
+            onViewDetails={setSelectedRestriction}
           />
         )}
       </div>
@@ -415,13 +409,21 @@ export default function CompanyAdminSecurityPage() {
           submitting={restrictionReport ? submittingRestriction : restrictedVisitors.isSubmittingRedFlag}
           missingIdentifier={Boolean(restrictionReport && !hasRestrictionIdentifier(restrictionForm))}
           title={restrictionReport ? "Restrict visitor from incident" : "Restrict visitor"}
-          description="Confirm the visitor identity and restriction details before saving."
+          description="This visitor should not be allowed entry."
           onClose={() => {
             setRestrictionReport(null);
             setShowAddRestriction(false);
             setRestrictionError(null);
           }}
           onSubmit={restrictionReport ? submitIncidentRestriction : (event) => restrictedVisitors.handleCreateRedFlag(event, () => setShowAddRestriction(false))}
+        />
+      )}
+
+      {selectedRestriction && (
+        <RestrictedVisitorDetailsModal
+          redFlag={selectedRestriction}
+          linkedIncident={reports.find((report) => report.red_flag_id === selectedRestriction.id) || null}
+          onClose={() => setSelectedRestriction(null)}
         />
       )}
     </div>
@@ -455,14 +457,34 @@ function redFlagLast4(flag: RedFlag, field: "phone" | "id_number" | "vehicle_reg
   return maskedValue || "Not provided";
 }
 
-function RestrictedVisitorsTab({ blacklist, onAdd }: { blacklist: ReturnType<typeof useCompanyBlacklist>; onAdd: () => void }) {
+function redFlagIdentifierSummary(flag: RedFlag) {
+  const identifiers = [
+    `Phone ${redFlagLast4(flag, "phone")}`,
+    `ID ${redFlagLast4(flag, "id_number")}`,
+    `Vehicle ${redFlagLast4(flag, "vehicle_reg")}`,
+  ].filter((value) => !value.endsWith("Not provided"));
+
+  return identifiers.length > 0 ? identifiers.join(" / ") : "No identifiers";
+}
+
+function RestrictedVisitorsTab({
+  blacklist,
+  reports,
+  onAdd,
+  onViewDetails,
+}: {
+  blacklist: ReturnType<typeof useCompanyBlacklist>;
+  reports: IncidentReport[];
+  onAdd: () => void;
+  onViewDetails: (redFlag: RedFlag) => void;
+}) {
   return (
     <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
       <CardHeader className="border-b border-slate-100 bg-slate-50/50">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="text-xl font-black text-slate-900">Restricted Visitors</CardTitle>
-            <CardDescription>Manage visitors who should be reviewed before entry.</CardDescription>
+            <CardDescription>This visitor should not be allowed entry.</CardDescription>
           </div>
           <Button type="button" variant="destructive" onClick={onAdd} className="w-full sm:w-auto">
             <Plus className="h-4 w-4" />
@@ -487,45 +509,120 @@ function RestrictedVisitorsTab({ blacklist, onAdd }: { blacklist: ReturnType<typ
               <TableHeader className="bg-slate-50">
                 <TableRow>
                   <TableHead className="pl-4 sm:pl-6">Name</TableHead>
-                  <TableHead>Phone last 4</TableHead>
-                  <TableHead>ID last 4</TableHead>
-                  <TableHead>Vehicle last 4</TableHead>
+                  <TableHead>Identifier summary</TableHead>
                   <TableHead>Reason category</TableHead>
-                  <TableHead>Action</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Review date</TableHead>
                   <TableHead>Expiry date</TableHead>
                   <TableHead>Created date</TableHead>
-                  <TableHead className="pr-4 text-right sm:pr-6">Remove</TableHead>
+                  <TableHead className="pr-4 text-right sm:pr-6">Details</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {blacklist.redFlags.map((flag) => (
-                  <TableRow key={flag.id}>
-                    <TableCell className="pl-4 font-bold text-slate-900 sm:pl-6">{flag.name}</TableCell>
-                    <TableCell className="font-mono text-slate-600">{redFlagLast4(flag, "phone")}</TableCell>
-                    <TableCell className="font-mono text-slate-600">{redFlagLast4(flag, "id_number")}</TableCell>
-                    <TableCell className="font-mono text-slate-600">{redFlagLast4(flag, "vehicle_reg")}</TableCell>
-                    <TableCell className="text-slate-600">{formatLabel(flag.reason_category, reasonCategoryLabels)}</TableCell>
-                    <TableCell className="text-slate-600">{formatLabel(flag.action, actionLabels)}</TableCell>
-                    <TableCell><Badge variant={flag.status === "active" ? "success" : "secondary"}>{formatLabel(flag.status, redFlagStatusLabels)}</Badge></TableCell>
-                    <TableCell className="text-slate-600">{formatDateOnly(flag.review_at)}</TableCell>
-                    <TableCell className="text-slate-600">{formatDateOnly(flag.expires_at)}</TableCell>
-                    <TableCell className="text-slate-600">{formatDateOnly(flag.created_at)}</TableCell>
-                    <TableCell className="pr-4 text-right sm:pr-6">
-                      <Button type="button" variant="outline" size="sm" onClick={() => blacklist.handleDeleteRedFlag(flag.id, flag.name)} aria-label={`Remove ${flag.name} from restricted visitors`}>
-                        <X className="h-4 w-4" />
-                        <span className="hidden sm:inline">Remove</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {blacklist.redFlags.map((flag) => {
+                  const linkedIncident = reports.find((report) => report.red_flag_id === flag.id);
+
+                  return (
+                    <TableRow key={flag.id}>
+                      <TableCell className="pl-4 font-bold text-slate-900 sm:pl-6">{flag.name}</TableCell>
+                      <TableCell className="min-w-[260px] font-mono text-slate-600">{redFlagIdentifierSummary(flag)}</TableCell>
+                      <TableCell className="text-slate-600">{formatLabel(flag.reason_category, reasonCategoryLabels)}</TableCell>
+                      <TableCell><Badge variant={flag.status === "active" ? "success" : "secondary"}>{formatLabel(flag.status, redFlagStatusLabels)}</Badge></TableCell>
+                      <TableCell className="text-slate-600">{formatDateOnly(flag.review_at)}</TableCell>
+                      <TableCell className="text-slate-600">{formatDateOnly(flag.expires_at)}</TableCell>
+                      <TableCell className="text-slate-600">{formatDateOnly(flag.created_at)}</TableCell>
+                      <TableCell className="pr-4 text-right sm:pr-6">
+                        <Button type="button" variant="outline" size="sm" onClick={() => onViewDetails(flag)} aria-label={`View restriction details for ${flag.name}`}>
+                          <Eye className="h-4 w-4" />
+                          <span className="hidden sm:inline">View Details</span>
+                        </Button>
+                        {linkedIncident && <span className="sr-only">Linked to incident {linkedIncident.id}</span>}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function RestrictedVisitorDetailsModal({
+  redFlag,
+  linkedIncident,
+  onClose,
+}: {
+  redFlag: RedFlag;
+  linkedIncident: IncidentReport | null;
+  onClose: () => void;
+}) {
+  const incidentVisitor = linkedIncident ? firstRelation(linkedIncident.visitors) : null;
+  const incidentGate = linkedIncident ? firstRelation(linkedIncident.gates) : null;
+  const incidentReporter = linkedIncident ? firstRelation(linkedIncident.reporter) : null;
+
+  return (
+    <ModalShell
+      title="Restricted visitor details"
+      description="This visitor should not be allowed entry."
+      onClose={onClose}
+      className="max-w-2xl"
+      footer={
+        <div className="flex w-full justify-end">
+          <Button type="button" variant="outline" onClick={onClose}>Close</Button>
+        </div>
+      }
+    >
+      <div className="space-y-5">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <DetailItem label="Name" value={redFlag.name} />
+          <DetailItem label="Status" value={formatLabel(redFlag.status, redFlagStatusLabels)} />
+          <DetailItem label="Phone last 4" value={redFlagLast4(redFlag, "phone")} />
+          <DetailItem label="ID last 4" value={redFlagLast4(redFlag, "id_number")} />
+          <DetailItem label="Vehicle last 4" value={redFlagLast4(redFlag, "vehicle_reg")} />
+          <DetailItem label="Reason category" value={formatLabel(redFlag.reason_category, reasonCategoryLabels)} />
+          <DetailItem label="Review date" value={formatDateOnly(redFlag.review_at)} />
+          <DetailItem label="Expiry date" value={formatDateOnly(redFlag.expires_at)} />
+          <DetailItem label="Created date" value={formatDateOnly(redFlag.created_at)} />
+        </div>
+
+        <TextBlock label="Full reason/details" value={redFlag.reason || "No details recorded"} />
+
+        {linkedIncident ? (
+          <div className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={statusVariant(linkedIncident.status)}>{statusLabels[linkedIncident.status]}</Badge>
+              <Badge variant={priorityVariant(linkedIncident.urgency)}>{urgencyLabels[linkedIncident.urgency]}</Badge>
+              <span className="text-sm font-black text-slate-900">{incidentLabels[linkedIncident.incident_type]}</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <DetailItem label="Linked incident" value={linkedIncident.id} />
+              <DetailItem label="Incident date" value={formatDate(linkedIncident.created_at)} />
+              <DetailItem label="Gate" value={incidentGate?.name || "Unassigned"} />
+              <DetailItem label="Reported by" value={incidentReporter?.full_name || "Security team"} />
+              <DetailItem label="Visit purpose" value={incidentVisitor?.purpose || "Not recorded"} />
+            </div>
+            <TextBlock label="Incident description" value={linkedIncident.description} />
+            <TextBlock label="Incident guard note" value={linkedIncident.action_taken || "No guard note recorded"} />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-sm font-semibold text-slate-600">
+            No linked incident information recorded.
+          </div>
+        )}
+      </div>
+    </ModalShell>
+  );
+}
+
+function DetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-white p-3">
+      <p className="text-xs font-black uppercase text-slate-400">{label}</p>
+      <p className="mt-1 break-words font-bold text-slate-900">{value}</p>
+    </div>
   );
 }
 
@@ -622,18 +719,7 @@ function RestrictionModal({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Action</Label>
-            <Select value={form.action || "deny_entry"} onValueChange={(value) => setForm((current) => ({ ...current, action: value }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="require_approval">Require approval</SelectItem>
-                <SelectItem value="deny_entry">Deny entry</SelectItem>
-                <SelectItem value="notify_admin">Notify admin</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="restriction-review">Review after</Label>
+            <Label htmlFor="restriction-review">Review date</Label>
             <Select value={form.review_months || "6"} onValueChange={(value) => setForm((current) => ({ ...current, review_months: value }))}>
               <SelectTrigger id="restriction-review"><CalendarClock className="h-4 w-4 text-slate-400" /><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -643,10 +729,10 @@ function RestrictionModal({
                 <SelectItem value="24">24 months</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs font-semibold text-slate-500">When should this restriction be reviewed again?</p>
+            <p className="text-xs font-semibold text-slate-500">When should this restriction be reviewed?</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="restriction-expiry">Restriction expiry</Label>
+            <Label htmlFor="restriction-expiry">Expiry date</Label>
             <Select value={form.expires_months || "24"} onValueChange={(value) => setForm((current) => ({ ...current, expires_months: value }))}>
               <SelectTrigger id="restriction-expiry"><CalendarClock className="h-4 w-4 text-slate-400" /><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -656,7 +742,7 @@ function RestrictionModal({
                 <SelectItem value="36">36 months</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs font-semibold text-slate-500">When should this restriction stop being active?</p>
+            <p className="text-xs font-semibold text-slate-500">When should this restriction end?</p>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="restriction-reason">Reason / Details</Label>
@@ -672,8 +758,8 @@ function RestrictionModal({
         </div>
 
         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-          <UserRound className="mr-2 inline h-4 w-4 text-slate-400" />
-          Add at least one strong identifier: phone, ID/passport, or vehicle registration.
+          <Ban className="mr-2 inline h-4 w-4 text-slate-400" />
+          This visitor should not be allowed entry. Add at least one strong identifier: phone, ID/passport, or vehicle registration.
         </div>
       </form>
     </ModalShell>

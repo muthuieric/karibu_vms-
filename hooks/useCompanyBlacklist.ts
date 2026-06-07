@@ -15,7 +15,6 @@ export type RedFlag = {
   vehicle_reg_last4?: string | null;
   reason: string;
   reason_category?: string | null;
-  action?: string | null;
   status?: string | null;
   review_at?: string | null;
   expires_at?: string | null;
@@ -29,7 +28,6 @@ export type RedFlagForm = {
   vehicle_reg: string;
   reason: string;
   reason_category?: string;
-  action?: string;
   review_months?: string;
   expires_months?: string;
 };
@@ -47,7 +45,6 @@ export function useCompanyBlacklist() {
     vehicle_reg: "",
     reason: "",
     reason_category: "security_incident",
-    action: "deny_entry",
     review_months: "6",
     expires_months: "24",
   });
@@ -104,7 +101,7 @@ export function useCompanyBlacklist() {
     const response = await fetch("/api/red-flags", {
       method: "POST",
       headers: await getAuthHeaders(true),
-      body: JSON.stringify({ company_id: companyId, ...formValues, phone: finalPhone }),
+      body: JSON.stringify({ company_id: companyId, ...formValues, phone: finalPhone, action: "deny_entry" }),
     });
     const result = await response.json();
 
@@ -127,7 +124,6 @@ export function useCompanyBlacklist() {
         vehicle_reg: "",
         reason: "",
         reason_category: "security_incident",
-        action: "deny_entry",
         review_months: "6",
         expires_months: "24",
       });
