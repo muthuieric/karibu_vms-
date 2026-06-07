@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit-log";
+import { isUuid } from "@/lib/validation";
 
 const ALLOWED_TYPES = [
   "visitor_related",
@@ -50,6 +51,7 @@ export async function GET(request: Request) {
         action_taken,
         status,
         admin_notes,
+        red_flag_id,
         created_at,
         reviewed_at,
         visitors(name, phone, id_number),
@@ -157,34 +159,77 @@ export async function PATCH(request: Request) {
     const body = await request.json();
 
     const auth = await requireRole(request, ["company_admin", "superadmin"]);
-    const companyId = auth.profile.company_id;
-
-    if (!companyId) {
-      return NextResponse.json({ error: "Company context is required." }, { status: 400 });
-    }
-
-    assertCompanyAccess(auth.profile, companyId);
 
     const reportId = String(body.id || "");
     const status = String(body.status || "");
     const adminNotes = body.admin_notes ? String(body.admin_notes).trim() : null;
+    const redFlagId = body.red_flag_id ? String(body.red_flag_id) : null;
 
     if (!reportId) {
       return NextResponse.json({ error: "Report ID is required." }, { status: 400 });
+    }
+
+    if (!isUuid(reportId)) {
+      return NextResponse.json({ error: "Invalid report ID." }, { status: 400 });
     }
 
     if (!ALLOWED_STATUS.includes(status)) {
       return NextResponse.json({ error: "Invalid review status." }, { status: 400 });
     }
 
+    if (redFlagId && !isUuid(redFlagId)) {
+      return NextResponse.json({ error: "Invalid restricted visitor record." }, { status: 400 });
+    }
+
+    if (redFlagId && status !== "linked_to_restriction") {
+      return NextResponse.json({ error: "A restricted visitor link requires linked_to_restriction status." }, { status: 400 });
+    }
+
+    let reportQuery = auth.supabaseAdmin
+      .from("incident_reports")
+      .select("id, company_id")
+      .eq("id", reportId);
+
+    if (auth.profile.role !== "superadmin" && auth.profile.company_id) {
+      reportQuery = reportQuery.eq("company_id", auth.profile.company_id);
+    }
+
+    const { data: existingReport, error: existingReportError } = await reportQuery.single();
+
+    if (existingReportError || !existingReport) {
+      return NextResponse.json({ error: "Report not found." }, { status: 404 });
+    }
+
+    const companyId = existingReport.company_id as string;
+    assertCompanyAccess(auth.profile, companyId);
+
+    if (redFlagId) {
+      const { data: linkedRedFlag, error: linkedRedFlagError } = await auth.supabaseAdmin
+        .from("red_flags")
+        .select("id")
+        .eq("id", redFlagId)
+        .eq("company_id", companyId)
+        .single();
+
+      if (linkedRedFlagError || !linkedRedFlag) {
+        return NextResponse.json({ error: "Restricted visitor record not found." }, { status: 404 });
+      }
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      status,
+      admin_notes: adminNotes,
+      reviewed_by: auth.profile.id,
+      reviewed_at: new Date().toISOString(),
+    };
+
+    if (status === "linked_to_restriction" && redFlagId) {
+      updatePayload.red_flag_id = redFlagId;
+    }
+
     const { data, error } = await auth.supabaseAdmin
       .from("incident_reports")
-      .update({
-        status,
-        admin_notes: adminNotes,
-        reviewed_by: auth.profile.id,
-        reviewed_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", reportId)
       .eq("company_id", companyId)
       .select("id")

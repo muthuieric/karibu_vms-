@@ -11,13 +11,19 @@ function addMonths(date: Date, months: number) {
   return next;
 }
 
+function monthValue(value: unknown, fallback: number, min: number, max: number) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(parsed)));
+}
+
 function maskLast4(last4?: string | null) {
   return last4 ? `••••${last4}` : "";
 }
 
 export async function POST(request: Request) {
   try {
-    const { company_id, name, id_number, phone, vehicle_reg, reason, reason_category, action } = await request.json();
+    const { company_id, name, id_number, phone, vehicle_reg, reason, reason_category, action, review_months, expires_months } = await request.json();
     const companyId = requireUuid(company_id, "company_id");
     const visitorName = requireText(name, "Visitor name", 120);
     const { profile, supabaseAdmin } = await requireRole(request, ["company_admin", "superadmin"]);
@@ -31,8 +37,10 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
-    const reviewAt = addMonths(now, 12).toISOString();
-    const expiresAt = addMonths(now, 24).toISOString();
+    const reviewMonths = monthValue(review_months, 12, 1, 36);
+    const expiresMonths = Math.max(monthValue(expires_months, 24, 1, 60), reviewMonths);
+    const reviewAt = addMonths(now, reviewMonths).toISOString();
+    const expiresAt = addMonths(now, expiresMonths).toISOString();
     const safeReason = requireText(reason, "Restriction reason", 500);
     const phoneLast4 = normalizedPhone ? getLast4(normalizedPhone) : null;
     const idNumberLast4 = normalizedIdNumber ? getLast4(normalizedIdNumber) : null;

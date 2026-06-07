@@ -43,7 +43,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   checked_out: { label: "Checked out", variant: "secondary" },
   neutral: { label: "Neutral", variant: "secondary" },
   denied: { label: "Denied", variant: "error" },
-  blacklisted: { label: "Blacklisted", variant: "error" },
+  blacklisted: { label: "Restricted", variant: "error" },
   locked: { label: "Locked", variant: "error" },
   manual_override: { label: "Override", variant: "info" },
 };

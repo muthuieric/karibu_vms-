@@ -1,0 +1,553 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, Ban, CalendarClock, CheckCircle2, ClipboardCheck, Flag, Loader2, Plus, RefreshCw, ShieldAlert, ShieldCheck, UserRound, X } from "lucide-react";
+import PhoneInput from "react-phone-input-2";
+
+import { PageHeader } from "@/components/dashboard/shared/PageHeader";
+import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/dashboard/shared/StateBlocks";
+import { ModalShell } from "@/components/dashboard/shared/ModalShell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useCompanyBlacklist, type RedFlagForm } from "@/hooks/useCompanyBlacklist";
+import { getAuthHeaders } from "@/lib/client-auth";
+import "react-phone-input-2/lib/style.css";
+
+type IncidentType = "visitor_related" | "gate_issue" | "restricted_attempt" | "suspicious_activity" | "property_issue" | "emergency" | "other";
+type Urgency = "low" | "normal" | "high" | "critical";
+type ReviewStatus = "pending_review" | "reviewed" | "dismissed" | "linked_to_restriction";
+type Relation<T> = T | T[] | null;
+
+type IncidentReport = {
+  id: string;
+  visitor_id: string | null;
+  gate_id: string | null;
+  red_flag_id?: string | null;
+  incident_type: IncidentType;
+  urgency: Urgency;
+  description: string;
+  action_taken: string | null;
+  status: ReviewStatus;
+  admin_notes: string | null;
+  created_at: string;
+  visitors: Relation<{ name: string | null; phone: string | null; id_number: string | null; vehicle_reg?: string | null }>;
+  gates: Relation<{ name: string | null }>;
+  reporter: Relation<{ full_name: string | null; role: string | null }>;
+};
+
+const tabs = ["Incident Reports", "Restricted Visitors"] as const;
+const incidentLabels: Record<IncidentType, string> = {
+  visitor_related: "Visitor related",
+  gate_issue: "Entry point issue",
+  restricted_attempt: "Restricted attempt",
+  suspicious_activity: "Suspicious activity",
+  property_issue: "Property issue",
+  emergency: "Emergency",
+  other: "Other",
+};
+const urgencyLabels: Record<Urgency, string> = { low: "Low", normal: "Normal", high: "High", critical: "Critical" };
+const statusLabels: Record<ReviewStatus, string> = {
+  pending_review: "Pending review",
+  reviewed: "Reviewed",
+  dismissed: "Dismissed",
+  linked_to_restriction: "Linked to restriction",
+};
+const blankRestriction: RedFlagForm = {
+  name: "",
+  id_number: "",
+  phone: "",
+  vehicle_reg: "",
+  reason: "",
+  reason_category: "security_incident",
+  action: "deny_entry",
+  review_months: "12",
+  expires_months: "24",
+};
+
+function firstRelation<T>(relation: Relation<T>): T | null {
+  if (Array.isArray(relation)) return relation[0] || null;
+  return relation;
+}
+
+function priorityVariant(urgency: Urgency) {
+  if (urgency === "critical") return "error";
+  if (urgency === "high") return "pending";
+  if (urgency === "low") return "secondary";
+  return "info";
+}
+
+function statusVariant(status: ReviewStatus) {
+  if (status === "reviewed") return "success";
+  if (status === "dismissed") return "secondary";
+  if (status === "linked_to_restriction") return "error";
+  return "pending";
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+}
+
+export default function CompanyAdminSecurityPage() {
+  const restrictedVisitors = useCompanyBlacklist();
+  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Incident Reports");
+  const [reports, setReports] = useState<IncidentReport[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [incidentError, setIncidentError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [restrictionReport, setRestrictionReport] = useState<IncidentReport | null>(null);
+  const [restrictionForm, setRestrictionForm] = useState<RedFlagForm>(blankRestriction);
+  const [restrictionError, setRestrictionError] = useState<string | null>(null);
+  const [submittingRestriction, setSubmittingRestriction] = useState(false);
+  const [showAddRestriction, setShowAddRestriction] = useState(false);
+
+  const loadReports = useCallback(async () => {
+    setIncidentError(null);
+    setLoadingReports(true);
+    try {
+      const response = await fetch("/api/incident-reports", { cache: "no-store", headers: await getAuthHeaders() });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Incident reports could not be loaded.");
+      setReports((result.data || []) as IncidentReport[]);
+    } catch (error) {
+      setIncidentError(error instanceof Error ? error.message : "Incident reports could not be loaded.");
+    } finally {
+      setLoadingReports(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadReports();
+  }, [loadReports]);
+
+  const incidentCounts = useMemo(() => ({
+    pending: reports.filter((report) => report.status === "pending_review").length,
+    linked: reports.filter((report) => report.status === "linked_to_restriction").length,
+  }), [reports]);
+
+  const updateIncident = async (report: IncidentReport, status: ReviewStatus, adminNotes?: string | null, redFlagId?: string | null) => {
+    setSavingId(report.id);
+    setIncidentError(null);
+    try {
+      const response = await fetch("/api/incident-reports", {
+        method: "PATCH",
+        headers: await getAuthHeaders(true),
+        body: JSON.stringify({
+          id: report.id,
+          status,
+          admin_notes: adminNotes ?? report.admin_notes,
+          red_flag_id: redFlagId || undefined,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Incident report could not be updated.");
+      setReports((current) =>
+        current.map((item) =>
+          item.id === report.id ? { ...item, status, admin_notes: adminNotes ?? report.admin_notes, red_flag_id: redFlagId ?? item.red_flag_id } : item
+        )
+      );
+    } catch (error) {
+      setIncidentError(error instanceof Error ? error.message : "Incident report could not be updated.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const openRestrictionModal = (report: IncidentReport) => {
+    const visitor = firstRelation(report.visitors);
+    setRestrictionError(null);
+    setRestrictionReport(report);
+    setRestrictionForm({
+      ...blankRestriction,
+      name: visitor?.name || "",
+      phone: visitor?.phone || "",
+      id_number: visitor?.id_number || "",
+      vehicle_reg: visitor?.vehicle_reg || "",
+      reason: report.description,
+    });
+  };
+
+  const submitIncidentRestriction = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!restrictionReport) return;
+    setRestrictionError(null);
+    setSubmittingRestriction(true);
+    try {
+      const redFlag = await restrictedVisitors.createRedFlag(restrictionForm);
+      const note = `Linked to restricted visitor record from incident report on ${new Date().toLocaleDateString()}.`;
+      await updateIncident(restrictionReport, "linked_to_restriction", note, redFlag.id);
+      await restrictedVisitors.fetchData();
+      setRestrictionReport(null);
+    } catch (error) {
+      setRestrictionError(error instanceof Error ? error.message : "Restricted visitor record could not be created.");
+    } finally {
+      setSubmittingRestriction(false);
+    }
+  };
+
+  if (!restrictedVisitors.companyId && !restrictedVisitors.loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <ErrorState title="Profile Error" description="Could not verify your building manager profile. Please log in again." />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-full bg-background p-4 pb-20 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <PageHeader title="Security Center" description="Review access reports and manage restricted visitors." icon={ShieldCheck} tone="warning">
+          <Button type="button" variant="outline" onClick={() => void loadReports()} disabled={loadingReports} className="w-full sm:w-auto">
+            {loadingReports ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Refresh
+          </Button>
+          <Button type="button" variant="destructive" onClick={() => setShowAddRestriction(true)} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4" />
+            Restrict Visitor
+          </Button>
+        </PageHeader>
+
+        <div className="rounded-[1.4rem] border border-slate-100 bg-white p-2 shadow-sm">
+          <div className="grid gap-2 sm:inline-grid sm:grid-cols-2">
+            {tabs.map((tab) => (
+              <Button key={tab} type="button" variant={activeTab === tab ? "default" : "ghost"} onClick={() => setActiveTab(tab)} className="justify-center">
+                {tab === "Incident Reports" ? <ClipboardCheck className="h-4 w-4" /> : <Flag className="h-4 w-4" />}
+                {tab}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {activeTab === "Incident Reports" ? (
+          <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle className="text-xl font-black text-slate-900">Incident Reports</CardTitle>
+                  <CardDescription>Guard-submitted access reports awaiting admin action.</CardDescription>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="pending">{incidentCounts.pending} pending</Badge>
+                  <Badge variant="error">{incidentCounts.linked} linked</Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4 p-4 sm:p-6">
+              {incidentError && (
+                <div className="flex gap-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{incidentError}</span>
+                </div>
+              )}
+
+              {loadingReports ? (
+                <LoadingSkeleton rows={5} />
+              ) : reports.length === 0 ? (
+                <EmptyState title="No incident reports" description="Submitted access reports will appear here for admin review." icon={ShieldAlert} />
+              ) : (
+                reports.map((report) => {
+                  const visitor = firstRelation(report.visitors);
+                  const gate = firstRelation(report.gates);
+                  const reporter = firstRelation(report.reporter);
+                  const isSaving = savingId === report.id;
+
+                  return (
+                    <div key={report.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0 flex-1 space-y-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant={priorityVariant(report.urgency)}>{urgencyLabels[report.urgency]}</Badge>
+                            <Badge variant={statusVariant(report.status)}>{statusLabels[report.status]}</Badge>
+                            <span className="text-sm font-black text-slate-900">{incidentLabels[report.incident_type]}</span>
+                          </div>
+
+                          <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                            <InfoItem label="Visitor" value={visitor?.name || "General report"} subvalue={visitor?.phone || undefined} />
+                            <InfoItem label="Gate" value={gate?.name || "Unassigned"} />
+                            <InfoItem label="Reported by" value={reporter?.full_name || "Security team"} />
+                            <InfoItem label="Created" value={formatDate(report.created_at)} />
+                          </div>
+
+                          <div className="grid gap-3 lg:grid-cols-2">
+                            <TextBlock label="Description" value={report.description} />
+                            <TextBlock label="Action taken" value={report.action_taken || "No action recorded"} />
+                          </div>
+                        </div>
+
+                        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-52 lg:flex-col">
+                          <Button type="button" onClick={() => void updateIncident(report, "reviewed")} disabled={isSaving || report.status === "reviewed"} className="flex-1">
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                            Mark reviewed
+                          </Button>
+                          <Button type="button" variant="outline" onClick={() => void updateIncident(report, "dismissed")} disabled={isSaving || report.status === "dismissed"} className="flex-1">
+                            <X className="h-4 w-4" />
+                            Dismiss
+                          </Button>
+                          {visitor && (
+                            <Button type="button" variant="destructive" onClick={() => openRestrictionModal(report)} disabled={isSaving || report.status === "linked_to_restriction"} className="flex-1">
+                              <Ban className="h-4 w-4" />
+                              Restrict Visitor
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <RestrictedVisitorsTab
+            blacklist={restrictedVisitors}
+            onAdd={() => setShowAddRestriction(true)}
+          />
+        )}
+      </div>
+
+      {(restrictionReport || showAddRestriction) && (
+        <RestrictionModal
+          form={restrictionReport ? restrictionForm : restrictedVisitors.newRedFlag}
+          setForm={restrictionReport ? setRestrictionForm : restrictedVisitors.setNewRedFlag}
+          error={restrictionError}
+          submitting={restrictionReport ? submittingRestriction : restrictedVisitors.isSubmittingRedFlag}
+          title={restrictionReport ? "Restrict visitor from incident" : "Restrict visitor"}
+          description="Confirm the visitor identity and restriction details before saving."
+          onClose={() => {
+            setRestrictionReport(null);
+            setShowAddRestriction(false);
+            setRestrictionError(null);
+          }}
+          onSubmit={restrictionReport ? submitIncidentRestriction : (event) => restrictedVisitors.handleCreateRedFlag(event, () => setShowAddRestriction(false))}
+        />
+      )}
+    </div>
+  );
+}
+
+function InfoItem({ label, value, subvalue }: { label: string; value: string; subvalue?: string }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+      <p className="text-xs font-black uppercase text-slate-400">{label}</p>
+      <p className="mt-1 break-words font-bold text-slate-900">{value}</p>
+      {subvalue && <p className="mt-1 break-words text-xs font-semibold text-slate-500">{subvalue}</p>}
+    </div>
+  );
+}
+
+function TextBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-black uppercase text-slate-400">{label}</p>
+      <p className="mt-1 whitespace-pre-wrap rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-sm leading-6 text-slate-700">{value}</p>
+    </div>
+  );
+}
+
+function RestrictedVisitorsTab({ blacklist, onAdd }: { blacklist: ReturnType<typeof useCompanyBlacklist>; onAdd: () => void }) {
+  return (
+    <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
+      <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle className="text-xl font-black text-slate-900">Restricted Visitors</CardTitle>
+            <CardDescription>Manage visitors who should be reviewed before entry.</CardDescription>
+          </div>
+          <Button type="button" variant="destructive" onClick={onAdd} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4" />
+            Restrict Visitor
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0 sm:p-6">
+        {blacklist.identifierWarning && (
+          <div className="m-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-950 sm:m-0 sm:mb-5">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <span>Restricted visitor matching requires at least one identifier such as phone, ID/passport, or vehicle registration.</span>
+          </div>
+        )}
+        {blacklist.loading ? (
+          <div className="p-5"><LoadingSkeleton rows={4} /></div>
+        ) : blacklist.redFlags.length === 0 ? (
+          <div className="p-5"><EmptyState title="No visitors restricted" description="Restricted visitor records will appear here." icon={Flag} /></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="pl-4 sm:pl-6">Name</TableHead>
+                  <TableHead>ID Number</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead className="pr-4 text-right sm:pr-6">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {blacklist.redFlags.map((flag) => (
+                  <TableRow key={flag.id}>
+                    <TableCell className="pl-4 font-bold text-slate-900 sm:pl-6">{flag.name}</TableCell>
+                    <TableCell className="font-mono text-slate-600">{flag.id_number || "Not provided"}</TableCell>
+                    <TableCell className="font-mono text-slate-600">{flag.phone || "Not provided"}</TableCell>
+                    <TableCell className="font-mono text-slate-600">{flag.vehicle_reg || "Not provided"}</TableCell>
+                    <TableCell className="max-w-[320px] truncate text-slate-600" title={flag.reason}>{flag.reason}</TableCell>
+                    <TableCell className="pr-4 text-right sm:pr-6">
+                      <Button type="button" variant="outline" size="sm" onClick={() => blacklist.handleDeleteRedFlag(flag.id, flag.name)} aria-label={`Remove ${flag.name} from restricted visitors`}>
+                        <X className="h-4 w-4" />
+                        <span className="hidden sm:inline">Remove</span>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function RestrictionModal({
+  form,
+  setForm,
+  error,
+  submitting,
+  title,
+  description,
+  onClose,
+  onSubmit,
+}: {
+  form: RedFlagForm;
+  setForm: React.Dispatch<React.SetStateAction<RedFlagForm>>;
+  error: string | null;
+  submitting: boolean;
+  title: string;
+  description: string;
+  onClose: () => void;
+  onSubmit: (event: React.FormEvent) => void;
+}) {
+  return (
+    <ModalShell
+      title={title}
+      description={description}
+      onClose={onClose}
+      className="max-w-2xl"
+      footer={
+        <div className="flex w-full flex-col-reverse justify-end gap-3 sm:flex-row">
+          <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="destructive" className="w-full sm:w-auto" disabled={submitting} onClick={() => document.getElementById("restrict-form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))}>
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+            Save Restriction
+          </Button>
+        </div>
+      }
+    >
+      <form id="restrict-form" onSubmit={onSubmit} className="space-y-6">
+        {error && (
+          <div className="flex gap-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="restriction-name">Visitor Name</Label>
+            <Input id="restriction-name" required value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Visitor name" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="restriction-id-number">ID Number</Label>
+            <Input id="restriction-id-number" value={form.id_number} onChange={(event) => setForm((current) => ({ ...current, id_number: event.target.value }))} placeholder="ID or passport" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="restriction-phone">Phone Number</Label>
+            <PhoneInput
+              inputProps={{ id: "restriction-phone" }}
+              country="ke"
+              value={form.phone}
+              onChange={(phone) => setForm((current) => ({ ...current, phone }))}
+              inputClass="!w-full !h-11 !text-slate-900 !bg-white !rounded-xl !border !border-slate-200 focus:!ring-2 focus:!ring-blue-600 px-3"
+              containerClass="w-full"
+              buttonClass="!border-slate-200 !bg-white !rounded-l-xl hover:!bg-slate-50"
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="restriction-vehicle">Vehicle Registration</Label>
+            <Input id="restriction-vehicle" value={form.vehicle_reg} onChange={(event) => setForm((current) => ({ ...current, vehicle_reg: event.target.value }))} placeholder="Vehicle registration" className="uppercase" />
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Reason Category</Label>
+            <Select value={form.reason_category || "security_incident"} onValueChange={(value) => setForm((current) => ({ ...current, reason_category: value }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="security_incident">Security incident</SelectItem>
+                <SelectItem value="access_violation">Access violation</SelectItem>
+                <SelectItem value="management_directive">Management directive</SelectItem>
+                <SelectItem value="safety_concern">Safety concern</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Action</Label>
+            <Select value={form.action || "deny_entry"} onValueChange={(value) => setForm((current) => ({ ...current, action: value }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="deny_entry">Deny entry</SelectItem>
+                <SelectItem value="manager_review">Manager review</SelectItem>
+                <SelectItem value="escort_required">Escort required</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="restriction-review">Review Period</Label>
+            <Select value={form.review_months || "12"} onValueChange={(value) => setForm((current) => ({ ...current, review_months: value }))}>
+              <SelectTrigger id="restriction-review"><CalendarClock className="h-4 w-4 text-slate-400" /><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3 months</SelectItem>
+                <SelectItem value="6">6 months</SelectItem>
+                <SelectItem value="12">12 months</SelectItem>
+                <SelectItem value="24">24 months</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="restriction-expiry">Expiry Period</Label>
+            <Select value={form.expires_months || "24"} onValueChange={(value) => setForm((current) => ({ ...current, expires_months: value }))}>
+              <SelectTrigger id="restriction-expiry"><CalendarClock className="h-4 w-4 text-slate-400" /><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="6">6 months</SelectItem>
+                <SelectItem value="12">12 months</SelectItem>
+                <SelectItem value="24">24 months</SelectItem>
+                <SelectItem value="36">36 months</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="restriction-reason">Reason / Details</Label>
+            <textarea
+              id="restriction-reason"
+              required
+              value={form.reason}
+              onChange={(event) => setForm((current) => ({ ...current, reason: event.target.value }))}
+              placeholder="Reason for restriction"
+              className="min-h-24 w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+          <UserRound className="mr-2 inline h-4 w-4 text-slate-400" />
+          Add at least one strong identifier: phone, ID/passport, or vehicle registration.
+        </div>
+      </form>
+    </ModalShell>
+  );
+}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { AlertOctagon, LayoutDashboard, SquareCode, ContactRound, ClipboardList, Landmark, OctagonX, WalletCards, MessageCircleQuestion, ShieldAlert, SlidersHorizontal } from "lucide-react";
+import { AlertOctagon, LayoutDashboard, SquareCode, ContactRound, ClipboardList, Landmark, WalletCards, MessageCircleQuestion, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
 import { DashboardSidebar, type DashboardNavItem } from "@/components/dashboard/shared/DashboardSidebar";
 import { HardLockedScreen } from "@/components/dashboard/shared/HardLockedScreen";
@@ -17,10 +17,9 @@ const adminNavItems: DashboardNavItem[] = [
   { href: "/dashboard/company-admin", label: "Admin Home", exact: true, icon: LayoutDashboard },
   { href: "/dashboard/company-admin/qr", label: "Gate QR Code", icon: SquareCode },
   { href: "/dashboard/company-admin/guards", label: "Security Team", icon: ContactRound },
-  { href: "/dashboard/company-admin/incidents", label: "Incidents", icon: ShieldAlert },
+  { href: "/dashboard/company-admin/security", label: "Security Center", icon: ShieldCheck },
   { href: "/dashboard/company-admin/rules", label: "Building Rules", icon: ClipboardList },
   { href: "/dashboard/company-admin/departments", label: "Departments", icon: Landmark },
-  { href: "/dashboard/company-admin/blacklist", label: "Restricted List", danger: true, icon: OctagonX },
   { href: "/dashboard/company-admin/billing", label: "Payments", icon: WalletCards },
   { href: "/dashboard/company-admin/support", label: "Help Desk", icon: MessageCircleQuestion },
   { href: "/dashboard/company-admin/settings", label: "Account", icon: SlidersHorizontal },
@@ -134,8 +133,8 @@ export default function CompanyAdminLayout({ children }: { children: React.React
   const isPaymentSuccessPage = normalizedPath.includes("/payment-success");
   const isExactAdminPage = normalizedPath === "/dashboard/company-admin";
   const isDepartmentsPage = normalizedPath.includes("/departments");
-  const isBlacklistPage = normalizedPath.includes("/blacklist");
-  const isRestrictedRoute = isExactAdminPage || isDepartmentsPage || isBlacklistPage;
+  const isSecurityPage = normalizedPath.includes("/security") || normalizedPath.includes("/blacklist");
+  const isRestrictedRoute = isExactAdminPage || isDepartmentsPage || isSecurityPage;
   const showLockdownPopup = isLocked && isRestrictedRoute && !isPaymentSuccessPage;
 
   return (
@@ -166,7 +165,7 @@ export default function CompanyAdminLayout({ children }: { children: React.React
                   </div>
                   <CardTitle className="text-2xl font-bold text-slate-900">Access Restricted</CardTitle>
                   <CardDescription className="text-slate-500">
-                    Management logs, departments, and blacklists are locked by administration.
+                    Management logs, departments, and restricted visitor records are locked by administration.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

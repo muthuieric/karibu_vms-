@@ -11,6 +11,23 @@ export type RedFlag = {
   phone: string;
   vehicle_reg?: string;
   reason: string;
+  reason_category?: string | null;
+  action?: string | null;
+  review_at?: string | null;
+  expires_at?: string | null;
+  created_at?: string | null;
+};
+
+export type RedFlagForm = {
+  name: string;
+  id_number: string;
+  phone: string;
+  vehicle_reg: string;
+  reason: string;
+  reason_category?: string;
+  action?: string;
+  review_months?: string;
+  expires_months?: string;
 };
 
 export function useCompanyBlacklist() {
@@ -19,7 +36,7 @@ export function useCompanyBlacklist() {
   const [loading, setLoading] = useState(true);
   const [isSubmittingRedFlag, setIsSubmittingRedFlag] = useState(false);
   const [identifierWarning, setIdentifierWarning] = useState(false);
-  const [newRedFlag, setNewRedFlag] = useState({ name: "", id_number: "", phone: "", vehicle_reg: "", reason: "" });
+  const [newRedFlag, setNewRedFlag] = useState<RedFlagForm>({ name: "", id_number: "", phone: "", vehicle_reg: "", reason: "" });
 
   const fetchData = async () => {
     setLoading(true);
@@ -66,24 +83,31 @@ export function useCompanyBlacklist() {
     fetchData();
   }, []);
 
-  const handleCreateRedFlag = async (e: React.FormEvent, onSuccess?: () => void) => {
+  const createRedFlag = async (formValues: RedFlagForm) => {
+    if (!companyId) throw new Error("Company context is required.");
+
+    const finalPhone = formValues.phone && !formValues.phone.startsWith("+") ? `+${formValues.phone}` : formValues.phone;
+    const response = await fetch("/api/red-flags", {
+      method: "POST",
+      headers: await getAuthHeaders(true),
+      body: JSON.stringify({ company_id: companyId, ...formValues, phone: finalPhone }),
+    });
+    const result = await response.json();
+
+    if (!response.ok) throw new Error(result.error);
+    return result.data as RedFlag;
+  };
+
+  const handleCreateRedFlag = async (e: React.FormEvent, onSuccess?: (redFlag?: RedFlag) => void) => {
     e.preventDefault();
     if (!companyId) return;
 
     setIsSubmittingRedFlag(true);
     try {
-      const finalPhone = newRedFlag.phone && !newRedFlag.phone.startsWith("+") ? `+${newRedFlag.phone}` : newRedFlag.phone;
-      const response = await fetch("/api/red-flags", {
-        method: "POST",
-        headers: await getAuthHeaders(true),
-        body: JSON.stringify({ company_id: companyId, ...newRedFlag, phone: finalPhone }),
-      });
-      const result = await response.json();
-
-      if (!response.ok) throw new Error(result.error);
+      const redFlag = await createRedFlag(newRedFlag);
 
       setNewRedFlag({ name: "", id_number: "", phone: "", vehicle_reg: "", reason: "" });
-      onSuccess?.();
+      onSuccess?.(redFlag);
       fetchData();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to add red flag. Make sure the API route exists.";
@@ -116,6 +140,8 @@ export function useCompanyBlacklist() {
     newRedFlag,
     identifierWarning,
     setNewRedFlag,
+    createRedFlag,
+    fetchData,
     handleCreateRedFlag,
     handleDeleteRedFlag,
   };
