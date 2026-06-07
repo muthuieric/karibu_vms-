@@ -11,7 +11,8 @@ import GuardStats from "@/components/GuardStats";
 import GuardVisitorsTable from "@/components/GuardVisitorsTable";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, ScanQrCode, ShieldCheck, UserPlus2 } from "lucide-react";
 
 const AddVisitorModal = dynamic(() => import("@/components/dashboard/guard/add-visitor/AddVisitorModal"), { ssr: false });
 const GuardAccessNoteModal = dynamic(() => import("@/components/dashboard/guard/GuardAccessNoteModal"), { ssr: false });
@@ -60,18 +61,12 @@ export default function GuardDashboard() {
         <GuardDashboardHeader
           guardGateName={dashboard.guardGateName}
           onLogout={dashboard.handleLogout}
-          onShowQr={() => {
-            dashboard.tickQrTimestamp();
-            setShowQrModal(true);
-          }}
-          onShowAddVisitor={() => setShowAddModal(true)}
           onShowIncidentReport={() => setShowIncidentModal(true)}
-          onRefresh={dashboard.refreshCompanySettings}
         />
 
         <section className="grid gap-4">
           <div className="rounded-[1.6rem] border border-blue-100 bg-white p-6 text-slate-900 shadow-sm">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <Badge className="border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100">Live security desk</Badge>
                 <h2 className="mt-4 text-3xl font-black tracking-tight md:text-4xl text-slate-900">{dashboard.guardGateName}</h2>
@@ -79,8 +74,36 @@ export default function GuardDashboard() {
                   Process arrivals, verify approvals, and move checked-in visitors out quickly from one queue.
                 </p>
               </div>
-              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3 text-blue-600">
-                <ShieldCheck className="h-7 w-7" />
+              <div className="grid gap-2 sm:flex sm:flex-wrap sm:justify-end lg:max-w-md">
+                <Button
+                  variant="outline"
+                  onClick={dashboard.refreshCompanySettings}
+                  className="h-11 border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    dashboard.tickQrTimestamp();
+                    setShowQrModal(true);
+                  }}
+                  className="h-11 border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                >
+                  <ScanQrCode className="mr-2 h-4 w-4" />
+                  Show QR
+                </Button>
+                <Button
+                  onClick={() => setShowAddModal(true)}
+                  className="h-11 bg-blue-600 text-white shadow-sm hover:bg-blue-700"
+                >
+                  <UserPlus2 className="mr-2 h-4 w-4" />
+                  New Visitor
+                </Button>
+                <div className="hidden rounded-2xl border border-blue-100 bg-blue-50 p-3 text-blue-600 lg:flex">
+                  <ShieldCheck className="h-7 w-7" />
+                </div>
               </div>
             </div>
           </div>

@@ -137,6 +137,11 @@ function hasRestrictionIdentifier(form: RedFlagForm) {
   return Boolean(form.id_number.trim() || form.vehicle_reg.trim() || (phoneDigits && phoneDigits !== "254"));
 }
 
+function visitorIdentifierSummary(visitor: { phone: string | null; id_number: string | null } | null) {
+  if (!visitor) return undefined;
+  return [visitor.phone, visitor.id_number ? `ID ${visitor.id_number}` : null].filter(Boolean).join(" / ") || undefined;
+}
+
 export default function CompanyAdminSecurityPage() {
   const restrictedVisitors = useCompanyBlacklist();
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Incident Reports");
@@ -343,7 +348,7 @@ export default function CompanyAdminSecurityPage() {
                           </div>
 
                           <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                            <InfoItem label="Visitor" value={visitor?.name || "General report"} subvalue={visitor?.phone || undefined} />
+                            <InfoItem label="Visitor" value={visitor?.name || "General report"} subvalue={visitorIdentifierSummary(visitor)} />
                             <InfoItem label="Gate" value={gate?.name || "Unassigned"} />
                             <InfoItem label="Reported by" value={reporter?.full_name || "Security team"} />
                             <InfoItem label="Created" value={formatDate(report.created_at)} />
@@ -536,7 +541,7 @@ function RestrictedVisitorsTab({
                           <Eye className="h-4 w-4" />
                           <span className="hidden sm:inline">View Details</span>
                         </Button>
-                        {linkedIncident && <span className="sr-only">Linked to incident {linkedIncident.id}</span>}
+                        {linkedIncident && <span className="sr-only">Linked to {incidentLabels[linkedIncident.incident_type]} from {formatDate(linkedIncident.created_at)}</span>}
                       </TableCell>
                     </TableRow>
                   );
@@ -598,10 +603,12 @@ function RestrictedVisitorDetailsModal({
               <span className="text-sm font-black text-slate-900">{incidentLabels[linkedIncident.incident_type]}</span>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <DetailItem label="Linked incident" value={linkedIncident.id} />
-              <DetailItem label="Incident date" value={formatDate(linkedIncident.created_at)} />
+              <DetailItem label="Incident type" value={incidentLabels[linkedIncident.incident_type]} />
+              <DetailItem label="Date/time" value={formatDate(linkedIncident.created_at)} />
               <DetailItem label="Gate" value={incidentGate?.name || "Unassigned"} />
               <DetailItem label="Reported by" value={incidentReporter?.full_name || "Security team"} />
+              <DetailItem label="Priority" value={urgencyLabels[linkedIncident.urgency]} />
+              <DetailItem label="Status" value={statusLabels[linkedIncident.status]} />
               <DetailItem label="Visit purpose" value={incidentVisitor?.purpose || "Not recorded"} />
             </div>
             <TextBlock label="Incident description" value={linkedIncident.description} />

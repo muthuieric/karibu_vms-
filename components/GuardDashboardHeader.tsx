@@ -1,25 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { LogOutIcon, RefreshCw, ScanQrCode, ShieldAlert, UserPlus2 } from "lucide-react";
+import { LogOutIcon, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type GuardDashboardHeaderProps = {
   guardGateName: string;
   onLogout: () => void;
-  onShowQr: () => void;
-  onShowAddVisitor: () => void;
   onShowIncidentReport: () => void;
-  onRefresh: () => void;
 };
 
 export default function GuardDashboardHeader({
   guardGateName,
   onLogout,
-  onShowQr,
-  onShowAddVisitor,
   onShowIncidentReport,
-  onRefresh,
 }: GuardDashboardHeaderProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -39,34 +33,11 @@ export default function GuardDashboardHeader({
         </div>
       </div>
       
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="outline"
-          onClick={onRefresh}
-          className="h-11 border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-        >
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onShowQr}
-          className="h-11 border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
-        >
-          <ScanQrCode className="mr-2 h-4 w-4" />
-          Show QR
-        </Button>
-        <Button
-          onClick={onShowAddVisitor}
-          className="h-11 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-        >
-          <UserPlus2 className="mr-2 h-4 w-4" />
-          New Visitor
-        </Button>
+      <div className="grid gap-2 sm:flex sm:items-center sm:gap-3">
         <Button
           variant="outline"
           onClick={onShowIncidentReport}
-          className="h-11 border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+          className="h-11 w-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 sm:w-auto"
         >
           <ShieldAlert className="mr-2 h-4 w-4" />
           Report Incident
@@ -74,7 +45,7 @@ export default function GuardDashboardHeader({
         <Button
           variant="ghost"
           onClick={onLogout}
-          className="h-11 text-slate-500 hover:bg-slate-100 hover:text-red-600"
+          className="h-11 w-full text-slate-500 hover:bg-slate-100 hover:text-red-600 sm:w-auto"
         >
           <LogOutIcon className="mr-2 h-4 w-4" />
           Sign Out

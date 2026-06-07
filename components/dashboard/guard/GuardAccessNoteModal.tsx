@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Loader2, ShieldAlert } from "lucide-react";
 
 import { ModalShell } from "@/components/dashboard/shared/ModalShell";
+import { SearchInput } from "@/components/dashboard/shared/Fields";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getAuthHeaders } from "@/lib/client-auth";
@@ -45,7 +46,14 @@ const urgencyOptions: { value: Urgency; label: string }[] = [
   { value: "critical", label: "Critical" },
 ];
 
-const GENERAL_VISITOR_VALUE = "general";
+function visitorSearchText(visitor: Visitor) {
+  return [visitor.name, visitor.phone, visitor.id_number].filter(Boolean).join(" ").toLowerCase();
+}
+
+function visitorOptionLabel(visitor: Visitor) {
+  const details = [visitor.phone, visitor.id_number].filter(Boolean).join(" / ");
+  return details ? `${visitor.name} - ${details}` : visitor.name;
+}
 
 export default function GuardAccessNoteModal({
   open,
@@ -54,7 +62,8 @@ export default function GuardAccessNoteModal({
   onClose,
   onSaved,
 }: GuardAccessNoteModalProps) {
-  const [visitorId, setVisitorId] = useState(GENERAL_VISITOR_VALUE);
+  const [selectedVisitorId, setSelectedVisitorId] = useState<string | null>(null);
+  const [visitorQuery, setVisitorQuery] = useState("");
   const [incidentType, setIncidentType] = useState<IncidentType>("visitor_related");
   const [urgency, setUrgency] = useState<Urgency>("normal");
   const [description, setDescription] = useState("");
@@ -65,7 +74,8 @@ export default function GuardAccessNoteModal({
   useEffect(() => {
     if (!open) return;
 
-    setVisitorId(GENERAL_VISITOR_VALUE);
+    setSelectedVisitorId(null);
+    setVisitorQuery("");
     setIncidentType("visitor_related");
     setUrgency("normal");
     setDescription("");
@@ -74,9 +84,18 @@ export default function GuardAccessNoteModal({
   }, [open]);
 
   const selectedVisitor = useMemo(
-    () => visitors.find((visitor) => visitor.id === visitorId) || null,
-    [visitorId, visitors]
+    () => visitors.find((visitor) => visitor.id === selectedVisitorId) || null,
+    [selectedVisitorId, visitors]
   );
+
+  const matchingVisitors = useMemo(() => {
+    const query = visitorQuery.trim().toLowerCase();
+    if (!query || selectedVisitor) return [];
+
+    return visitors
+      .filter((visitor) => visitorSearchText(visitor).includes(query))
+      .slice(0, 6);
+  }, [selectedVisitor, visitorQuery, visitors]);
 
   if (!open) return null;
 
@@ -98,7 +117,7 @@ export default function GuardAccessNoteModal({
         headers: await getAuthHeaders(true),
         body: JSON.stringify({
           visitor_id: selectedVisitor?.id || null,
-          gate_id: selectedVisitor?.gate_id || gateId || null,
+          gate_id: selectedVisitor ? selectedVisitor.gate_id || gateId || null : gateId || null,
           incident_type: incidentType,
           urgency,
           description: trimmedDescription,
@@ -151,20 +170,69 @@ export default function GuardAccessNoteModal({
           <Label htmlFor="incident-visitor" className="font-bold text-slate-700">
             Visitor
           </Label>
-          <select
+          <SearchInput
             id="incident-visitor"
-            value={visitorId}
-            onChange={(event) => setVisitorId(event.target.value)}
-            className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-blue-600"
+            value={selectedVisitor ? visitorOptionLabel(selectedVisitor) : visitorQuery}
+            onChange={(event) => {
+              setSelectedVisitorId(null);
+              setVisitorQuery(event.target.value);
+            }}
+            inputClassName="h-11 bg-slate-50 border-slate-200"
             disabled={isSubmitting}
-          >
-            <option value={GENERAL_VISITOR_VALUE}>General report</option>
-            {visitors.map((visitor) => (
-              <option key={visitor.id} value={visitor.id}>
-                {visitor.name} {visitor.status ? `(${visitor.status.replace("_", " ")})` : ""}
-              </option>
-            ))}
-          </select>
+            placeholder="Search visitor name, phone, or ID number..."
+            autoComplete="off"
+          />
+          {selectedVisitor ? (
+            <div className="flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="break-words text-sm font-black text-blue-950">{selectedVisitor.name}</p>
+                <p className="mt-0.5 break-words text-xs font-semibold text-blue-800">
+                  {[selectedVisitor.phone, selectedVisitor.id_number].filter(Boolean).join(" / ") || "No phone or ID recorded"}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedVisitorId(null);
+                  setVisitorQuery("");
+                }}
+                disabled={isSubmitting}
+                className="border-blue-200 bg-white text-blue-700 hover:bg-blue-100"
+              >
+                Clear
+              </Button>
+            </div>
+          ) : matchingVisitors.length > 0 ? (
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              {matchingVisitors.map((visitor) => (
+                <button
+                  key={visitor.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedVisitorId(visitor.id);
+                    setVisitorQuery("");
+                  }}
+                  disabled={isSubmitting}
+                  className="flex w-full flex-col gap-0.5 border-b border-slate-100 px-3 py-2.5 text-left last:border-b-0 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span className="break-words text-sm font-bold text-slate-900">{visitor.name}</span>
+                  <span className="break-words text-xs font-semibold text-slate-500">
+                    {[visitor.phone, visitor.id_number, visitor.status?.replace("_", " ")].filter(Boolean).join(" / ")}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : visitorQuery.trim() ? (
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+              No matching visitor. Leave this blank to submit a general gate report.
+            </div>
+          ) : (
+            <p className="text-xs font-semibold text-slate-500">
+              Optional. Leave blank for a general gate report.
+            </p>
+          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
