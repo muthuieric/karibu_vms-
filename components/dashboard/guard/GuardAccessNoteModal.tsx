@@ -10,8 +10,16 @@ type VisitorOption = {
   gate_id?: string | null;
 };
 
-type GuardAccessNoteModalProps = {
+type Props = {
   open: boolean;
   onClose: () => void;
   visitors?: VisitorOption[];
-  selectedVisitor?: VisitorOption | null
+  selectedVisitor?: VisitorOption | null;
+  onSaved?: () => void;
+};
+
+export default function GuardAccessNoteModal({
+  open,
+  onClose,
+  visitors = [],
+  selectedVisitor = null,
