@@ -8,4 +8,14 @@ export async function POST(request: Request) {
     const auth = await requireRole(request, ["company_admin", "superadmin"]);
     const safeCompanyId = auth.profile.role === "superadmin" ? companyId || auth.profile.company_id : auth.profile.company_id;
 
-    if (!safe
+    if (!safeCompanyId) {
+      return NextResponse.json({ error: "Company context is required." }, { status: 400 });
+    }
+
+    assertCompanyAccess(auth.profile, safeCompanyId);
+
+    await writeAuditLog({
+      supabaseAdmin: auth.supabaseAdmin,
+      companyId: safeCompanyId,
+      actor: auth.profile,
+      action
