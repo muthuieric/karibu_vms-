@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useCompanyBlacklist, type RedFlagForm } from "@/hooks/useCompanyBlacklist";
+import { useCompanyBlacklist, type RedFlag, type RedFlagForm } from "@/hooks/useCompanyBlacklist";
 import { getAuthHeaders } from "@/lib/client-auth";
 import "react-phone-input-2/lib/style.css";
 
@@ -73,8 +73,30 @@ const blankRestriction: RedFlagForm = {
   reason: "",
   reason_category: "security_incident",
   action: "deny_entry",
-  review_months: "12",
+  review_months: "6",
   expires_months: "24",
+};
+
+const actionLabels: Record<string, string> = {
+  require_approval: "Require approval",
+  deny_entry: "Deny entry",
+  notify_admin: "Notify admin",
+  manager_review: "Manager review",
+  escort_required: "Escort required",
+};
+
+const redFlagStatusLabels: Record<string, string> = {
+  active: "Active",
+  expired: "Expired",
+  removed: "Removed",
+  deleted: "Removed",
+};
+
+const reasonCategoryLabels: Record<string, string> = {
+  security_incident: "Security incident",
+  access_violation: "Access violation",
+  management_directive: "Management directive",
+  safety_concern: "Safety concern",
 };
 
 function firstRelation<T>(relation: Relation<T>): T | null {
@@ -98,6 +120,25 @@ function statusVariant(status: ReviewStatus) {
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+}
+
+function formatDateOnly(value?: string | null) {
+  if (!value) return "Not set";
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+}
+
+function formatLabel(value?: string | null, labels?: Record<string, string>) {
+  if (!value) return "Not set";
+  if (labels?.[value]) return labels[value];
+  return value
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function formatLast4(value?: string | null) {
+  return value ? `••••${value}` : "Not provided";
 }
 
 function hasRestrictionIdentifier(form: RedFlagForm) {
@@ -297,6 +338,7 @@ export default function CompanyAdminSecurityPage() {
                   const gate = firstRelation(report.gates);
                   const reporter = firstRelation(report.reporter);
                   const isSaving = savingId === report.id;
+                  const isPending = report.status === "pending_review";
 
                   return (
                     <div key={report.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
@@ -322,19 +364,32 @@ export default function CompanyAdminSecurityPage() {
                         </div>
 
                         <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-52 lg:flex-col">
-                          <Button type="button" onClick={() => void updateIncident(report, "reviewed")} disabled={isSaving || report.status === "reviewed"} className="flex-1">
-                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Mark reviewed
-                          </Button>
-                          <Button type="button" variant="outline" onClick={() => void updateIncident(report, "dismissed")} disabled={isSaving || report.status === "dismissed"} className="flex-1">
-                            <X className="h-4 w-4" />
-                            Dismiss
-                          </Button>
-                          {report.visitor_id && visitor && (
-                            <Button type="button" variant="destructive" onClick={() => openRestrictionModal(report)} disabled={isSaving || report.status === "linked_to_restriction"} className="flex-1">
+                          {isPending ? (
+                            <>
+                              <Button type="button" onClick={() => void updateIncident(report, "reviewed")} disabled={isSaving} className="flex-1">
+                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                Mark Reviewed
+                              </Button>
+                              <Button type="button" variant="outline" onClick={() => void updateIncident(report, "dismissed")} disabled={isSaving} className="flex-1">
+                                <X className="h-4 w-4" />
+                                Dismiss
+                              </Button>
+                              {report.visitor_id && visitor && (
+                                <Button type="button" variant="destructive" onClick={() => openRestrictionModal(report)} disabled={isSaving} className="flex-1">
+                                  <Ban className="h-4 w-4" />
+                                  Restrict Visitor
+                                </Button>
+                              )}
+                            </>
+                          ) : report.status === "linked_to_restriction" ? (
+                            <Button type="button" variant="destructive" disabled className="flex-1">
                               <Ban className="h-4 w-4" />
-                              Restrict Visitor
+                              Already Restricted
                             </Button>
+                          ) : (
+                            <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-sm font-bold text-slate-600">
+                              Final decision recorded
+                            </div>
                           )}
                         </div>
                       </div>
@@ -392,6 +447,14 @@ function TextBlock({ label, value }: { label: string; value: string }) {
   );
 }
 
+function redFlagLast4(flag: RedFlag, field: "phone" | "id_number" | "vehicle_reg") {
+  const last4 = field === "phone" ? flag.phone_last4 : field === "id_number" ? flag.id_number_last4 : flag.vehicle_reg_last4;
+  if (last4) return formatLast4(last4);
+
+  const maskedValue = field === "phone" ? flag.phone : field === "id_number" ? flag.id_number : flag.vehicle_reg;
+  return maskedValue || "Not provided";
+}
+
 function RestrictedVisitorsTab({ blacklist, onAdd }: { blacklist: ReturnType<typeof useCompanyBlacklist>; onAdd: () => void }) {
   return (
     <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
@@ -424,21 +487,31 @@ function RestrictedVisitorsTab({ blacklist, onAdd }: { blacklist: ReturnType<typ
               <TableHeader className="bg-slate-50">
                 <TableRow>
                   <TableHead className="pl-4 sm:pl-6">Name</TableHead>
-                  <TableHead>ID Number</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Vehicle</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead className="pr-4 text-right sm:pr-6">Actions</TableHead>
+                  <TableHead>Phone last 4</TableHead>
+                  <TableHead>ID last 4</TableHead>
+                  <TableHead>Vehicle last 4</TableHead>
+                  <TableHead>Reason category</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Review date</TableHead>
+                  <TableHead>Expiry date</TableHead>
+                  <TableHead>Created date</TableHead>
+                  <TableHead className="pr-4 text-right sm:pr-6">Remove</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {blacklist.redFlags.map((flag) => (
                   <TableRow key={flag.id}>
                     <TableCell className="pl-4 font-bold text-slate-900 sm:pl-6">{flag.name}</TableCell>
-                    <TableCell className="font-mono text-slate-600">{flag.id_number || "Not provided"}</TableCell>
-                    <TableCell className="font-mono text-slate-600">{flag.phone || "Not provided"}</TableCell>
-                    <TableCell className="font-mono text-slate-600">{flag.vehicle_reg || "Not provided"}</TableCell>
-                    <TableCell className="max-w-[320px] truncate text-slate-600" title={flag.reason}>{flag.reason}</TableCell>
+                    <TableCell className="font-mono text-slate-600">{redFlagLast4(flag, "phone")}</TableCell>
+                    <TableCell className="font-mono text-slate-600">{redFlagLast4(flag, "id_number")}</TableCell>
+                    <TableCell className="font-mono text-slate-600">{redFlagLast4(flag, "vehicle_reg")}</TableCell>
+                    <TableCell className="text-slate-600">{formatLabel(flag.reason_category, reasonCategoryLabels)}</TableCell>
+                    <TableCell className="text-slate-600">{formatLabel(flag.action, actionLabels)}</TableCell>
+                    <TableCell><Badge variant={flag.status === "active" ? "success" : "secondary"}>{formatLabel(flag.status, redFlagStatusLabels)}</Badge></TableCell>
+                    <TableCell className="text-slate-600">{formatDateOnly(flag.review_at)}</TableCell>
+                    <TableCell className="text-slate-600">{formatDateOnly(flag.expires_at)}</TableCell>
+                    <TableCell className="text-slate-600">{formatDateOnly(flag.created_at)}</TableCell>
                     <TableCell className="pr-4 text-right sm:pr-6">
                       <Button type="button" variant="outline" size="sm" onClick={() => blacklist.handleDeleteRedFlag(flag.id, flag.name)} aria-label={`Remove ${flag.name} from restricted visitors`}>
                         <X className="h-4 w-4" />
@@ -553,15 +626,15 @@ function RestrictionModal({
             <Select value={form.action || "deny_entry"} onValueChange={(value) => setForm((current) => ({ ...current, action: value }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="require_approval">Require approval</SelectItem>
                 <SelectItem value="deny_entry">Deny entry</SelectItem>
-                <SelectItem value="manager_review">Manager review</SelectItem>
-                <SelectItem value="escort_required">Escort required</SelectItem>
+                <SelectItem value="notify_admin">Notify admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="restriction-review">Review Period</Label>
-            <Select value={form.review_months || "12"} onValueChange={(value) => setForm((current) => ({ ...current, review_months: value }))}>
+            <Label htmlFor="restriction-review">Review after</Label>
+            <Select value={form.review_months || "6"} onValueChange={(value) => setForm((current) => ({ ...current, review_months: value }))}>
               <SelectTrigger id="restriction-review"><CalendarClock className="h-4 w-4 text-slate-400" /><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="3">3 months</SelectItem>
@@ -570,9 +643,10 @@ function RestrictionModal({
                 <SelectItem value="24">24 months</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs font-semibold text-slate-500">When should this restriction be reviewed again?</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="restriction-expiry">Expiry Period</Label>
+            <Label htmlFor="restriction-expiry">Restriction expiry</Label>
             <Select value={form.expires_months || "24"} onValueChange={(value) => setForm((current) => ({ ...current, expires_months: value }))}>
               <SelectTrigger id="restriction-expiry"><CalendarClock className="h-4 w-4 text-slate-400" /><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -582,6 +656,7 @@ function RestrictionModal({
                 <SelectItem value="36">36 months</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs font-semibold text-slate-500">When should this restriction stop being active?</p>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="restriction-reason">Reason / Details</Label>

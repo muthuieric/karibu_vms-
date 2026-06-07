@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
-    const reviewMonths = monthValue(review_months, 12, 1, 36);
+    const reviewMonths = monthValue(review_months, 6, 1, 36);
     const expiresMonths = Math.max(monthValue(expires_months, 24, 1, 60), reviewMonths);
     const reviewAt = addMonths(now, reviewMonths).toISOString();
     const expiresAt = addMonths(now, expiresMonths).toISOString();
@@ -94,6 +94,9 @@ export async function POST(request: Request) {
         id_number: maskLast4(data.id_number_last4),
         phone: maskLast4(data.phone_last4),
         vehicle_reg: maskLast4(data.vehicle_reg_last4),
+        id_number_last4: data.id_number_last4,
+        phone_last4: data.phone_last4,
+        vehicle_reg_last4: data.vehicle_reg_last4,
       },
     });
   } catch (error) {
@@ -114,7 +117,6 @@ export async function GET(request: Request) {
       .from("red_flags")
       .select("id, name, name_encrypted, id_number_last4, phone_last4, vehicle_reg_last4, reason, reason_category, action, status, review_at, expires_at, created_at")
       .eq("company_id", companyId)
-      .eq("status", "active")
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -125,6 +127,9 @@ export async function GET(request: Request) {
         id_number: maskLast4(flag.id_number_last4),
         phone: maskLast4(flag.phone_last4),
         vehicle_reg: maskLast4(flag.vehicle_reg_last4),
+        id_number_last4: flag.id_number_last4,
+        phone_last4: flag.phone_last4,
+        vehicle_reg_last4: flag.vehicle_reg_last4,
         reason: flag.reason,
         reason_category: flag.reason_category,
         action: flag.action,
@@ -262,6 +267,9 @@ export async function PATCH(request: Request) {
         id_number: maskLast4(data.id_number_last4),
         phone: maskLast4(data.phone_last4),
         vehicle_reg: maskLast4(data.vehicle_reg_last4),
+        id_number_last4: data.id_number_last4,
+        phone_last4: data.phone_last4,
+        vehicle_reg_last4: data.vehicle_reg_last4,
       },
     });
   } catch (error) {

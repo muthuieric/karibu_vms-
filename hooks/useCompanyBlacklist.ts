@@ -8,11 +8,15 @@ export type RedFlag = {
   id: string;
   name: string;
   id_number: string;
+  id_number_last4?: string | null;
   phone: string;
+  phone_last4?: string | null;
   vehicle_reg?: string;
+  vehicle_reg_last4?: string | null;
   reason: string;
   reason_category?: string | null;
   action?: string | null;
+  status?: string | null;
   review_at?: string | null;
   expires_at?: string | null;
   created_at?: string | null;
@@ -36,7 +40,17 @@ export function useCompanyBlacklist() {
   const [loading, setLoading] = useState(true);
   const [isSubmittingRedFlag, setIsSubmittingRedFlag] = useState(false);
   const [identifierWarning, setIdentifierWarning] = useState(false);
-  const [newRedFlag, setNewRedFlag] = useState<RedFlagForm>({ name: "", id_number: "", phone: "", vehicle_reg: "", reason: "" });
+  const [newRedFlag, setNewRedFlag] = useState<RedFlagForm>({
+    name: "",
+    id_number: "",
+    phone: "",
+    vehicle_reg: "",
+    reason: "",
+    reason_category: "security_incident",
+    action: "deny_entry",
+    review_months: "6",
+    expires_months: "24",
+  });
 
   const fetchData = async () => {
     setLoading(true);
@@ -106,7 +120,17 @@ export function useCompanyBlacklist() {
     try {
       const redFlag = await createRedFlag(newRedFlag);
 
-      setNewRedFlag({ name: "", id_number: "", phone: "", vehicle_reg: "", reason: "" });
+      setNewRedFlag({
+        name: "",
+        id_number: "",
+        phone: "",
+        vehicle_reg: "",
+        reason: "",
+        reason_category: "security_incident",
+        action: "deny_entry",
+        review_months: "6",
+        expires_months: "24",
+      });
       onSuccess?.(redFlag);
       fetchData();
     } catch (error) {
