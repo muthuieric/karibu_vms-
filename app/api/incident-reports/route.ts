@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       .insert({
         company_id: companyId,
         visitor_id: body.visitor_id || null,
-        gate_id: body.gate_id || auth.profile.gate_id || null,
+        gate_id: body.gate_id || null,
         reported_by: auth.profile.id,
         incident_type: incidentType,
         urgency,
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
         incidentType,
         urgency,
         visitorId: body.visitor_id || null,
-        gateId: body.gate_id || auth.profile.gate_id || null,
+        gateId: body.gate_id || null,
       },
     });
 
