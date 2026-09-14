@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       await resend.emails.send({
         from: "VMS Portal <onboarding@resend.dev>", 
         to: company.contact_email,
-        subject: "Your VMS Account is Approved! 🎉",
+        subject: "Your VMS Account is Approved",
         html: `
           <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
             <h2 style="color: #111827;">Welcome to VMS Portal, ${company.contact_name || 'Admin'}!</h2>

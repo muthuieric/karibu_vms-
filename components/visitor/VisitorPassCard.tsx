@@ -6,15 +6,17 @@ import QRCode from "qrcode";
 import { CheckCircle2, Clock3, Download, LockKeyhole, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type PassStatus = "pending" | "approved" | "rejected" | "checked_out";
+type PassStatus = "pending" | "approved" | "rejected" | "checked_out" | "pre_registered";
 
 export type SafeVisitorPass = {
   visitorName: string;
   hostName?: string | null;
   companyName: string;
+  companyLogoUrl?: string | null;
   gateName?: string | null;
   status: PassStatus;
   date?: string | null;
+  expectedArrival?: string | null;
   checkedInAt?: string | null;
   checkedOutAt?: string | null;
   passCode?: string | null;
@@ -33,6 +35,12 @@ const statusConfig: Record<PassStatus, { label: string; tone: string; icon: type
     tone: "border-orange-200 bg-orange-50 text-orange-800",
     icon: LockKeyhole,
     message: "Please show this pass to security.",
+  },
+  pre_registered: {
+    label: "Pre-Registered",
+    tone: "border-indigo-200 bg-indigo-50 text-indigo-800",
+    icon: Clock3,
+    message: "Arrival scheduled. Present this QR pass at the security gate.",
   },
   approved: {
     label: "Approved",
@@ -57,6 +65,12 @@ const statusConfig: Record<PassStatus, { label: string; tone: string; icon: type
 function formatDate(value?: string | null) {
   if (!value) return "Today";
   return new Date(value).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return null;
+  const d = new Date(value);
+  return d.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" }) + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatTime(value?: string | null) {
@@ -153,13 +167,13 @@ export default function VisitorPassCard({ pass, passUrl }: VisitorPassCardProps)
     ctx.font = "800 42px Arial";
     ctx.fillText(pass.companyName.slice(0, 26), 220, 180);
 
-    ctx.fillStyle = pass.status === "approved" ? "#ecfdf5" : pass.status === "rejected" ? "#fef2f2" : pass.status === "checked_out" ? "#f8fafc" : "#fff7ed";
-    ctx.strokeStyle = pass.status === "approved" ? "#a7f3d0" : pass.status === "rejected" ? "#fecaca" : pass.status === "checked_out" ? "#e2e8f0" : "#fed7aa";
+    ctx.fillStyle = pass.status === "approved" ? "#ecfdf5" : pass.status === "rejected" ? "#fef2f2" : pass.status === "pre_registered" ? "#eef2ff" : pass.status === "checked_out" ? "#f8fafc" : "#fff7ed";
+    ctx.strokeStyle = pass.status === "approved" ? "#a7f3d0" : pass.status === "rejected" ? "#fecaca" : pass.status === "pre_registered" ? "#c7d2fe" : pass.status === "checked_out" ? "#e2e8f0" : "#fed7aa";
     ctx.beginPath();
     ctx.roundRect(110, 285, 680, 92, 24);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = pass.status === "approved" ? "#065f46" : pass.status === "rejected" ? "#991b1b" : pass.status === "checked_out" ? "#334155" : "#9a3412";
+    ctx.fillStyle = pass.status === "approved" ? "#065f46" : pass.status === "rejected" ? "#991b1b" : pass.status === "pre_registered" ? "#3730a3" : pass.status === "checked_out" ? "#334155" : "#9a3412";
     ctx.font = "800 34px Arial";
     ctx.fillText(config.label, 140, 343);
 
@@ -174,8 +188,8 @@ export default function VisitorPassCard({ pass, passUrl }: VisitorPassCardProps)
       ["Host", pass.hostName || "Security desk"],
       ["Gate", pass.gateName || "Main entry"],
       ...(pass.passCode ? [["Pass Code", pass.passCode]] : []),
-      ["Date", passDate],
-      ["Time In", checkedInTime || (pass.status === "approved" || pass.status === "checked_out" ? "Recorded" : "Locked")],
+      ...(pass.expectedArrival ? [["Scheduled", formatDateTime(pass.expectedArrival) || "Scheduled"]] : [["Date", passDate]]),
+      ...(pass.status !== "pre_registered" ? [["Time In", checkedInTime || (pass.status === "approved" || pass.status === "checked_out" ? "Recorded" : "Locked")]] : []),
       ...(pass.status === "checked_out" ? [["Time Out", checkedOutTime || "Recorded"]] : []),
       ["Status", config.label],
     ];
@@ -217,8 +231,26 @@ export default function VisitorPassCard({ pass, passUrl }: VisitorPassCardProps)
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white">
               <Image src="/icon.svg" alt="Karibu VMS logo" width={34} height={34} className="h-8 w-8 object-contain" priority />
             </div>
+            {pass.companyLogoUrl ? (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white p-1 overflow-hidden shadow-sm">
+                <Image
+                  src={pass.companyLogoUrl}
+                  alt={`${pass.companyName} logo`}
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-contain"
+                  unoptimized
+                  priority
+                />
+              </div>
+            ) : (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white">
+                <Image src="/icon.svg" alt="Karibu VMS logo" width={34} height={34} className="h-8 w-8 object-contain" priority />
+              </div>
+            )}
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-widest text-blue-200">Karibu VMS</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-blue-200">Visitor Pass</p>
               <h1 className="truncate text-xl font-black tracking-tight">{pass.companyName}</h1>
             </div>
           </div>
@@ -274,22 +306,29 @@ export default function VisitorPassCard({ pass, passUrl }: VisitorPassCardProps)
           </div>
         )}
 
-        <div className={`grid gap-3 text-center ${pass.status === "checked_out" ? "grid-cols-3" : "grid-cols-2"}`}>
-          <div className="rounded-2xl border border-slate-200 bg-white p-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Date</p>
-            <p className="mt-1 text-sm font-black text-slate-800">{passDate}</p>
+        {pass.status === "pre_registered" ? (
+          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/70 p-3.5 text-center">
+            <p className="text-xs font-bold uppercase tracking-wide text-indigo-600">Scheduled Arrival</p>
+            <p className="mt-1 text-sm font-black text-indigo-950">{formatDateTime(pass.expectedArrival) || passDate}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Time In</p>
-            <p className="mt-1 text-sm font-black text-slate-800">{checkedInTime || (pass.status === "approved" || pass.status === "checked_out" ? "Recorded" : "Locked")}</p>
-          </div>
-          {pass.status === "checked_out" && (
+        ) : (
+          <div className={`grid gap-3 text-center ${pass.status === "checked_out" ? "grid-cols-3" : "grid-cols-2"}`}>
             <div className="rounded-2xl border border-slate-200 bg-white p-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Time Out</p>
-              <p className="mt-1 text-sm font-black text-slate-800">{checkedOutTime || "Recorded"}</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Date</p>
+              <p className="mt-1 text-sm font-black text-slate-800">{passDate}</p>
             </div>
-          )}
-        </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Time In</p>
+              <p className="mt-1 text-sm font-black text-slate-800">{checkedInTime || (pass.status === "approved" || pass.status === "checked_out" ? "Recorded" : "Locked")}</p>
+            </div>
+            {pass.status === "checked_out" && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Time Out</p>
+                <p className="mt-1 text-sm font-black text-slate-800">{checkedOutTime || "Recorded"}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {passUrl && (
           <Button

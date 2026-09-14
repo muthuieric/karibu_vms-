@@ -35,6 +35,8 @@ export default function CompanyAdminLayout({ children }: { children: React.React
   const [visitorCount, setVisitorCount] = useState(0);
   const [amountDue, setAmountDue] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [companyName, setCompanyName] = useState<string>("Karibu VMS");
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const verifyAccountStatus = async () => {
@@ -57,9 +59,14 @@ export default function CompanyAdminLayout({ children }: { children: React.React
           if (profile?.company_id) {
             const { data: company } = await supabase
               .from("companies")
-              .select("is_locked, hard_locked, created_at")
+              .select("name, logo_url, is_locked, hard_locked, created_at")
               .eq("id", profile.company_id)
               .single();
+
+            if (company) {
+              if (company.name) setCompanyName(company.name);
+              setCompanyLogoUrl(company.logo_url || null);
+            }
 
             const role = (profile.role || "").trim().toLowerCase();
             const isCompanyUser = role === "admin" || role === "company_admin" || role === "company-admin";
@@ -140,6 +147,8 @@ export default function CompanyAdminLayout({ children }: { children: React.React
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#F8FAFC] md:flex-row">
       <DashboardSidebar
+        brand={companyName}
+        logoUrl={companyLogoUrl}
         pathname={normalizedPath}
         navItems={adminNavItems}
         isMobileOpen={isMobileMenuOpen}

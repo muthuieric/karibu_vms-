@@ -18,6 +18,7 @@ export type DashboardNavItem = {
 
 type DashboardSidebarProps = {
   brand?: string;
+  logoUrl?: string | null;
   subtitle?: string;
   accent?: "default" | "dark";
   pathname: string;
@@ -31,19 +32,40 @@ function isActive(pathname: string, item: DashboardNavItem) {
   return item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-function SidebarHeader({ brand = "Karibu VMS", subtitle = "Admin" }: { brand?: string; subtitle?: string }) {
+function SidebarHeader({
+  brand = "Karibu VMS",
+  logoUrl,
+  subtitle = "Admin",
+}: {
+  brand?: string;
+  logoUrl?: string | null;
+  subtitle?: string;
+}) {
   return (
     <div className="px-5 py-5">
-      <div className="flex items-center gap-2">
-        <Image
-          src="/icon.svg"
-          alt="Karibu VMS logo"
-          width={32}
-          height={32}
-          className="h-8 w-8 shrink-0 object-contain"
-        />
-        <div className="flex flex-col">
-          <span className="text-sm font-black text-slate-900 leading-none">{brand}</span>
+      <div className="flex items-center gap-2.5">
+        {logoUrl ? (
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white border border-slate-100 p-0.5 shadow-sm">
+            <Image
+              src={logoUrl}
+              alt={`${brand} logo`}
+              width={32}
+              height={32}
+              className="h-full w-full object-contain"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <Image
+            src="/icon.svg"
+            alt="Karibu VMS logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 object-contain"
+          />
+        )}
+        <div className="flex flex-col min-w-0">
+          <span className="truncate text-sm font-black text-slate-900 leading-none">{brand}</span>
           <span className="mt-1 w-fit rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">{subtitle}</span>
         </div>
       </div>
@@ -101,6 +123,7 @@ function NavLinks({
 
 export function DashboardSidebar({
   brand,
+  logoUrl,
   subtitle,
   pathname,
   navItems,
@@ -112,7 +135,7 @@ export function DashboardSidebar({
     <>
       {/* Mobile Top Bar */}
       <div className="flex items-center justify-between bg-[#F8FAFC] p-4 md:hidden">
-        <SidebarHeader brand={brand} subtitle={subtitle} />
+        <SidebarHeader brand={brand} logoUrl={logoUrl} subtitle={subtitle} />
         <Button variant="ghost" size="icon" onClick={() => onMobileOpenChange(true)} aria-label="Open menu" className="text-slate-600">
           <Menu className="h-5 w-5" />
         </Button>
@@ -129,7 +152,7 @@ export function DashboardSidebar({
           />
           <div className="relative flex h-full min-h-0 w-72 flex-col bg-white shadow-xl animate-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between p-2 pr-4">
-              <SidebarHeader brand={brand} subtitle={subtitle} />
+              <SidebarHeader brand={brand} logoUrl={logoUrl} subtitle={subtitle} />
               <Button variant="ghost" className="h-8 w-8 rounded-full p-0 text-slate-500 hover:bg-slate-100 hover:text-slate-900" onClick={() => onMobileOpenChange(false)} aria-label="Close menu">
                 <X className="h-4 w-4" />
               </Button>
@@ -147,7 +170,7 @@ export function DashboardSidebar({
 
       {/* Desktop Sidebar */}
       <aside className="z-10 hidden h-full min-h-0 w-64 shrink-0 flex-col bg-[#F8FAFC] md:flex">
-        <SidebarHeader brand={brand} subtitle={subtitle} />
+        <SidebarHeader brand={brand} logoUrl={logoUrl} subtitle={subtitle} />
         <NavLinks pathname={pathname} navItems={navItems} />
         <div className="p-4 mb-4">
           <Button variant="ghost" className="w-full justify-start text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium transition-colors" onClick={onLogout}>

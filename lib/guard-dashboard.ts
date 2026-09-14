@@ -3,9 +3,9 @@ import type { Visitor } from "@/types/guard";
 export function filterGuardVisitors(
   visitors: Visitor[],
   searchTerm: string,
-  statusFilter: "all" | "pending" | "checked_in",
+  statusFilter: "all" | "pending" | "checked_in" | "pre_registered",
 ) {
-  return visitors.filter((visitor) => {
+  const filtered = visitors.filter((visitor) => {
     const query = searchTerm.toLowerCase();
     let matchesSearch =
       visitor.name?.toLowerCase().includes(query) ||
@@ -20,8 +20,18 @@ export function filterGuardVisitors(
       );
     }
 
-    return matchesSearch && (statusFilter === "all" || visitor.status === statusFilter);
+    return matchesSearch && (statusFilter === "all" ? visitor.status !== "cancelled" : visitor.status === statusFilter);
   });
+
+  if (statusFilter === "pre_registered") {
+    filtered.sort((a, b) => {
+      const timeA = a.expected_arrival ? new Date(a.expected_arrival).getTime() : Infinity;
+      const timeB = b.expected_arrival ? new Date(b.expected_arrival).getTime() : Infinity;
+      return timeA - timeB;
+    });
+  }
+
+  return filtered;
 }
 
 export function getDynamicGateQrUrl(

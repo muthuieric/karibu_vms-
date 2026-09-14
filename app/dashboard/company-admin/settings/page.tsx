@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,15 +10,21 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { isStrongPassword, PASSWORD_REQUIREMENTS_MESSAGE } from "@/lib/password-policy";
 import { getAuthHeaders } from "@/lib/client-auth";
-import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, SlidersHorizontal, AlertTriangle } from "lucide-react";
+import { KeyRound, Mail, User, Loader2, CheckCircle2, AlertCircle, SlidersHorizontal, AlertTriangle, Building2, Upload } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
+import { compressLogoImage, getCompanyLogoStoragePath } from "@/lib/company-logo";
 
 const ANONYMISE_VISITORS_ENDPOINT = "/api/company-admin/visitors/anonymise-checked-out";
 
 export default function AccountPage() {
   const [userEmail, setUserEmail] = useState("");
   const [userName, setUserName] = useState("");
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>("");
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
   
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,17 +43,88 @@ export default function AccountPage() {
         
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name")
+          .select("company_id, full_name")
           .eq("id", authData.user.id)
           .single();
           
         if (profile) {
           setUserName(profile.full_name || "");
+          if (profile.company_id) {
+            setCompanyId(profile.company_id);
+            const { data: company } = await supabase
+              .from("companies")
+              .select("name, logo_url")
+              .eq("id", profile.company_id)
+              .single();
+
+            if (company) {
+              setCompanyName(company.name || "");
+              setCompanyLogoUrl(company.logo_url || null);
+            }
+          }
         }
       }
     };
     fetchProfile();
   }, []);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!companyId) {
+      setLogoUploadError("Workspace organization ID could not be loaded. Please refresh the page.");
+      return;
+    }
+
+    setLogoUploadError(null);
+    setUploadingLogo(true);
+    setMessage(null);
+
+    try {
+      const compressed = await compressLogoImage(file);
+      const storagePath = getCompanyLogoStoragePath(companyId, compressed.ext);
+
+      const { error: uploadError } = await supabase.storage
+        .from("company-assets")
+        .upload(storagePath, compressed.file, {
+          contentType: compressed.contentType,
+          upsert: true,
+          cacheControl: "3600",
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message || "Failed to upload logo to storage bucket.");
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("company-assets")
+        .getPublicUrl(storagePath);
+
+      const publicUrl = publicUrlData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from("companies")
+        .update({ logo_url: publicUrl })
+        .eq("id", companyId);
+
+      if (updateError) {
+        throw new Error(updateError.message || "Failed to save logo URL to company profile.");
+      }
+
+      setCompanyLogoUrl(`${publicUrl}?t=${Date.now()}`);
+      setMessage({ type: "success", text: "Organization logo updated successfully!" });
+    } catch (err) {
+      console.error("Error uploading company logo:", err);
+      const errorMsg = err instanceof Error ? err.message : "Failed to upload company logo.";
+      setLogoUploadError(errorMsg);
+      setMessage({ type: "error", text: errorMsg });
+    } finally {
+      setUploadingLogo(false);
+      // Reset the input value so the same file can be re-selected if desired
+      e.target.value = "";
+    }
+  };
 
   const fetchEligibleCount = useCallback(async () => {
     await Promise.resolve();
@@ -172,7 +250,7 @@ export default function AccountPage() {
                 <div className="mt-4 text-center md:text-left">
                   <p className="text-xl font-bold text-slate-900">{userName || "Loading..."}</p>
                   <p className="text-sm font-bold text-slate-500 flex items-center justify-center md:justify-start gap-1.5 mt-1 uppercase tracking-wider">
-                    Workspace Admin
+                    {companyName ? `${companyName} • Admin` : "Workspace Admin"}
                   </p>
                 </div>
 
@@ -203,6 +281,91 @@ export default function AccountPage() {
           </div>
 
           <div className="md:col-span-7 lg:col-span-8 space-y-6">
+            {/* Organization Branding Card */}
+            <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
+              <CardHeader className="pb-6">
+                <CardTitle className="flex items-center text-xl font-bold text-slate-900">
+                  <Building2 className="mr-2 h-5 w-5 text-blue-600" /> Organization Branding
+                </CardTitle>
+                <CardDescription>
+                  Upload your organization logo to brand your public visitor check-in gate and dashboard headers.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-6 p-4 rounded-2xl border border-slate-100 bg-slate-50">
+                  <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+                    {companyLogoUrl ? (
+                      <Image
+                        src={companyLogoUrl}
+                        alt={`${companyName || "Company"} logo`}
+                        width={120}
+                        height={60}
+                        className="max-h-16 w-auto object-contain"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-slate-400">
+                        <Building2 className="h-7 w-7 mb-1 text-slate-300" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Default Icon</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-slate-900">
+                      {companyLogoUrl ? "Custom Logo Active" : "No Custom Logo Uploaded"}
+                    </p>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      {companyLogoUrl
+                        ? "Your custom logo is active across visitor self check-in pages and admin/guard headers."
+                        : "Karibu VMS default branding is currently shown. Upload your company logo to personalize your gates."}
+                    </p>
+                  </div>
+                </div>
+
+                {logoUploadError && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-xs font-medium text-red-700 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                    <span>{logoUploadError}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <label
+                    htmlFor="logo-file-input"
+                    className={`inline-flex items-center justify-center h-11 px-5 rounded-xl font-bold text-sm shadow-sm cursor-pointer transition-colors ${
+                      uploadingLogo
+                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
+                  >
+                    {uploadingLogo ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Uploading Logo...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        {companyLogoUrl ? "Change Organization Logo" : "Upload Organization Logo"}
+                      </>
+                    )}
+                    <input
+                      id="logo-file-input"
+                      type="file"
+                      disabled={uploadingLogo}
+                      accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                      className="sr-only"
+                      onChange={handleLogoUpload}
+                    />
+                  </label>
+                  <span className="text-xs text-slate-500 font-medium">
+                    PNG, JPEG, SVG, or WebP under 2MB
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
               <CardHeader className="pb-6">
                 <CardTitle className="flex items-center text-xl font-bold">

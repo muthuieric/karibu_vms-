@@ -18,8 +18,19 @@ export async function POST(request: Request) {
     const rateLimited = checkRateLimit(request, { keyPrefix: "register", limit: 5, windowMs: 60_000 });
     if (rateLimited) return rateLimited;
 
-    // NEW: Capture the planTier from the request
-    const { companyName, address, fullName, email, phone, password, planTier } = await request.json();
+    // NEW: Capture the planTier and optional logo data from the request
+    const {
+      companyName,
+      address,
+      fullName,
+      email,
+      phone,
+      password,
+      planTier,
+      logoBase64,
+      logoExt,
+      logoMimeType,
+    } = await request.json();
 
     const safeCompanyName = requireText(companyName, "Company name", 160);
     const safeFullName = requireText(fullName, "Full name", 120);
@@ -49,6 +60,38 @@ export async function POST(request: Request) {
       .single();
 
     if (companyError) throw companyError;
+
+    // Handle optional logo upload
+    if (logoBase64 && typeof logoBase64 === "string") {
+      try {
+        const cleanExt = (logoExt || "png").replace(/[^a-z0-9]/gi, "").toLowerCase() || "png";
+        const buffer = Buffer.from(logoBase64, "base64");
+        const storagePath = `logos/${company.id}/logo.${cleanExt}`;
+        const contentType = logoMimeType || (cleanExt === "svg" ? "image/svg+xml" : `image/${cleanExt === "jpg" ? "jpeg" : cleanExt}`);
+
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from("company-assets")
+          .upload(storagePath, buffer, {
+            contentType,
+            upsert: true,
+          });
+
+        if (!uploadError) {
+          const { data: publicUrlData } = supabaseAdmin.storage
+            .from("company-assets")
+            .getPublicUrl(storagePath);
+
+          await supabaseAdmin
+            .from("companies")
+            .update({ logo_url: publicUrlData.publicUrl })
+            .eq("id", company.id);
+        } else {
+          console.error("Failed to upload company logo during registration:", uploadError);
+        }
+      } catch (logoErr) {
+        console.error("Error processing company logo during registration:", logoErr);
+      }
+    }
 
     // 2. Create the Admin User in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({

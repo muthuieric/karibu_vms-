@@ -34,6 +34,8 @@ export function useGuardDashboard() {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState("");
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [planTier, setPlanTier] = useState("basic");
   const [verificationMethod, setVerificationMethod] = useState<VisitorVerificationMethod | "basic_default">("basic_default");
   const [qrPassSetupWarning, setQrPassSetupWarning] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export function useGuardDashboard() {
   const [guardGateName, setGuardGateName] = useState("All Gates");
   const [customFieldLabels, setCustomFieldLabels] = useState<Record<string, string>>({});
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "checked_in">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "checked_in" | "pre_registered">("all");
   const [requirePhoto, setRequirePhoto] = useState(false);
   const [askPhone, setAskPhone] = useState(true);
   const [askId, setAskId] = useState(true);
@@ -53,6 +55,7 @@ export function useGuardDashboard() {
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [sendingOtpId, setSendingOtpId] = useState<string | null>(null);
   const [approvingPassId, setApprovingPassId] = useState<string | null>(null);
+  const [confirmingPreRegisteredId, setConfirmingPreRegisteredId] = useState<string | null>(null);
   const [otpInput, setOtpInput] = useState("");
   const [qrTimestamp, setQrTimestamp] = useState(0);
   const [guardStats, setGuardStats] = useState<GuardStats>(EMPTY_GUARD_STATS);
@@ -115,7 +118,7 @@ export function useGuardDashboard() {
 
     const { data: companyData, error } = await supabase
       .from("companies")
-      .select("name, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier, visitor_verification_method")
+      .select("name, logo_url, require_photo, ask_phone, ask_id, ask_host, ask_purpose, ask_vehicle, custom_fields, is_locked, subscription_ends_at, plan_tier, visitor_verification_method")
       .eq("id", targetCompanyId)
       .single();
 
@@ -125,6 +128,9 @@ export function useGuardDashboard() {
     }
 
     if (companyData) {
+      if (companyData.name) setCompanyName(companyData.name);
+      setCompanyLogoUrl(companyData.logo_url || null);
+
       const resolvedVerificationMethod = resolveVisitorVerificationMethod(
         companyData.plan_tier,
         companyData.visitor_verification_method
@@ -379,8 +385,48 @@ export function useGuardDashboard() {
     }
   };
 
+  const handleConfirmPreRegistered = async (visitor: Visitor) => {
+    try {
+      setConfirmingPreRegisteredId(visitor.id);
+      const headers = await getAuthHeaders(true);
+      const response = await fetch("/api/guard/visitors/confirm-pre-registered", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          visitorId: visitor.id,
+          gateId: guardGateId || visitor.gate_id || null,
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to confirm visitor entry.");
+      }
+
+      const targetCompanyId = companyId || visitor.company_id;
+      if (targetCompanyId) {
+        await refreshGuardVisitors(targetCompanyId);
+      }
+
+      return {
+        success: true,
+        checkedInAt: result.checkedInAt || new Date().toISOString(),
+        visitorName: visitor.name,
+        message: result.message,
+      };
+    } catch (error) {
+      console.error("Failed to confirm pre-registered visitor:", error);
+      alert(error instanceof Error ? error.message : "Failed to confirm visitor entry.");
+      return { success: false, error: error instanceof Error ? error.message : "Error" };
+    } finally {
+      setConfirmingPreRegisteredId(null);
+    }
+  };
+
   return {
     companyId,
+    companyName,
+    companyLogoUrl,
     accessError,
     visitors,
     loading,
@@ -402,11 +448,13 @@ export function useGuardDashboard() {
     verifyingId,
     sendingOtpId,
     approvingPassId,
+    confirmingPreRegisteredId,
     otpInput,
     filteredVisitors: filterGuardVisitors(visitors, searchTerm, statusFilter),
     totalToday: guardStats.totalToday,
     checkedInCount: guardStats.checkedInCount,
     pendingCount: guardStats.pendingCount,
+    preRegisteredCount: guardStats.preRegisteredCount || visitors.filter((v) => v.status === "pre_registered").length,
     setSearchTerm,
     setStatusFilter,
     setOtpInput,
@@ -420,6 +468,7 @@ export function useGuardDashboard() {
     handleConfirmOTP,
     handleApprovePass,
     handleCheckOut,
+    handleConfirmPreRegistered,
     handlePrintQr: () => printGateQrPoster(window.location.origin, companyId, guardGateId, guardGateName),
     getDynamicQrUrl: () => getDynamicGateQrUrl(window.location.origin, companyId, guardGateId, qrTimestamp),
     addVisitorToQueue,

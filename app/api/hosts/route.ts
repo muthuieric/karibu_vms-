@@ -2,6 +2,133 @@ import { NextResponse } from "next/server";
 import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/api-auth";
 import { assertResourceCompanyAccess } from "@/lib/api-resources";
 import { optionalText, requireText, requireUuid } from "@/lib/validation";
+import { generateTemporaryPassword } from "@/lib/password-policy";
+import { DEFAULT_HOST_PASSWORD } from "@/lib/password-policy";
+
+type AuthProvisionResult = {
+  status: "created" | "already_exists" | "skipped" | "failed";
+  email?: string;
+  temporaryPassword?: string;
+  defaultPassword?: string;
+  userId?: string;
+  message?: string;
+};
+
+async function provisionHostAuthUser(
+  supabaseAdmin: Awaited<ReturnType<typeof requireRole>>["supabaseAdmin"],
+  {
+    hostId,
+    companyId,
+    hostName,
+    email,
+  }: {
+    hostId: string;
+    companyId: string;
+    hostName: string;
+    email?: string | null;
+  }
+): Promise<AuthProvisionResult> {
+  const normalizedEmail = email?.trim().toLowerCase();
+  if (!normalizedEmail) {
+    return { status: "skipped", message: "No email address provided for host" };
+  }
+
+  const temporaryPassword = generateTemporaryPassword(14);
+  const defaultPassword = DEFAULT_HOST_PASSWORD;
+
+  try {
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password: defaultPassword,
+      email_confirm: true,
+      user_metadata: {
+        role: "host",
+        companyId,
+        hostId,
+        name: hostName,
+        must_change_password: true,
+      },
+    });
+
+    if (authError) {
+      const isAlreadyRegistered =
+        authError.message?.toLowerCase().includes("already registered") ||
+        authError.message?.toLowerCase().includes("already been registered") ||
+        authError.status === 422;
+
+      if (isAlreadyRegistered) {
+        return {
+          status: "already_exists",
+          email: normalizedEmail,
+          message: "Auth user already exists for this email.",
+        };
+      }
+
+      console.warn("Host auth provisioning failed:", authError);
+      return {
+        status: "failed",
+        email: normalizedEmail,
+        message: authError.message,
+      };
+    }
+
+    if (authData?.user) {
+      // Link user_id in hosts table
+      await supabaseAdmin
+        .from("hosts")
+        .update({ user_id: authData.user.id })
+        .eq("id", hostId);
+
+      // Create/upsert user profile with role: 'host'
+      const { error: profileErr } = await supabaseAdmin
+        .from("profiles")
+        .upsert({
+          id: authData.user.id,
+          company_id: companyId,
+          role: "host",
+          full_name: hostName,
+          email: normalizedEmail,
+          must_change_password: true,
+        }, { onConflict: "id" });
+
+      if (profileErr) {
+        console.warn("Host profile creation warning:", profileErr.message);
+        // Fallback without must_change_password in case column isn't migrated yet
+        try {
+          await supabaseAdmin
+            .from("profiles")
+            .upsert({
+              id: authData.user.id,
+              company_id: companyId,
+              role: "host",
+              full_name: hostName,
+              email: normalizedEmail,
+            }, { onConflict: "id" });
+        } catch (fallbackErr) {
+          console.warn("Fallback upsert also failed:", fallbackErr);
+        }
+      }
+
+      return {
+        status: "created",
+        email: normalizedEmail,
+        temporaryPassword: defaultPassword,
+        defaultPassword,
+        userId: authData.user.id,
+        message: "Host auth account created successfully with default password.",
+      };
+    }
+
+    return { status: "failed", email: normalizedEmail, message: "No user returned from auth service" };
+  } catch (err) {
+    console.error("Host auth provisioning exception:", err);
+    return {
+      status: "failed",
+      email: normalizedEmail,
+      message: err instanceof Error ? err.message : "Failed to provision host auth account",
+    };
+  }
+}
 
 async function assertDepartmentBelongsToCompany(supabaseAdmin: Awaited<ReturnType<typeof requireRole>>["supabaseAdmin"], departmentId: string, companyId: string) {
   const { data, error } = await supabaseAdmin
@@ -26,14 +153,24 @@ export async function POST(request: Request) {
     assertCompanyAccess(profile, companyId);
     await assertDepartmentBelongsToCompany(supabaseAdmin, departmentId, companyId);
 
+    const cleanEmail = optionalText(email, 160);
+
     const { data, error } = await supabaseAdmin
       .from("hosts")
-      .insert([{ company_id: companyId, department_id: departmentId, name: hostName, phone: optionalText(phone, 30), email: optionalText(email, 160) }])
+      .insert([{ company_id: companyId, department_id: departmentId, name: hostName, phone: optionalText(phone, 30), email: cleanEmail }])
       .select("id, company_id, department_id, name, phone, email, created_at")
       .single();
 
     if (error) throw error;
-    return NextResponse.json({ data });
+
+    const authAccount = await provisionHostAuthUser(supabaseAdmin, {
+      hostId: data.id,
+      companyId,
+      hostName,
+      email: cleanEmail,
+    });
+
+    return NextResponse.json({ data, authAccount });
   } catch (error) {
     console.error("Host create error:", error);
     const safeError = getSafeErrorResponse(error, "Host could not be created.");
@@ -84,15 +221,28 @@ export async function PUT(request: Request) {
     const { profile, supabaseAdmin } = await requireRole(request, ["company_admin", "superadmin"]);
     await assertResourceCompanyAccess(supabaseAdmin, profile, "hosts", hostId);
 
+    const cleanEmail = optionalText(email, 160);
+
     const { data, error } = await supabaseAdmin
       .from("hosts")
-      .update({ name: hostName, phone: optionalText(phone, 30), email: optionalText(email, 160) })
+      .update({ name: hostName, phone: optionalText(phone, 30), email: cleanEmail })
       .eq("id", hostId)
-      .select("id, company_id, department_id, name, phone, email, created_at")
+      .select("id, company_id, department_id, name, phone, email, created_at, user_id")
       .single();
 
     if (error) throw error;
-    return NextResponse.json({ data });
+
+    let authAccount: AuthProvisionResult | null = null;
+    if (cleanEmail && !data.user_id) {
+      authAccount = await provisionHostAuthUser(supabaseAdmin, {
+        hostId: data.id,
+        companyId: data.company_id,
+        hostName,
+        email: cleanEmail,
+      });
+    }
+
+    return NextResponse.json({ data, authAccount });
   } catch (error) {
     console.error("Host update error:", error);
     const safeError = getSafeErrorResponse(error, "Host could not be updated.");

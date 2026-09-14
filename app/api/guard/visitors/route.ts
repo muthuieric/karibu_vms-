@@ -3,13 +3,14 @@ import { assertCompanyAccess, getSafeErrorResponse, requireRole } from "@/lib/ap
 import { decryptValue } from "@/lib/crypto-fields";
 import { writeAuditLog } from "@/lib/audit-log";
 
-const ACTIVE_STATUSES = ["pending", "checked_in"];
+const ACTIVE_STATUSES = ["pending", "checked_in", "pre_registered"];
 
 const EMPTY_STATS = {
   totalToday: 0,
   pendingCount: 0,
   checkedInCount: 0,
   checkedOutCount: 0,
+  preRegisteredCount: 0,
 };
 
 const GUARD_VISITOR_SELECT = [
@@ -27,6 +28,9 @@ const GUARD_VISITOR_SELECT = [
   "status",
   "created_at",
   "checked_in_at",
+  "expected_arrival",
+  "is_pre_registered",
+  "pre_registered_by",
   "host_id",
   "host_name",
   "host_confirmed",
@@ -74,6 +78,9 @@ function toGuardVisitor(visitor: Record<string, unknown>) {
     status: visitor.status,
     created_at: visitor.created_at,
     checked_in_at: visitor.checked_in_at,
+    expected_arrival: visitor.expected_arrival || null,
+    is_pre_registered: visitor.is_pre_registered || false,
+    pre_registered_by: visitor.pre_registered_by || null,
     host_id: visitor.host_id,
     host_name: visitor.host_name,
     host_confirmed: visitor.host_confirmed,
@@ -155,7 +162,7 @@ export async function GET(request: Request) {
       .select(GUARD_VISITOR_SELECT)
       .eq("company_id", companyId)
       .in("status", ACTIVE_STATUSES)
-      .or(`status.eq.checked_in,and(status.eq.pending,created_at.gte.${startIso},created_at.lt.${endIso})`)
+      .or(`status.eq.checked_in,status.eq.pre_registered,and(status.eq.pending,created_at.gte.${startIso},created_at.lt.${endIso})`)
       .order("created_at", { ascending: false })
       .limit(visitorId ? 1 : 500);
 
@@ -166,7 +173,7 @@ export async function GET(request: Request) {
       .from("visitors")
       .select("status, created_at")
       .eq("company_id", companyId)
-      .or(`created_at.gte.${startIso},and(status.eq.checked_in,created_at.lt.${startIso})`)
+      .or(`created_at.gte.${startIso},and(status.eq.checked_in,created_at.lt.${startIso}),status.eq.pre_registered`)
       .lt("created_at", endIso);
 
     if (guardGateId) statsQuery = statsQuery.or(`gate_id.eq.${guardGateId},gate_id.is.null`);
@@ -183,6 +190,7 @@ export async function GET(request: Request) {
       if (visitor.status === "pending") counts.pendingCount += 1;
       if (visitor.status === "checked_in") counts.checkedInCount += 1;
       if (visitor.status === "checked_out") counts.checkedOutCount += 1;
+      if (visitor.status === "pre_registered") counts.preRegisteredCount += 1;
       return counts;
     }, { ...EMPTY_STATS });
 

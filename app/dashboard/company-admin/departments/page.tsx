@@ -43,6 +43,7 @@ export default function DepartmentsPage() {
         searchQuery={departmentsPage.searchQuery}
         selectedDeptId={departmentsPage.selectedDeptId}
         newHost={departmentsPage.newHost}
+        companyId={departmentsPage.companyId || ""}
         editingDeptId={departmentsPage.editingDeptId}
         editingDeptName={departmentsPage.editingDeptName}
         isUpdatingDept={departmentsPage.isUpdatingDept}

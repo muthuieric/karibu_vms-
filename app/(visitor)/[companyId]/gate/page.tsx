@@ -54,6 +54,7 @@ function CheckInFormContent() {
   return (
     <VisitorCheckInForm
       companyName={gate.companyName}
+      logoUrl={gate.companyLogoUrl}
       gateName={gate.gateName}
       rules={gate.rules}
       customFields={gate.customFields}

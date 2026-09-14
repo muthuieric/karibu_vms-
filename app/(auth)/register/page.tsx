@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,20 @@ import { useRegisterPage } from "@/hooks/useAuthPages";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function RegisterPage() {
-  const { loading, success, error, captchaToken, isCaptchaEnabled, formData, setFormData, setCaptchaToken, setError, handleSubmit } = useRegisterPage();
+  const {
+    loading,
+    success,
+    error,
+    captchaToken,
+    isCaptchaEnabled,
+    formData,
+    logoPreview,
+    handleLogoChange,
+    setFormData,
+    setCaptchaToken,
+    setError,
+    handleSubmit,
+  } = useRegisterPage();
 
   if (success) {
     return (
@@ -94,6 +108,56 @@ export default function RegisterPage() {
                     value={formData.address}
                     onChange={(e) => setFormData({...formData, address: e.target.value})}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="companyLogo" className="text-zinc-700 font-medium text-sm flex items-center justify-between">
+                    <span>Company Logo <span className="text-zinc-400 font-normal">(Optional)</span></span>
+                    <span className="text-xs text-zinc-500 font-normal">PNG, JPEG, SVG, WebP up to 2MB</span>
+                  </Label>
+
+                  {logoPreview ? (
+                    <div className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white p-1">
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-zinc-800">Logo selected</p>
+                        <p className="text-xs text-zinc-500">Will be uploaded upon registration</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleLogoChange(null)}
+                        className="h-8 w-8 text-zinc-400 hover:text-red-600"
+                        aria-label="Remove logo"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="relative flex items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-zinc-50/50 p-4 transition-colors hover:border-zinc-400 hover:bg-zinc-50">
+                      <input
+                        id="companyLogo"
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                        className="absolute inset-0 cursor-pointer opacity-0"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          handleLogoChange(file);
+                        }}
+                      />
+                      <div className="flex items-center gap-2.5 text-zinc-600">
+                        <Upload className="h-4 w-4 text-zinc-400" />
+                        <span className="text-sm font-medium">Upload organization logo</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -6,29 +6,46 @@ import { Button } from "@/components/ui/button";
 
 type GuardDashboardHeaderProps = {
   guardGateName: string;
+  companyName?: string;
+  companyLogoUrl?: string | null;
   onLogout: () => void;
   onShowIncidentReport: () => void;
 };
 
 export default function GuardDashboardHeader({
   guardGateName,
+  companyName,
+  companyLogoUrl,
   onLogout,
   onShowIncidentReport,
 }: GuardDashboardHeaderProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50">
-          <Image
-            src="/icon.svg"
-            alt="Karibu VMS logo"
-            width={32}
-            height={32}
-            className="h-8 w-8 object-contain"
-          />
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 overflow-hidden border border-slate-100 p-1">
+          {companyLogoUrl ? (
+            <Image
+              src={companyLogoUrl}
+              alt={`${companyName || "Organization"} logo`}
+              width={40}
+              height={40}
+              className="h-full w-full object-contain"
+              unoptimized
+            />
+          ) : (
+            <Image
+              src="/icon.svg"
+              alt="Karibu VMS logo"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain"
+            />
+          )}
         </div>
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Guard Workspace</p>
+          <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+            {companyName ? `${companyName} • Guard Workspace` : "Guard Workspace"}
+          </p>
           <h1 className="text-xl font-bold text-slate-900">{guardGateName}</h1>
         </div>
       </div>

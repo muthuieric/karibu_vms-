@@ -22,6 +22,10 @@ type VisitorRegistrationPayload = {
   vehicle_reg?: string | null;
   photo_url?: string | null;
   custom_data?: Record<string, string>;
+  status?: string;
+  expected_arrival?: string | null;
+  is_pre_registered?: boolean;
+  pre_registered_by?: string | null;
 };
 
 type VisitorRegistrationResponse = {
@@ -35,6 +39,9 @@ type VisitorRegistrationResponse = {
   vehicle_reg?: string | null;
   status: string;
   created_at?: string;
+  expected_arrival?: string | null;
+  is_pre_registered?: boolean;
+  pre_registered_by?: string | null;
   host_id?: string | null;
   host_name?: string | null;
   purpose?: string | null;
@@ -260,6 +267,11 @@ export async function POST(request: Request) {
       );
     }
 
+    const isPreRegistered = payload.status === "pre_registered" || Boolean(payload.is_pre_registered);
+    const visitorStatus = isPreRegistered ? "pre_registered" : "pending";
+    const expectedArrival = payload.expected_arrival ? new Date(payload.expected_arrival).toISOString() : null;
+    const preRegisteredBy = payload.pre_registered_by || safeHostId || null;
+
     const retentionDays = 180;
     const deleteAfter = addDays(now, retentionDays).toISOString();
 
@@ -277,28 +289,32 @@ export async function POST(request: Request) {
       id_number_last4: safeIdNumberFields.last4,
       host_id: safeHostId,
       host_name: safeHostName,
-      purpose: purposeEnabled ? payload.purpose || null : null,
+      purpose: (purposeEnabled || isPreRegistered) ? payload.purpose || null : null,
       vehicle_reg: null,
       vehicle_reg_encrypted: safeVehicleRegFields.encrypted,
       vehicle_reg_hash: safeVehicleRegFields.hash,
       vehicle_reg_last4: safeVehicleRegFields.last4,
       hash_key_id: activeHashKeyId,
-      status: "pending",
+      status: visitorStatus,
+      is_pre_registered: isPreRegistered,
+      expected_arrival: expectedArrival,
+      pre_registered_by: preRegisteredBy,
       photo_url: payload.photo_url || null,
-      custom_data: { ...(payload.custom_data || {}), source: payload.custom_data?.source || "public_qr" },
+      custom_data: { ...(payload.custom_data || {}), source: payload.custom_data?.source || (isPreRegistered ? "host_pre_reg" : "public_qr") },
       gate_id: safeGateId,
       verification_method: verificationMethod === "basic_default" ? null : verificationMethod,
       retention_days: retentionDays,
       delete_after: deleteAfter,
     };
 
-    const insertPayloadWithQrPass = qrPassEnabled
+    const shouldGeneratePassToken = qrPassEnabled || isPreRegistered;
+    const insertPayloadWithQrPass = shouldGeneratePassToken
       ? { ...insertPayload, pass_token: createVisitorPassToken() }
       : insertPayload;
 
-    const visitorSelect: string = qrPassEnabled
-      ? "id, company_id, gate_id, name, document_type, host_id, host_name, purpose, status, created_at, photo_url, custom_data, phone_last4, id_number_last4, vehicle_reg_last4, pass_token, pass_code, pass_expired_at, verification_method"
-      : "id, company_id, gate_id, name, document_type, host_id, host_name, purpose, status, created_at, photo_url, custom_data, phone_last4, id_number_last4, vehicle_reg_last4, pass_code, pass_expired_at, verification_method";
+    const visitorSelect: string = shouldGeneratePassToken
+      ? "id, company_id, gate_id, name, document_type, host_id, host_name, purpose, status, expected_arrival, is_pre_registered, pre_registered_by, created_at, photo_url, custom_data, phone_last4, id_number_last4, vehicle_reg_last4, pass_token, pass_code, pass_expired_at, verification_method"
+      : "id, company_id, gate_id, name, document_type, host_id, host_name, purpose, status, expected_arrival, is_pre_registered, pre_registered_by, created_at, photo_url, custom_data, phone_last4, id_number_last4, vehicle_reg_last4, pass_code, pass_expired_at, verification_method";
 
     const { data: insertedVisitor, error } = await supabaseAdmin
       .from("visitors")
@@ -330,10 +346,12 @@ export async function POST(request: Request) {
         phone: maskLast4((insertedVisitor as { phone_last4?: string | null }).phone_last4),
         id_number: maskLast4((insertedVisitor as { id_number_last4?: string | null }).id_number_last4),
         vehicle_reg: maskLast4((insertedVisitor as { vehicle_reg_last4?: string | null }).vehicle_reg_last4),
-        passToken: qrPassEnabled ? data.pass_token : null,
-        passUrl: qrPassEnabled && data.pass_token ? getVisitorPassUrl(data.pass_token) : null,
-        qrPassEnabled,
+        passToken: shouldGeneratePassToken ? data.pass_token : null,
+        passUrl: shouldGeneratePassToken && data.pass_token ? getVisitorPassUrl(data.pass_token) : null,
+        qrPassEnabled: shouldGeneratePassToken,
         verificationMethod,
+        expectedArrival: data.expected_arrival || null,
+        isPreRegistered: data.is_pre_registered || false,
       },
     }, { status: 201 });
   } catch (error) {

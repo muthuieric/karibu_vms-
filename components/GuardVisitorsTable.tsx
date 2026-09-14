@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Info, ShieldCheck, Timer } from "lucide-react";
+import { CalendarClock, CheckCircle2, Info, ShieldCheck, Timer } from "lucide-react";
 import { SearchInput } from "@/components/dashboard/shared/Fields";
 import { EmptyState, LoadingSkeleton } from "@/components/dashboard/shared/StateBlocks";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,12 @@ type Visitor = {
   id: string;
   name: string;
   phone: string;
-  status: "pending" | "checked_in" | "checked_out" | "auto_checked_out";
+  status: "pending" | "checked_in" | "checked_out" | "auto_checked_out" | "pre_registered" | "cancelled";
   created_at: string;
   checked_in_at?: string;
+  expected_arrival?: string | null;
+  is_pre_registered?: boolean;
+  pre_registered_by?: string | null;
   document_type: string;
   id_number?: string;
   otp_code?: string;
@@ -46,7 +49,7 @@ type GuardVisitorsTableProps = {
   loading: boolean;
   visitors: Visitor[];
   searchTerm: string;
-  statusFilter: "all" | "pending" | "checked_in";
+  statusFilter: "all" | "pending" | "checked_in" | "pre_registered";
   planTier: string;
   verificationMethod: "qr_pass" | "sms_otp" | "basic_default";
   qrPassSetupWarning: string | null;
@@ -54,9 +57,11 @@ type GuardVisitorsTableProps = {
   verifyingId: string | null;
   sendingOtpId: string | null;
   approvingPassId: string | null;
+  confirmingPreRegisteredId?: string | null;
   otpInput: string;
+  preRegisteredCount?: number;
   onSearchTermChange: (value: string) => void;
-  onStatusFilterChange: (value: "all" | "pending" | "checked_in") => void;
+  onStatusFilterChange: (value: "all" | "pending" | "checked_in" | "pre_registered") => void;
   onPhotoClick: (url: string) => void;
   onInfoClick: (visitor: Visitor) => void;
   onOtpInputChange: (value: string) => void;
@@ -66,6 +71,7 @@ type GuardVisitorsTableProps = {
   onApprovePass: (visitor: Visitor) => void;
   onCheckOut: (id: string) => void;
   onDirectApprove: (visitor: Visitor) => void;
+  onConfirmPreRegistered?: (visitor: Visitor) => void;
 };
 
 const CustomStatusBadge = ({ status, isOverride }: { status: string, isOverride?: boolean }) => {
@@ -80,6 +86,12 @@ const CustomStatusBadge = ({ status, isOverride }: { status: string, isOverride?
     );
   }
   switch (normalizedStatus) {
+    case "pre_registered":
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-800 border border-indigo-200">
+          <CalendarClock className="h-3.5 w-3.5" /> {label}
+        </span>
+      );
     case "pending":
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-800 border border-orange-200">
@@ -111,6 +123,32 @@ const CustomStatusBadge = ({ status, isOverride }: { status: string, isOverride?
   }
 };
 
+function getArrivalHighlight(expectedArrival?: string | null) {
+  if (!expectedArrival) return null;
+  const arrival = new Date(expectedArrival);
+  const now = new Date();
+  if (isNaN(arrival.getTime())) return null;
+
+  const diffMs = arrival.getTime() - now.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+
+  if (diffHours >= -2 && diffHours <= 1) {
+    return {
+      label: "Arrival Expected Now",
+      className: "border-amber-300 bg-amber-100 text-amber-900 font-extrabold animate-pulse",
+    };
+  }
+
+  if (arrival.toDateString() === now.toDateString()) {
+    return {
+      label: "Expected Today",
+      className: "border-indigo-200 bg-indigo-50 text-indigo-700 font-bold",
+    };
+  }
+
+  return null;
+}
+
 export default function GuardVisitorsTable({
   loading,
   visitors,
@@ -123,6 +161,8 @@ export default function GuardVisitorsTable({
   verifyingId,
   sendingOtpId,
   approvingPassId,
+  confirmingPreRegisteredId,
+  preRegisteredCount,
   otpInput,
   onSearchTermChange,
   onStatusFilterChange,
@@ -135,6 +175,7 @@ export default function GuardVisitorsTable({
   onApprovePass,
   onCheckOut,
   onDirectApprove,
+  onConfirmPreRegistered,
 }: GuardVisitorsTableProps) {
   
   const renderActions = (visitor: Visitor) => {
@@ -212,16 +253,42 @@ export default function GuardVisitorsTable({
       );
     }
     
-    return (
-      <Button 
-        size="sm" 
-        variant="outline" 
-        onClick={() => onCheckOut(visitor.id)} 
-        className="w-full sm:w-auto whitespace-nowrap font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
-      >
-        Check Out
-      </Button>
-    );
+    if (visitor.status === "pre_registered") {
+      return (
+        <Button
+          size="sm"
+          onClick={() => (onConfirmPreRegistered ? onConfirmPreRegistered(visitor) : onDirectApprove(visitor))}
+          disabled={confirmingPreRegisteredId === visitor.id}
+          className="w-full sm:w-auto whitespace-nowrap bg-emerald-600 font-bold text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50"
+        >
+          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+          {confirmingPreRegisteredId === visitor.id ? "Confirming..." : "Confirm Entry"}
+        </Button>
+      );
+    }
+
+    if (visitor.status === "cancelled") {
+      return (
+        <span className="text-xs font-bold text-slate-400 italic">
+          Cancelled
+        </span>
+      );
+    }
+
+    if (visitor.status === "checked_in") {
+      return (
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={() => onCheckOut(visitor.id)} 
+          className="w-full sm:w-auto whitespace-nowrap font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
+        >
+          Check Out
+        </Button>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -258,6 +325,26 @@ export default function GuardVisitorsTable({
               >
                 Checked In
               </button>
+              <button
+                onClick={() => onStatusFilterChange("pre_registered")}
+                className={`flex-1 sm:flex-none px-4 py-2 text-sm font-bold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+                  statusFilter === "pre_registered"
+                    ? "bg-indigo-600 shadow-sm text-white"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <CalendarClock className="h-4 w-4" />
+                <span>Pre-Registered</span>
+                {typeof preRegisteredCount === "number" && preRegisteredCount > 0 && (
+                  <span
+                    className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold ${
+                      statusFilter === "pre_registered" ? "bg-white text-indigo-700" : "bg-indigo-100 text-indigo-800"
+                    }`}
+                  >
+                    {preRegisteredCount}
+                  </span>
+                )}
+              </button>
             </div>
         </div>
       </div>
@@ -280,10 +367,27 @@ export default function GuardVisitorsTable({
                   <div key={visitor.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex justify-between items-start mb-3">
                       <CustomStatusBadge status={visitor.status} isOverride={isOverride} />
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500">
-                        <Timer className="h-3.5 w-3.5" />
-                        {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
+                      {visitor.status === "pre_registered" && visitor.expected_arrival ? (
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700">
+                            <CalendarClock className="h-3.5 w-3.5" />
+                            {new Date(visitor.expected_arrival).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          {(() => {
+                            const highlight = getArrivalHighlight(visitor.expected_arrival);
+                            return highlight ? (
+                              <span className={`rounded-md border px-1.5 py-0.5 text-[10px] ${highlight.className}`}>
+                                {highlight.label}
+                              </span>
+                            ) : null;
+                          })()}
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                          <Timer className="h-3.5 w-3.5" />
+                          {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
@@ -370,10 +474,30 @@ export default function GuardVisitorsTable({
                     return (
                       <TableRow key={visitor.id} className="hover:bg-slate-50/50">
                         <TableCell className="font-medium text-slate-500 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600">
-                            <Timer className="h-3.5 w-3.5" />
-                            {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
+                          {visitor.status === "pre_registered" && visitor.expected_arrival ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700">
+                                <CalendarClock className="h-3.5 w-3.5" />
+                                {new Date(visitor.expected_arrival).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                              <span className="text-[11px] text-slate-500 font-medium">
+                                {new Date(visitor.expected_arrival).toLocaleDateString([], { month: "short", day: "numeric" })}
+                              </span>
+                              {(() => {
+                                const highlight = getArrivalHighlight(visitor.expected_arrival);
+                                return highlight ? (
+                                  <span className={`inline-block rounded-md border px-1.5 py-0.5 text-[10px] ${highlight.className}`}>
+                                    {highlight.label}
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                              <Timer className="h-3.5 w-3.5" />
+                              {new Date(visitor.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
                         </TableCell>
 
                         <TableCell>

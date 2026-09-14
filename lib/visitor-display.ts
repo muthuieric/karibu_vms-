@@ -38,6 +38,8 @@ export function getVisitorStatusLabel(status?: string | null, isOverride?: boole
   }
 
   switch (normalizedStatus) {
+    case "pre_registered":
+      return "Pre-Registered";
     case "pending":
       return "Pending";
     case "expired":
@@ -46,6 +48,8 @@ export function getVisitorStatusLabel(status?: string | null, isOverride?: boole
       return "Inside";
     case "checked_out":
       return "Departed";
+    case "cancelled":
+      return "Cancelled";
     default:
       return "Requires Review";
   }

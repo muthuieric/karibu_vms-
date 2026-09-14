@@ -71,6 +71,7 @@ type Rules = {
 
 type VisitorCheckInFormProps = {
   companyName: string;
+  logoUrl?: string | null;
   gateName?: string | null;
   rules: Rules;
   customFields: CustomField[];
@@ -125,6 +126,7 @@ function PlainSectionHeader({ title }: { title: string }) {
 
 export default function VisitorCheckInForm({
   companyName,
+  logoUrl,
   gateName,
   rules,
   customFields,
@@ -155,14 +157,28 @@ export default function VisitorCheckInForm({
     <div className="mx-auto w-full max-w-xl">
       <Card className="overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
         <div className="border-b border-zinc-100 bg-white px-5 py-7 text-center">
-          <Image
-            src="/logo.svg"
-            alt="Karibu VMS logo"
-            width={140}
-            height={46}
-            className="mx-auto mb-6 h-11 w-auto object-contain"
-            priority
-          />
+          {logoUrl ? (
+            <div className="mx-auto mb-5 flex max-h-16 items-center justify-center">
+              <Image
+                src={logoUrl}
+                alt={`${companyName} logo`}
+                width={180}
+                height={56}
+                className="max-h-14 w-auto object-contain"
+                priority
+                unoptimized
+              />
+            </div>
+          ) : (
+            <Image
+              src="/logo.svg"
+              alt="Karibu VMS logo"
+              width={140}
+              height={46}
+              className="mx-auto mb-6 h-11 w-auto object-contain"
+              priority
+            />
+          )}
 
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-blue-700">
             Visitor self check-in

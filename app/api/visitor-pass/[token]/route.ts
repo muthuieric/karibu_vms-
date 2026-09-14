@@ -17,7 +17,8 @@ function getPassStatus(status?: string | null, passExpiredAt?: string | null) {
   if (passExpiredAt) return "checked_out";
   if (status === "checked_in") return "approved";
   if (status === "checked_out" || status === "auto_checked_out") return "checked_out";
-  if (status === "rejected") return "rejected";
+  if (status === "rejected" || status === "cancelled") return "rejected";
+  if (status === "pre_registered") return "pre_registered";
   return "pending";
 }
 
@@ -37,7 +38,7 @@ export async function GET(_request: Request, context: VisitorPassRouteContext) {
     const supabaseAdmin = createSupabaseAdmin();
     const { data: visitor, error } = await supabaseAdmin
       .from("visitors")
-      .select("name, host_name, status, created_at, checked_in_at, checked_out_at, pass_code, pass_expired_at, host_confirmed_at, company_id, gate_id")
+      .select("name, host_name, status, expected_arrival, created_at, checked_in_at, checked_out_at, pass_code, pass_expired_at, host_confirmed_at, company_id, gate_id")
       // TODO: migrate this lookup to pass_token_hash once existing pass_token flows are upgraded.
       .eq("pass_token", normalizedToken)
       .maybeSingle();
@@ -48,7 +49,7 @@ export async function GET(_request: Request, context: VisitorPassRouteContext) {
     }
 
     const [{ data: company }, { data: gate }] = await Promise.all([
-      supabaseAdmin.from("companies").select("name").eq("id", visitor.company_id).maybeSingle(),
+      supabaseAdmin.from("companies").select("name, logo_url").eq("id", visitor.company_id).maybeSingle(),
       visitor.gate_id
         ? supabaseAdmin.from("gates").select("name").eq("id", visitor.gate_id).eq("company_id", visitor.company_id).maybeSingle()
         : Promise.resolve({ data: null }),
@@ -60,9 +61,11 @@ export async function GET(_request: Request, context: VisitorPassRouteContext) {
           visitorName: getDisplayName(visitor.name),
           hostName: visitor.host_name || null,
           companyName: company?.name || "Karibu VMS",
+          companyLogoUrl: company?.logo_url || null,
           gateName: gate?.name || null,
           status: getPassStatus(visitor.status, visitor.pass_expired_at),
           date: visitor.created_at || null,
+          expectedArrival: visitor.expected_arrival || null,
           checkedInAt: visitor.checked_in_at || null,
           checkedOutAt: visitor.checked_out_at || visitor.pass_expired_at || null,
           passCode: canRevealPassCode(visitor.status, visitor.pass_expired_at) ? visitor.pass_code || null : null,

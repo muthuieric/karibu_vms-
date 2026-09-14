@@ -5,7 +5,16 @@ import { supabase } from "@/lib/supabase";
 import { getAuthHeaders } from "@/lib/client-auth";
 
 export type Department = { id: string; name: string };
-export type Host = { id: string; name: string; phone: string; email: string; department_id: string };
+export type Host = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  department_id: string;
+  company_id?: string;
+  user_id?: string | null;
+  created_at?: string;
+};
 
 export function useCompanyDepartments() {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -232,6 +241,7 @@ export function useCompanyDepartments() {
 
   return {
     departments,
+    companyId,
     isLoading,
     searchQuery,
     newDeptName,

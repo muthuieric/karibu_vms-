@@ -27,10 +27,11 @@ export default function AdminDashboard() {
   return (
     <PageContainer>
         <PageHeader
-          title="Admin Home"
+          title={dashboard.companyName ? `${dashboard.companyName} Admin` : "Admin Home"}
           eyebrow="Company Admin"
           description="Manage visitors, view real-time gate activity, and monitor entry approvals across the organization."
           icon={LayoutDashboard}
+          logoUrl={dashboard.companyLogoUrl}
         >
           <div className="flex flex-col gap-3 sm:flex-row shrink-0 w-full sm:w-auto">
             <Button onClick={dashboard.exportVisitorsToPdf} variant="outline" className="w-full sm:w-auto bg-white border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-xl h-11">

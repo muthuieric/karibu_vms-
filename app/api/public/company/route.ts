@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 const PUBLIC_COMPANY_FIELDS = [
   "id",
   "name",
+  "logo_url",
   "is_locked",
   "subscription_ends_at",
   "require_photo",
@@ -26,7 +27,7 @@ const PUBLIC_COMPANY_FIELDS = [
 
 const PUBLIC_COMPANY_FIELDS_FALLBACK = PUBLIC_COMPANY_FIELDS
   .split(", ")
-  .filter((field) => field !== "visitor_verification_method")
+  .filter((field) => field !== "visitor_verification_method" && field !== "logo_url")
   .join(", ");
 
 const PRIVATE_ACCESS_FIELDS = [
@@ -40,6 +41,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 type PublicCompany = {
   id: string;
   name: string;
+  logo_url?: string | null;
   is_locked: boolean | null;
   subscription_ends_at: string | null;
   require_photo: boolean | null;
@@ -78,6 +80,7 @@ function publicCompanyPayload(company: PublicCompany) {
   return {
     id: company.id,
     name: company.name,
+    logo_url: company.logo_url ?? null,
     is_locked: company.is_locked,
     subscription_ends_at: company.subscription_ends_at,
     require_photo: company.require_photo,

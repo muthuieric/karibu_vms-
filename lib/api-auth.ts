@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { createSupabaseAdmin } from "@/lib/billing/server";
 
-export type AppRole = "superadmin" | "company_admin" | "guard";
+export type AppRole = "superadmin" | "company_admin" | "guard" | "host";
 
 export type AuthenticatedProfile = {
   id: string;
@@ -23,6 +23,7 @@ const ROLE_ALIASES: Record<string, AppRole> = {
   company_admin: "company_admin",
   "company-admin": "company_admin",
   guard: "guard",
+  host: "host",
 };
 
 export function normalizeRole(role?: string | null): AppRole | null {
@@ -49,14 +50,79 @@ export async function requireAuthenticatedRequest(request: Request): Promise<Aut
   }
 
   const supabaseAdmin = createSupabaseAdmin();
-  const { data: profile, error: profileError } = await supabaseAdmin
+  let { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
     .select("id, company_id, role, full_name, email")
     .eq("id", authData.user.id)
-    .single();
+    .maybeSingle();
+
+  // Self-heal: If profile is missing, resolve from user_metadata or hosts table
+  if (!profile) {
+    const meta = authData.user.user_metadata || {};
+    let resolvedRole = meta.role ? String(meta.role).trim().toLowerCase() : null;
+    let resolvedCompanyId = meta.companyId || meta.company_id || null;
+    let resolvedFullName = meta.name || meta.full_name || null;
+
+    if (!resolvedCompanyId || resolvedRole === "host" || !resolvedRole) {
+      const { data: matchedHost } = await supabaseAdmin
+        .from("hosts")
+        .select("id, company_id, name")
+        .or(`user_id.eq.${authData.user.id},email.ilike.${authData.user.email || "NONE"}`)
+        .maybeSingle();
+
+      if (matchedHost) {
+        resolvedRole = resolvedRole || "host";
+        resolvedCompanyId = resolvedCompanyId || matchedHost.company_id;
+        resolvedFullName = resolvedFullName || matchedHost.name;
+
+        // Auto-link host user_id
+        await supabaseAdmin
+          .from("hosts")
+          .update({ user_id: authData.user.id })
+          .eq("id", matchedHost.id);
+      }
+    }
+
+    if (resolvedRole) {
+      // Attempt to persist in profiles table
+      try {
+        const { data: createdProfile } = await supabaseAdmin
+          .from("profiles")
+          .upsert(
+            {
+              id: authData.user.id,
+              company_id: resolvedCompanyId,
+              role: resolvedRole,
+              full_name: resolvedFullName || authData.user.email || "User",
+              email: authData.user.email || null,
+            },
+            { onConflict: "id" }
+          )
+          .select("id, company_id, role, full_name, email")
+          .maybeSingle();
+
+        if (createdProfile) {
+          profile = createdProfile;
+        }
+      } catch (insertErr) {
+        console.warn("Could not insert profile into profiles table:", insertErr);
+      }
+
+      // If DB upsert failed (e.g. enum issue in Postgres), fallback to resolved in-memory profile
+      if (!profile) {
+        profile = {
+          id: authData.user.id,
+          company_id: resolvedCompanyId,
+          role: resolvedRole,
+          full_name: resolvedFullName || authData.user.email || "User",
+          email: authData.user.email || null,
+        };
+      }
+    }
+  }
 
   const normalizedRole = normalizeRole(profile?.role);
-  if (profileError || !profile || !normalizedRole) {
+  if (!profile || !normalizedRole) {
     throw Object.assign(new Error("Unauthorized request."), { status: 401 });
   }
 

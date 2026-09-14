@@ -3,9 +3,12 @@ export type Visitor = {
   name: string;
   phone: string;
   phone_last4?: string | null;
-  status: "pending" | "checked_in" | "checked_out" | "auto_checked_out";
+  status: "pending" | "checked_in" | "checked_out" | "auto_checked_out" | "pre_registered" | "cancelled";
   created_at: string;
   checked_in_at?: string;
+  expected_arrival?: string | null;
+  is_pre_registered?: boolean;
+  pre_registered_by?: string | null;
   document_type: string;
   id_number?: string;
   id_number_last4?: string | null;
@@ -27,6 +30,17 @@ export type Visitor = {
   gate_id?: string | null;
 };
 
+export type Host = {
+  id: string;
+  company_id: string;
+  department_id: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  user_id?: string | null;
+  created_at?: string;
+};
+
 export type CustomField = {
   id: string;
   label: string;
@@ -37,6 +51,7 @@ export type GuardStats = {
   pendingCount: number;
   checkedInCount: number;
   checkedOutCount: number;
+  preRegisteredCount?: number;
 };
 
 export type GuardVisitorsResponse = {

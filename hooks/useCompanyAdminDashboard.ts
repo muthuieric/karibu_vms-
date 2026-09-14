@@ -17,6 +17,9 @@ export type AdminVisitor = {
   status: string;
   created_at: string;
   checked_out_at?: string;
+  expected_arrival?: string | null;
+  is_pre_registered?: boolean;
+  pre_registered_by?: string | null;
   pass_expired_at?: string | null;
   host_name?: string;
   host_confirmed?: boolean;
@@ -61,6 +64,7 @@ export function useCompanyAdminDashboard() {
   const [isLocked, setIsLocked] = useState(false);
   const [planTier, setPlanTier] = useState("basic");
   const [companyName, setCompanyName] = useState("");
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [customFieldLabels, setCustomFieldLabels] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -112,12 +116,14 @@ export function useCompanyAdminDashboard() {
       const { data: company } = await supabase
         .from("companies")
         .select("name, is_locked, custom_fields, plan_tier")
+        .select("name, logo_url, is_locked, custom_fields, plan_tier")
         .eq("id", profile.company_id)
         .single();
 
       const accountLocked = company?.is_locked === true;
       setIsLocked(accountLocked);
       setCompanyName(company?.name || "");
+      setCompanyLogoUrl(company?.logo_url || null);
       setPlanTier(company?.plan_tier || "basic");
 
       if (accountLocked) {
@@ -435,6 +441,7 @@ export function useCompanyAdminDashboard() {
     gates,
     customFieldLabels,
     companyName,
+    companyLogoUrl,
     filteredVisitors,
     lifetimeVisitors,
     totalToday,

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
@@ -8,6 +9,7 @@ type PageHeaderProps = {
   description?: string;
   eyebrow?: string;
   icon?: LucideIcon;
+  logoUrl?: string | null;
   children?: ReactNode;
   className?: string;
   tone?: "default" | "danger" | "success" | "warning";
@@ -25,6 +27,7 @@ export function PageHeader({
   description,
   eyebrow,
   icon: Icon,
+  logoUrl,
   children,
   className,
   tone = "default",
@@ -38,11 +41,15 @@ export function PageHeader({
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex min-w-0 items-start gap-4">
-          {Icon && (
+          {logoUrl ? (
+            <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-white p-1 shadow-sm">
+              <Image src={logoUrl} alt="Organization logo" width={44} height={44} className="h-full w-full object-contain" unoptimized />
+            </div>
+          ) : Icon ? (
             <div className={cn("mt-0.5 rounded-2xl border p-3 shadow-sm", toneClasses[tone])}>
               <Icon className="h-6 w-6" />
             </div>
-          )}
+          ) : null}
           <div className="min-w-0">
             {eyebrow && (
               <p className="mb-1 text-xs font-black uppercase tracking-[0.2em] text-primary">

@@ -12,7 +12,7 @@ import GuardVisitorsTable from "@/components/GuardVisitorsTable";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ScanQrCode, ShieldCheck, UserPlus2 } from "lucide-react";
+import { CheckCircle2, RefreshCw, ScanQrCode, ShieldCheck, UserPlus2, X } from "lucide-react";
 
 const AddVisitorModal = dynamic(() => import("@/components/dashboard/guard/add-visitor/AddVisitorModal"), { ssr: false });
 const GuardAccessNoteModal = dynamic(() => import("@/components/dashboard/guard/GuardAccessNoteModal"), { ssr: false });
@@ -27,6 +27,23 @@ export default function GuardDashboard() {
   const [showQrModal, setShowQrModal] = useState(false);
   const [enlargedPhoto, setEnlargedPhoto] = useState<string | null>(null);
   const [infoModalVisitor, setInfoModalVisitor] = useState<Visitor | null>(null);
+  const [confirmSuccess, setConfirmSuccess] = useState<{ visitorName: string; time: string } | null>(null);
+
+  const handleConfirmPreRegistered = async (visitor: Visitor) => {
+    const result = await dashboard.handleConfirmPreRegistered(visitor);
+    if (result && result.success) {
+      const timeString = result.checkedInAt
+        ? new Date(result.checkedInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      setConfirmSuccess({
+        visitorName: visitor.name,
+        time: timeString,
+      });
+      setTimeout(() => {
+        setConfirmSuccess((current) => (current?.visitorName === visitor.name ? null : current));
+      }, 7000);
+    }
+  };
 
   useEffect(() => {
     if (!showQrModal) return undefined;
@@ -60,6 +77,8 @@ export default function GuardDashboard() {
       <PageContainer className="space-y-6 lg:space-y-8">
         <GuardDashboardHeader
           guardGateName={dashboard.guardGateName}
+          companyName={dashboard.companyName}
+          companyLogoUrl={dashboard.companyLogoUrl}
           onLogout={dashboard.handleLogout}
           onShowIncidentReport={() => setShowIncidentModal(true)}
         />
@@ -114,7 +133,35 @@ export default function GuardDashboard() {
             totalToday={dashboard.totalToday}
             pendingCount={dashboard.pendingCount}
             checkedInCount={dashboard.checkedInCount}
+            preRegisteredCount={dashboard.preRegisteredCount}
           />
+        )}
+
+        {confirmSuccess && (
+          <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900 shadow-sm animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-emerald-100 p-2 text-emerald-600">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold">
+                  Entry Confirmed: <span className="font-extrabold">{confirmSuccess.visitorName}</span>
+                </p>
+                <p className="text-xs text-emerald-700">
+                  Checked in at {confirmSuccess.time}. Host arrival SMS notification dispatched.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setConfirmSuccess(null)}
+              className="h-8 w-8 p-0 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900"
+            >
+              <span className="sr-only">Dismiss</span>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         )}
 
         {dashboard.qrPassSetupWarning && (
@@ -135,6 +182,8 @@ export default function GuardDashboard() {
           verifyingId={dashboard.verifyingId}
           sendingOtpId={dashboard.sendingOtpId}
           approvingPassId={dashboard.approvingPassId}
+          confirmingPreRegisteredId={dashboard.confirmingPreRegisteredId}
+          preRegisteredCount={dashboard.preRegisteredCount}
           otpInput={dashboard.otpInput}
           onSearchTermChange={dashboard.setSearchTerm}
           onStatusFilterChange={dashboard.setStatusFilter}
@@ -147,6 +196,7 @@ export default function GuardDashboard() {
           onApprovePass={dashboard.handleApprovePass}
           onCheckOut={dashboard.handleCheckOut}
           onDirectApprove={dashboard.handleDirectApprove}
+          onConfirmPreRegistered={handleConfirmPreRegistered}
         />
       <AddVisitorModal
         isOpen={showAddModal}

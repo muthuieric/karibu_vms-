@@ -1,13 +1,26 @@
 "use client";
 
-import { Loader2, Pencil, Trash2, X } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { ExternalLink, KeyRound, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DEFAULT_HOST_PASSWORD } from "@/lib/password-policy";
+import { getAuthHeaders } from "@/lib/client-auth";
 
-type Host = { id: string; name: string; phone: string; email: string; department_id: string };
+type Host = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  department_id: string;
+  company_id?: string;
+  user_id?: string | null;
+  created_at?: string;
+};
 type FilteredDepartment = {
   id: string;
   name: string;
@@ -27,6 +40,7 @@ type DepartmentsHostsListProps = {
   searchQuery: string;
   selectedDeptId: string | null;
   newHost: HostFormData;
+  companyId?: string;
   editingDeptId: string | null;
   editingDeptName: string;
   isUpdatingDept: boolean;
@@ -55,6 +69,7 @@ export default function DepartmentsHostsList({
   searchQuery,
   selectedDeptId,
   newHost,
+  companyId,
   editingDeptId,
   editingDeptName,
   isUpdatingDept,
@@ -76,6 +91,39 @@ export default function DepartmentsHostsList({
   onDeleteHost,
   onClearSearch,
 }: DepartmentsHostsListProps) {
+  const [resettingHostId, setResettingHostId] = useState<string | null>(null);
+
+  const handleResetHostPassword = async (host: Host) => {
+    const confirmed = window.confirm(
+      `Reset login password for ${host.name} to the standard default password (${DEFAULT_HOST_PASSWORD})?\n\nThe host will be required to change it upon first login.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setResettingHostId(host.id);
+      const headers = await getAuthHeaders(true);
+      const res = await fetch("/api/hosts/reset-password", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          hostId: host.id,
+          companyId: host.company_id || companyId,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || "Failed to reset password.");
+      }
+
+      alert(`Password for ${host.name} has been reset to:\n\n${json.defaultPassword || DEFAULT_HOST_PASSWORD}\n\nHost must change this password upon their next login.`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to reset password.");
+    } finally {
+      setResettingHostId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {departmentsCount === 0 && (
@@ -136,22 +184,39 @@ export default function DepartmentsHostsList({
 
           <CardContent className="p-0 sm:p-6 sm:pt-4">
             {selectedDeptId === dept.id && (
-              <form onSubmit={onAddHost} className="m-4 sm:m-0 sm:mb-6 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-4 items-end flex-wrap shadow-sm">
-                <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                  <Label htmlFor={`host-name-${dept.id}`} className="font-bold text-blue-900">Host Name *</Label>
-                  <Input id={`host-name-${dept.id}`} required value={newHost.name} onChange={(e) => onNewHostChange({ ...newHost, name: e.target.value })} placeholder="John Doe" className="bg-white border-blue-200 rounded-xl h-10" />
+              <form onSubmit={onAddHost} className="m-4 sm:m-0 sm:mb-6 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-4 shadow-sm">
+                <div className="rounded-xl border border-blue-200/80 bg-white/80 p-3 text-xs text-blue-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4 text-blue-600 shrink-0" />
+                    <span>
+                      <strong>Default Password:</strong>{" "}
+                      <code className="rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 font-mono font-bold text-blue-700">
+                        {DEFAULT_HOST_PASSWORD}
+                      </code>
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-500">
+                    Host will be prompted to set a personal password upon first login.
+                  </span>
                 </div>
-                <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                  <Label htmlFor={`host-phone-${dept.id}`} className="font-bold text-blue-900">Phone Number</Label>
-                  <Input id={`host-phone-${dept.id}`} value={newHost.phone} onChange={(e) => onNewHostChange({ ...newHost, phone: e.target.value })} placeholder="+2547..." className="bg-white border-blue-200 rounded-xl h-10" />
-                </div>
-                <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                  <Label htmlFor={`host-email-${dept.id}`} className="font-bold text-blue-900">Email</Label>
-                  <Input id={`host-email-${dept.id}`} type="email" value={newHost.email} onChange={(e) => onNewHostChange({ ...newHost, email: e.target.value })} placeholder="john@example.com" className="bg-white border-blue-200 rounded-xl h-10" />
-                </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <Button type="submit" className="flex-1 sm:flex-none h-10 px-6 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl">Add Host</Button>
-                  <Button type="button" variant="ghost" onClick={() => onSelectDept(null)} className="h-10 px-4 font-bold text-blue-700 hover:bg-blue-100 rounded-xl">Cancel</Button>
+
+                <div className="flex gap-4 items-end flex-wrap">
+                  <div className="grid gap-1.5 flex-1 min-w-[200px]">
+                    <Label htmlFor={`host-name-${dept.id}`} className="font-bold text-blue-900">Host Name *</Label>
+                    <Input id={`host-name-${dept.id}`} required value={newHost.name} onChange={(e) => onNewHostChange({ ...newHost, name: e.target.value })} placeholder="John Doe" className="bg-white border-blue-200 rounded-xl h-10" />
+                  </div>
+                  <div className="grid gap-1.5 flex-1 min-w-[200px]">
+                    <Label htmlFor={`host-phone-${dept.id}`} className="font-bold text-blue-900">Phone Number</Label>
+                    <Input id={`host-phone-${dept.id}`} value={newHost.phone} onChange={(e) => onNewHostChange({ ...newHost, phone: e.target.value })} placeholder="+2547..." className="bg-white border-blue-200 rounded-xl h-10" />
+                  </div>
+                  <div className="grid gap-1.5 flex-1 min-w-[200px]">
+                    <Label htmlFor={`host-email-${dept.id}`} className="font-bold text-blue-900">Email</Label>
+                    <Input id={`host-email-${dept.id}`} type="email" value={newHost.email} onChange={(e) => onNewHostChange({ ...newHost, email: e.target.value })} placeholder="john@example.com" className="bg-white border-blue-200 rounded-xl h-10" />
+                  </div>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Button type="submit" className="flex-1 sm:flex-none h-10 px-6 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl">Add Host</Button>
+                    <Button type="button" variant="ghost" onClick={() => onSelectDept(null)} className="h-10 px-4 font-bold text-blue-700 hover:bg-blue-100 rounded-xl">Cancel</Button>
+                  </div>
                 </div>
               </form>
             )}
@@ -194,12 +259,32 @@ export default function DepartmentsHostsList({
                         <TableCell className="text-slate-500 font-medium h-12">{host.phone || "-"}</TableCell>
                         <TableCell className="text-slate-500 font-medium h-12">{host.email || "-"}</TableCell>
                         <TableCell className="text-right h-12">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Link
+                              href={`/dashboard/host?hostId=${host.id}`}
+                              target="_blank"
+                              className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50/70 px-2 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+                              title="Open Host Portal for this host"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Portal
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-all rounded-lg"
+                              onClick={() => handleResetHostPassword(host)}
+                              disabled={resettingHostId === host.id}
+                              title={`Reset password to default (${DEFAULT_HOST_PASSWORD})`}
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg"
                               onClick={() => onEditHostStart(host)}
+                              title="Edit Host"
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -208,6 +293,7 @@ export default function DepartmentsHostsList({
                               size="sm"
                               className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
                               onClick={() => onDeleteHost(host.id, host.name)}
+                              title="Delete Host"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

@@ -28,6 +28,9 @@ type Visitor = {
   status: string;
   created_at: string;
   checked_out_at?: string;
+  expected_arrival?: string | null;
+  is_pre_registered?: boolean;
+  pre_registered_by?: string | null;
   pass_expired_at?: string | null;
   host_name?: string;
   host_confirmed?: boolean;
