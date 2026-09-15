@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { EmptyState, LoadingState } from "@/components/dashboard/shared/StateBlocks";
 import { StatCard } from "@/components/dashboard/shared/StatCard";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
+import { WorkspaceLogo } from "@/components/dashboard/shared/WorkspaceLogo";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getPlanLabel } from "@/lib/billing/pricing";
 import { supabase } from "@/lib/supabase";
@@ -17,6 +18,7 @@ import { supabase } from "@/lib/supabase";
 type Company = {
   id: string;
   name: string;
+  logo_url?: string | null;
   subscription_status: "trial" | "paid" | "unpaid";
   amount_paid: number;
   current_balance?: number | null;
@@ -46,6 +48,7 @@ export default function SuperadminBillingPage() {
     const { data, error } = await supabase
       .from("companies")
       .select("id, name, subscription_status, amount_paid, current_balance, is_locked, hard_locked, created_at, subscription_ends_at, plan_tier, pending_plan_tier")
+      .select("id, name, logo_url, subscription_status, amount_paid, current_balance, is_locked, hard_locked, created_at, subscription_ends_at, plan_tier, pending_plan_tier")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -56,6 +59,7 @@ export default function SuperadminBillingPage() {
 
     const formattedCompanies = ((data || []) as Company[]).map((company) => ({
       ...company,
+      logo_url: company.logo_url || null,
       subscription_status: (company.subscription_status?.toLowerCase() || "trial") as Company["subscription_status"],
       amount_paid: company.amount_paid || 0,
       current_balance: company.current_balance || 0,
@@ -170,9 +174,9 @@ export default function SuperadminBillingPage() {
                     return (
                       <TableRow key={company.id}>
                         <TableCell className="pl-6 font-semibold text-slate-900">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
-                            <span className="max-w-[250px] truncate">{company.name}</span>
+                          <div className="flex items-center gap-2.5">
+                            <WorkspaceLogo name={company.name} logoUrl={company.logo_url} size="sm" />
+                            <span className="max-w-[240px] truncate">{company.name}</span>
                             {(company.hard_locked || company.is_locked) && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
                           </div>
                         </TableCell>
@@ -212,10 +216,10 @@ export default function SuperadminBillingPage() {
                 return (
                   <div key={company.id} className="space-y-3 p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 items-start gap-2 font-semibold text-slate-900">
-                        <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                      <div className="flex min-w-0 items-center gap-2.5 font-semibold text-slate-900">
+                        <WorkspaceLogo name={company.name} logoUrl={company.logo_url} size="sm" />
                         <span className="line-clamp-2">{company.name}</span>
-                        {(company.hard_locked || company.is_locked) && <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />}
+                        {(company.hard_locked || company.is_locked) && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
                       </div>
                       <div className="whitespace-nowrap text-right font-bold text-emerald-600">
                         KES {company.amount_paid.toLocaleString()}

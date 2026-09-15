@@ -56,6 +56,8 @@ function CheckInFormContent() {
       companyName={gate.companyName}
       logoUrl={gate.companyLogoUrl}
       gateName={gate.gateName}
+      groupLabel={gate.groupLabel}
+      userLabel={gate.userLabel}
       rules={gate.rules}
       customFields={gate.customFields}
       customAnswers={gate.customAnswers}

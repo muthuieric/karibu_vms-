@@ -9,6 +9,7 @@ import AddVisitorForm from "@/components/dashboard/guard/add-visitor/AddVisitorF
 import "react-phone-input-2/lib/style.css";
 import type { Visitor } from "@/types/guard";
 import type { VisitorVerificationMethod } from "@/lib/visitor-verification";
+import { saveOfflineWalkInVisitor, enqueueSyncAction } from "@/lib/offline-db";
 
 type CustomField = {
   id: string;
@@ -152,6 +153,75 @@ export default function AddVisitorModal({
       return;
     }
 
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+
+    if (isOffline) {
+      setIsSubmitting(true);
+      try {
+        let finalPhone = null;
+        if (askPhone && newVisitor.phone) {
+          finalPhone = newVisitor.phone.startsWith("+") ? newVisitor.phone : `+${newVisitor.phone}`;
+        }
+
+        const finalGateId = guardGateId && guardGateId !== "" && guardGateId !== "unassigned" ? guardGateId : null;
+        const localId = "offline_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8);
+
+        const registerPayload = {
+          company_id: companyId,
+          gate_id: finalGateId,
+          name: newVisitor.name.trim(),
+          phone: finalPhone || "",
+          document_type: askId ? newVisitor.doc_type : null,
+          id_number: askId ? newVisitor.id_number.trim() : null,
+          host_id: askHost && newVisitor.host_id ? newVisitor.host_id : null,
+          purpose: askPurpose ? newVisitor.purpose.trim() || null : null,
+          vehicle_reg: askVehicle ? newVisitor.vehicle_reg.trim() || null : null,
+          photo_url: selfiePreview || null,
+          custom_data: { ...customAnswers, source: "guard_desk_offline" },
+        };
+
+        const offlineVisitor: Visitor = {
+          id: localId,
+          name: newVisitor.name.trim(),
+          phone: finalPhone || "",
+          status: "checked_in",
+          created_at: new Date().toISOString(),
+          checked_in_at: new Date().toISOString(),
+          document_type: askId ? newVisitor.doc_type : "National ID",
+          id_number: askId ? newVisitor.id_number.trim() : undefined,
+          company_id: companyId,
+          gate_id: finalGateId,
+          host_id: askHost && newVisitor.host_id ? newVisitor.host_id : null,
+          host_name: hosts.find((h) => h.id === newVisitor.host_id)?.name,
+          purpose: askPurpose ? newVisitor.purpose.trim() : undefined,
+          vehicle_reg: askVehicle ? newVisitor.vehicle_reg.trim() : undefined,
+          photo_url: selfiePreview || undefined,
+          custom_data: { ...customAnswers, source: "guard_desk_offline" },
+        };
+
+        await saveOfflineWalkInVisitor(offlineVisitor);
+        await enqueueSyncAction("register_walk_in", localId, registerPayload);
+
+        onVisitorAdded?.(offlineVisitor);
+
+        // Reset form
+        setNewVisitor({ name: "", phone: "", id_number: "", doc_type: "National ID", host_id: "", purpose: "", vehicle_reg: "" });
+        setHostSearchQuery("");
+        setCustomAnswers({});
+        setSelfieFile(null);
+        setSelfiePreview(null);
+        setAgreedToTerms(false);
+        onClose();
+        return;
+      } catch (err) {
+        console.error("Failed to save offline visitor:", err);
+        alert("Failed to record visitor offline.");
+        return;
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
     setIsSubmitting(true);
     let uploadedPhotoUrl = null;
 
@@ -253,6 +323,61 @@ export default function AddVisitorModal({
       onClose();
 
     } catch (err) {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        // Fallback to offline save
+        try {
+          const localId = "offline_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8);
+          const finalGateId = guardGateId && guardGateId !== "" && guardGateId !== "unassigned" ? guardGateId : null;
+          let finalPhone = null;
+          if (askPhone && newVisitor.phone) {
+            finalPhone = newVisitor.phone.startsWith("+") ? newVisitor.phone : `+${newVisitor.phone}`;
+          }
+          const offlineVisitor: Visitor = {
+            id: localId,
+            name: newVisitor.name.trim(),
+            phone: finalPhone || "",
+            status: "checked_in",
+            created_at: new Date().toISOString(),
+            checked_in_at: new Date().toISOString(),
+            document_type: askId ? newVisitor.doc_type : "National ID",
+            id_number: askId ? newVisitor.id_number.trim() : undefined,
+            company_id: companyId,
+            gate_id: finalGateId,
+            host_id: askHost && newVisitor.host_id ? newVisitor.host_id : null,
+            host_name: hosts.find((h) => h.id === newVisitor.host_id)?.name,
+            purpose: askPurpose ? newVisitor.purpose.trim() : undefined,
+            vehicle_reg: askVehicle ? newVisitor.vehicle_reg.trim() : undefined,
+            photo_url: selfiePreview || undefined,
+            custom_data: { ...customAnswers, source: "guard_desk_offline" },
+          };
+          await saveOfflineWalkInVisitor(offlineVisitor);
+          await enqueueSyncAction("register_walk_in", localId, {
+            company_id: companyId,
+            gate_id: finalGateId,
+            name: newVisitor.name.trim(),
+            phone: finalPhone || "",
+            document_type: askId ? newVisitor.doc_type : null,
+            id_number: askId ? newVisitor.id_number.trim() : null,
+            host_id: askHost && newVisitor.host_id ? newVisitor.host_id : null,
+            purpose: askPurpose ? newVisitor.purpose.trim() || null : null,
+            vehicle_reg: askVehicle ? newVisitor.vehicle_reg.trim() || null : null,
+            photo_url: selfiePreview || null,
+            custom_data: { ...customAnswers, source: "guard_desk_offline" },
+          });
+          onVisitorAdded?.(offlineVisitor);
+          setNewVisitor({ name: "", phone: "", id_number: "", doc_type: "National ID", host_id: "", purpose: "", vehicle_reg: "" });
+          setHostSearchQuery("");
+          setCustomAnswers({});
+          setSelfieFile(null);
+          setSelfiePreview(null);
+          setAgreedToTerms(false);
+          onClose();
+          return;
+        } catch (saveErr) {
+          console.error("Fallback offline save error:", saveErr);
+        }
+      }
+
       const message = getSupabaseErrorMessage(err, "Failed to add visitor.");
       console.error("Failed to add visitor:", err);
       alert(message);

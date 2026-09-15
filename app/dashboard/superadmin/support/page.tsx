@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { EmptyState, LoadingState } from "@/components/dashboard/shared/StateBlocks";
 import { StatCard } from "@/components/dashboard/shared/StatCard";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
+import { WorkspaceLogo } from "@/components/dashboard/shared/WorkspaceLogo";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getAuthHeaders } from "@/lib/client-auth";
@@ -20,6 +21,7 @@ type SupportTicket = {
   id: string;
   company_id: string | null;
   company_name: string;
+  company_logo_url?: string | null;
   submitted_by: string;
   submitted_by_email: string | null;
   subject: string;
@@ -208,8 +210,8 @@ export default function SuperadminSupportPage() {
                   {filteredTickets.map((ticket) => (
                     <TableRow key={ticket.id} className="align-top">
                       <TableCell className="pl-6 font-semibold text-slate-900">
-                        <div className="flex max-w-[220px] items-start gap-2">
-                          <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                        <div className="flex max-w-[220px] items-center gap-2.5">
+                          <WorkspaceLogo name={ticket.company_name} logoUrl={ticket.company_logo_url} size="sm" />
                           <span className="line-clamp-2">{ticket.company_name}</span>
                         </div>
                       </TableCell>
@@ -245,8 +247,11 @@ export default function SuperadminSupportPage() {
               {filteredTickets.map((ticket) => (
                 <article key={ticket.id} className="space-y-4 p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{ticket.company_name}</p>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <WorkspaceLogo name={ticket.company_name} logoUrl={ticket.company_logo_url} size="xs" />
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 truncate">{ticket.company_name}</p>
+                      </div>
                       <h3 className="mt-1 text-base font-bold text-slate-900">{ticket.subject}</h3>
                     </div>
                     <StatusBadge status={ticket.status}>{getStatusLabel(ticket.status)}</StatusBadge>

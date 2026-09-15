@@ -5,7 +5,7 @@ import PublicFooter from "@/components/PublicFooter";
 import LazySmartChatbot from "@/components/LazySmartChatbot";
 import { Button } from "@/components/ui/button";
 import { publicMetadata } from "@/lib/seo/site";
-import { AlertTriangle, BadgeCheck, Building2, Clock3, DoorOpen, FileSearch, ShieldCheck, SlidersHorizontal, UserCheck } from "lucide-react";
+import { AlertTriangle, BadgeCheck, Building2, Clock3, Database, DoorOpen, FileSearch, Home, ShieldCheck, SlidersHorizontal, UserCheck } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
   title: "Why Karibu VMS | Faster, Cleaner Visitor Entry",
@@ -47,8 +47,18 @@ const reasons = [
     icon: UserCheck,
   },
   {
-    title: "Risk-aware workflows",
-    description: "Restricted visitor lists, statuses, and review workflows help teams notice entries that need extra attention.",
+    title: "PMS Directory Sync",
+    description: "Eliminate manual data entry by syncing units, house numbers, and tenants directly from your Property Management System.",
+    icon: Database,
+  },
+  {
+    title: "Multi-facility adaptability",
+    description: "Configure dynamic terminology effortlessly for residential gated estates (Units & Tenants), commercial suites, or corporate offices.",
+    icon: Home,
+  },
+  {
+    title: "Risk-aware workflows & cyber defense",
+    description: "Restricted visitor watchlists, impossible travel fraud detection, and rate limiting protect against unauthorized access.",
     icon: AlertTriangle,
   },
 ];
@@ -78,6 +88,9 @@ const comparisons = [
 
 const benefits = [
   "Faster visitor registration during busy hours",
+  "Automated occupant sync via PMS REST API",
+  "Tailored terminology for estates, residential units, and offices",
+  "Impossible travel velocity anomaly detection and cyber defense",
   "Clearer guard and admin responsibilities",
   "More reliable visitor history for follow-up",
   "Better control over gates, hosts, and departments",

@@ -219,8 +219,8 @@ export default function RegisterPage() {
                     value={formData.planTier}
                     onChange={(e) => setFormData({...formData, planTier: e.target.value})}
                   >
-                    <option value="basic">Basic Plan (Core Features)</option>
-                    <option value="premium">Premium Plan (Full Security & OTP)</option>
+                    <option value="basic">Basic Plan (Free - Core Features)</option>
+                    <option value="premium">Premium Plan (KES 500/mo - Full Security & OTP)</option>
                     <option value="custom">Enterprise Custom (Contact Us)</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">

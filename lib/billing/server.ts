@@ -282,10 +282,12 @@ export async function getCurrentBillingSummary(companyId: string) {
 
   const currentBalance = isActiveTrial ? 0 : Math.max(0, calculation.totalAmount - paidAmount);
   if (convertedExpiredTrial) {
+    const expiredStatus = currentBalance > 0 ? "unpaid" : "active";
     await updateCompanyWithOptionalHardLock(supabaseAdmin, companyId, {
       current_balance: currentBalance,
-      subscription_status: "unpaid",
+      subscription_status: expiredStatus,
     });
+    subscriptionStatus = expiredStatus;
   }
   const accountStatus = companyWithBilling.hard_locked || companyWithBilling.is_locked
     ? "locked"

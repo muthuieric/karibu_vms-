@@ -53,9 +53,9 @@ export default function ManageCompaniesPage() {
           companiesPage.openAdminForm(companyId);
           setShowAdminModal(true);
         }}
-        onViewCompanyVisitors={(companyId, companyName) => {
+        onViewCompanyVisitors={(companyId: string, companyName: string, logoUrl?: string | null) => {
           setShowVisitorsModal(true);
-          companiesPage.viewCompanyVisitors(companyId, companyName);
+          companiesPage.viewCompanyVisitors(companyId, companyName, logoUrl);
         }}
         onToggleCompanyLock={(companyId, currentLockStatus) => setLockTarget({ companyId, isLocked: currentLockStatus })}
         onToggleCompanyHardLock={companiesPage.toggleCompanyHardLock}
@@ -88,6 +88,7 @@ export default function ManageCompaniesPage() {
       {showVisitorsModal && (
         <CompanyVisitorStatsModal
           companyName={companiesPage.viewingCompanyName}
+          companyLogoUrl={companiesPage.viewingCompanyLogoUrl}
           visitorStats={companiesPage.visitorStats}
           loadingVisitors={companiesPage.loadingVisitors}
           onClose={() => setShowVisitorsModal(false)}

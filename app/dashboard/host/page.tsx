@@ -307,6 +307,10 @@ function HostPortalContent() {
   // Direct pre-registration submission
   const handleDirectPreRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isAdminPreview) {
+      setDirectError("Administrators cannot pre-register visitors on behalf of hosts.");
+      return;
+    }
     if (!directName.trim() || !directArrival) {
       setDirectError("Visitor name and expected arrival time are required.");
       return;
@@ -352,7 +356,7 @@ function HostPortalContent() {
 
   // Revoke / Cancel or Delete visitor
   const handleRevokeAction = async (action: "cancel" | "delete") => {
-    if (!revokingVisitor) return;
+    if (!revokingVisitor || isAdminPreview) return;
 
     try {
       setRevokingActionLoading(true);
@@ -494,9 +498,9 @@ function HostPortalContent() {
           <div className="mx-auto flex max-w-6xl items-center justify-between flex-wrap gap-2 sm:px-6">
             <div className="flex items-center gap-2">
               <span className="rounded-md bg-amber-600/30 px-2 py-0.5 uppercase tracking-wider text-[10px] font-black text-amber-950">
-                Admin Preview
+                Admin Preview • Read-Only
               </span>
-              <span>Previewing Host Portal as administrator.</span>
+              <span>Previewing Host Portal as administrator. For security and tenant privacy, administrators cannot add, edit, or delete visits on behalf of hosts.</span>
             </div>
             <div className="flex items-center gap-2.5">
               {allHosts.length > 1 && (
@@ -560,29 +564,35 @@ function HostPortalContent() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <Button
-              onClick={() => {
-                setActiveTab("share");
-                setIsPreRegisterModalOpen(true);
-              }}
-              variant="outline"
-              className="border-slate-200 bg-white font-bold text-slate-700 shadow-sm hover:bg-slate-50"
-            >
-              <Share2 className="mr-2 h-4 w-4 text-blue-600" />
-              Invite Link
-            </Button>
-            <Button
-              onClick={() => {
-                setActiveTab("direct");
-                setIsPreRegisterModalOpen(true);
-              }}
-              className="bg-blue-600 font-bold text-white shadow-sm hover:bg-blue-700"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Pre-Register Visitor
-            </Button>
-          </div>
+          {!isAdminPreview ? (
+            <div className="flex items-center gap-2.5">
+              <Button
+                onClick={() => {
+                  setActiveTab("share");
+                  setIsPreRegisterModalOpen(true);
+                }}
+                variant="outline"
+                className="border-slate-200 bg-white font-bold text-slate-700 shadow-sm hover:bg-slate-50"
+              >
+                <Share2 className="mr-2 h-4 w-4 text-blue-600" />
+                Invite Link
+              </Button>
+              <Button
+                onClick={() => {
+                  setActiveTab("direct");
+                  setIsPreRegisterModalOpen(true);
+                }}
+                className="bg-blue-600 font-bold text-white shadow-sm hover:bg-blue-700"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Pre-Register Visitor
+              </Button>
+            </div>
+          ) : (
+            <div className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600">
+              Read-Only Admin View
+            </div>
+          )}
         </div>
 
         {/* Metrics Grid */}
@@ -687,16 +697,18 @@ function HostPortalContent() {
                   ? "Try changing your search query or filter."
                   : "You haven't scheduled any visitors yet. Pre-register your first guest now!"}
               </p>
-              <Button
-                onClick={() => {
-                  setActiveTab("direct");
-                  setIsPreRegisterModalOpen(true);
-                }}
-                className="mt-4 bg-blue-600 font-bold text-white shadow-sm hover:bg-blue-700"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Pre-Register Visitor
-              </Button>
+              {!isAdminPreview && (
+                <Button
+                  onClick={() => {
+                    setActiveTab("direct");
+                    setIsPreRegisterModalOpen(true);
+                  }}
+                  className="mt-4 bg-blue-600 font-bold text-white shadow-sm hover:bg-blue-700"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Pre-Register Visitor
+                </Button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -780,7 +792,7 @@ function HostPortalContent() {
                               </Button>
                             )}
 
-                            {isPreReg && (
+                            {!isAdminPreview && isPreReg && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -792,7 +804,7 @@ function HostPortalContent() {
                               </Button>
                             )}
 
-                            {isCancelled && (
+                            {!isAdminPreview && isCancelled && (
                               <Button
                                 size="sm"
                                 variant="ghost"

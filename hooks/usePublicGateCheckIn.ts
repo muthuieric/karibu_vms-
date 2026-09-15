@@ -118,6 +118,8 @@ export function usePublicGateCheckIn() {
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState("");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  const [groupLabel, setGroupLabel] = useState("Department");
+  const [userLabel, setUserLabel] = useState("Host");
   const [planTier, setPlanTier] = useState("basic");
   const [verificationMethod, setVerificationMethod] = useState<VisitorVerificationMethod | "basic_default">("basic_default");
   const [accessDenied, setAccessDenied] = useState(false);
@@ -212,6 +214,8 @@ export function usePublicGateCheckIn() {
       const resolvedVerificationMethod = resolveVisitorVerificationMethod(company.plan_tier, company.visitor_verification_method);
       setCompanyName(company.name);
       setCompanyLogoUrl(company.logo_url || null);
+      if (company.group_label) setGroupLabel(company.group_label);
+      if (company.user_label) setUserLabel(company.user_label);
       setPlanTier(basePlanTier);
       setVerificationMethod(resolvedVerificationMethod);
       setRules({
@@ -488,6 +492,8 @@ export function usePublicGateCheckIn() {
     loading,
     companyName,
     companyLogoUrl,
+    groupLabel,
+    userLabel,
     gateName,
     accessDenied,
     submitted,

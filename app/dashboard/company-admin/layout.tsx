@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AlertOctagon, LayoutDashboard, SquareCode, ContactRound, ClipboardList, Landmark, WalletCards, MessageCircleQuestion, ShieldCheck, SlidersHorizontal } from "lucide-react";
@@ -37,76 +37,95 @@ export default function CompanyAdminLayout({ children }: { children: React.React
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [companyName, setCompanyName] = useState<string>("Karibu VMS");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  const [companyPlan, setCompanyPlan] = useState<string>("basic");
+  const [groupLabel, setGroupLabel] = useState<string>("Departments");
+
+  const dynamicNavItems = useMemo(() => {
+    return adminNavItems.map((item) => {
+      if (item.href === "/dashboard/company-admin/departments") {
+        return { ...item, label: groupLabel };
+      }
+      return item;
+    });
+  }, [groupLabel]);
 
   useEffect(() => {
     const verifyAccountStatus = async () => {
       try {
         const { data: authData } = await supabase.auth.getUser();
+        if (!authData?.user) {
+          router.replace("/login");
+          return;
+        }
 
-        if (authData?.user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("company_id, role")
-            .eq("id", authData.user.id)
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("company_id, role")
+          .eq("id", authData.user.id)
+          .single();
+
+        if (profile?.role === "guard") {
+          router.replace("/dashboard/guard");
+          setLoading(false);
+          return;
+        }
+
+        if (profile?.company_id) {
+          const { data: company } = await supabase
+            .from("companies")
+            .select("name, logo_url, is_locked, hard_locked, created_at, current_balance, plan_tier, group_label")
+            .eq("id", profile.company_id)
             .single();
 
-          if (profile?.role === "guard") {
-            router.replace("/dashboard/guard");
+          if (company) {
+            if (company.name) setCompanyName(company.name);
+            setCompanyLogoUrl(company.logo_url || null);
+            if (company.plan_tier) setCompanyPlan(company.plan_tier);
+            if ((company as any).group_label) {
+              const g = String((company as any).group_label).trim();
+              setGroupLabel(g.endsWith("s") ? g : `${g}s`);
+            }
+          }
+
+          const role = (profile.role || "").trim().toLowerCase();
+          const isCompanyUser = role === "admin" || role === "company_admin" || role === "company-admin";
+          if (isCompanyUser && company?.hard_locked === true) {
+            setIsHardLocked(true);
             setLoading(false);
             return;
           }
 
-          if (profile?.company_id) {
-            const { data: company } = await supabase
-              .from("companies")
-              .select("name, logo_url, is_locked, hard_locked, created_at")
-              .eq("id", profile.company_id)
-              .single();
+          let countStartDate = company?.created_at || new Date().toISOString();
 
-            if (company) {
-              if (company.name) setCompanyName(company.name);
-              setCompanyLogoUrl(company.logo_url || null);
-            }
+          const { data: recentTx } = await supabase
+            .from("transactions")
+            .select("created_at, status")
+            .eq("company_id", profile.company_id)
+            .order("created_at", { ascending: false })
+            .limit(10);
 
-            const role = (profile.role || "").trim().toLowerCase();
-            const isCompanyUser = role === "admin" || role === "company_admin" || role === "company-admin";
-            if (isCompanyUser && company?.hard_locked === true) {
-              setIsHardLocked(true);
-              setLoading(false);
-              return;
-            }
+          if (recentTx && recentTx.length > 0) {
+            const lastPaid = recentTx.find((tx) =>
+              tx.status &&
+              (tx.status.toUpperCase() === "COMPLETED" ||
+                tx.status.toUpperCase() === "SUCCESS" ||
+                tx.status.toUpperCase() === "PAID")
+            );
 
-            let countStartDate = company?.created_at || new Date().toISOString();
-
-            const { data: recentTx } = await supabase
-              .from("transactions")
-              .select("created_at, status")
-              .eq("company_id", profile.company_id)
-              .order("created_at", { ascending: false })
-              .limit(10);
-
-            if (recentTx && recentTx.length > 0) {
-              const lastPaid = recentTx.find((tx) =>
-                tx.status &&
-                (tx.status.toUpperCase() === "COMPLETED" ||
-                  tx.status.toUpperCase() === "SUCCESS" ||
-                  tx.status.toUpperCase() === "PAID")
-              );
-
-              if (lastPaid) countStartDate = lastPaid.created_at;
-            }
-
-            const { count } = await supabase
-              .from("visitors")
-              .select("*", { count: "exact", head: true })
-              .eq("company_id", profile.company_id)
-              .gte("created_at", countStartDate);
-
-            const unpaidVisitors = count || 0;
-            setVisitorCount(unpaidVisitors);
-            setAmountDue(unpaidVisitors * 3);
-            setIsLocked(company?.is_locked === true);
+            if (lastPaid) countStartDate = lastPaid.created_at;
           }
+
+          const { count } = await supabase
+            .from("visitors")
+            .select("*", { count: "exact", head: true })
+            .eq("company_id", profile.company_id)
+            .gte("created_at", countStartDate);
+
+          const unpaidVisitors = count || 0;
+          setVisitorCount(unpaidVisitors);
+          const balance = typeof company?.current_balance === "number" ? company.current_balance : 0;
+          setAmountDue(balance);
+          setIsLocked(company?.is_locked === true);
         }
       } catch (error) {
         console.error("Error verifying account status:", error);
@@ -150,7 +169,7 @@ export default function CompanyAdminLayout({ children }: { children: React.React
         brand={companyName}
         logoUrl={companyLogoUrl}
         pathname={normalizedPath}
-        navItems={adminNavItems}
+        navItems={dynamicNavItems}
         isMobileOpen={isMobileMenuOpen}
         onMobileOpenChange={setIsMobileMenuOpen}
         onLogout={handleLogout}
@@ -184,8 +203,10 @@ export default function CompanyAdminLayout({ children }: { children: React.React
                       <span className="font-bold text-slate-900">{visitorCount}</span>
                     </div>
                     <div className="flex justify-between border-b border-slate-200 py-3">
-                      <span className="text-sm text-slate-500 font-bold">Visitor Rate</span>
-                      <span className="font-bold text-slate-900">KES 3.00</span>
+                      <span className="text-sm text-slate-500 font-bold">Extra Visitor Rate</span>
+                      <span className="font-bold text-slate-900">
+                        {companyPlan === "basic" || companyPlan === "trial_basic" ? "KES 2.00" : "KES 3.00"}
+                      </span>
                     </div>
                     <div className="flex items-end justify-between pt-3">
                       <span className="text-sm font-bold text-slate-500">Balance Due</span>

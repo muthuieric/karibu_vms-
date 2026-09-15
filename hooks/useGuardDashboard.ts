@@ -7,6 +7,14 @@ import { filterGuardVisitors, getDynamicGateQrUrl, printGateQrPoster } from "@/l
 import { getBasePlan } from "@/lib/billing/pricing";
 import { isQrPassFrontendEnabled, resolveVisitorVerificationMethod, type VisitorVerificationMethod } from "@/lib/visitor-verification";
 import type { CustomField, GuardStats, GuardVisitorsResponse, Visitor } from "@/types/guard";
+import {
+  cacheVisitors,
+  getCachedVisitors,
+  markVisitorCheckedInLocally,
+  markVisitorCheckedOutLocally,
+  enqueueSyncAction,
+} from "@/lib/offline-db";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 const EMPTY_GUARD_STATS: GuardStats = {
   totalToday: 0,
@@ -59,14 +67,65 @@ export function useGuardDashboard() {
   const [otpInput, setOtpInput] = useState("");
   const [qrTimestamp, setQrTimestamp] = useState(0);
   const [guardStats, setGuardStats] = useState<GuardStats>(EMPTY_GUARD_STATS);
-
   const tickQrTimestamp = () => setQrTimestamp(Date.now());
 
+  const offlineSync = useOfflineSync({
+    companyId,
+    onSynced: (freshVisitors) => {
+      if (freshVisitors && freshVisitors.length) {
+        setVisitors(freshVisitors);
+        const stats: GuardStats = {
+          totalToday: freshVisitors.length,
+          pendingCount: freshVisitors.filter((v) => v.status === "pending").length,
+          checkedInCount: freshVisitors.filter((v) => v.status === "checked_in").length,
+          checkedOutCount: freshVisitors.filter((v) => v.status === "checked_out").length,
+          preRegisteredCount: freshVisitors.filter((v) => v.status === "pre_registered").length,
+        };
+        setGuardStats(stats);
+      } else if (companyId) {
+        void refreshGuardVisitors(companyId);
+      }
+    },
+  });
+
   const refreshGuardVisitors = useCallback(async (targetCompanyId: string) => {
-    const result = await fetchGuardVisitors(targetCompanyId);
-    setVisitors(result.data);
-    setGuardStats(result.stats);
-    return result;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      const cached = await getCachedVisitors(targetCompanyId);
+      setVisitors(cached);
+      const stats: GuardStats = {
+        totalToday: cached.length,
+        pendingCount: cached.filter((v) => v.status === "pending").length,
+        checkedInCount: cached.filter((v) => v.status === "checked_in").length,
+        checkedOutCount: cached.filter((v) => v.status === "checked_out").length,
+        preRegisteredCount: cached.filter((v) => v.status === "pre_registered").length,
+      };
+      setGuardStats(stats);
+      return { data: cached, stats };
+    }
+
+    try {
+      const result = await fetchGuardVisitors(targetCompanyId);
+      setVisitors(result.data);
+      setGuardStats(result.stats);
+      void cacheVisitors(result.data);
+      return result;
+    } catch (err) {
+      console.warn("[GuardDashboard] Network fetch failed, falling back to local DB:", err);
+      const cached = await getCachedVisitors(targetCompanyId);
+      if (cached.length) {
+        setVisitors(cached);
+        const stats: GuardStats = {
+          totalToday: cached.length,
+          pendingCount: cached.filter((v) => v.status === "pending").length,
+          checkedInCount: cached.filter((v) => v.status === "checked_in").length,
+          checkedOutCount: cached.filter((v) => v.status === "checked_out").length,
+          preRegisteredCount: cached.filter((v) => v.status === "pre_registered").length,
+        };
+        setGuardStats(stats);
+        return { data: cached, stats };
+      }
+      throw err;
+    }
   }, []);
 
   const applyCompanySettings = useCallback((companyData: {
@@ -261,9 +320,28 @@ export function useGuardDashboard() {
   };
 
   const handleDirectApprove = async (visitor: Visitor) => {
+    const now = new Date().toISOString();
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      await markVisitorCheckedInLocally(visitor.id, now);
+      await enqueueSyncAction("direct_approve", visitor.id, {
+        visitorId: visitor.id,
+        gateId: guardGateId || visitor.gate_id || null,
+      });
+      setVisitors((prev) =>
+        prev.map((v) => (v.id === visitor.id ? { ...v, status: "checked_in", checked_in_at: now } : v))
+      );
+      setGuardStats((prev) => ({
+        ...prev,
+        checkedInCount: prev.checkedInCount + 1,
+        pendingCount: Math.max(0, prev.pendingCount - 1),
+      }));
+      void offlineSync.refreshPendingCount();
+      return;
+    }
+
     await supabase
       .from("visitors")
-      .update({ status: "checked_in", checked_in_at: new Date().toISOString() })
+      .update({ status: "checked_in", checked_in_at: now })
       .eq("id", visitor.id);
   };
 
@@ -363,6 +441,21 @@ export function useGuardDashboard() {
   };
 
   const handleCheckOut = async (id: string) => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      await markVisitorCheckedOutLocally(id);
+      await enqueueSyncAction("checkout", id, { visitorId: id });
+      setVisitors((prev) =>
+        prev.map((v) => (v.id === id ? { ...v, status: "checked_out" } : v))
+      );
+      setGuardStats((prev) => ({
+        ...prev,
+        checkedOutCount: prev.checkedOutCount + 1,
+        checkedInCount: Math.max(0, prev.checkedInCount - 1),
+      }));
+      void offlineSync.refreshPendingCount();
+      return;
+    }
+
     try {
       const response = await fetch("/api/visitor-pass/checkout", {
         method: "POST",
@@ -386,6 +479,42 @@ export function useGuardDashboard() {
   };
 
   const handleConfirmPreRegistered = async (visitor: Visitor) => {
+    const now = new Date().toISOString();
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+
+    if (isOffline) {
+      setConfirmingPreRegisteredId(visitor.id);
+      try {
+        await markVisitorCheckedInLocally(visitor.id, now);
+        await enqueueSyncAction("confirm_entry", visitor.id, {
+          visitorId: visitor.id,
+          gateId: guardGateId || visitor.gate_id || null,
+        });
+
+        setVisitors((prev) =>
+          prev.map((v) => (v.id === visitor.id ? { ...v, status: "checked_in", checked_in_at: now } : v))
+        );
+        setGuardStats((prev) => ({
+          ...prev,
+          checkedInCount: prev.checkedInCount + 1,
+          preRegisteredCount: Math.max(0, (prev.preRegisteredCount || 1) - 1),
+        }));
+        void offlineSync.refreshPendingCount();
+
+        return {
+          success: true,
+          checkedInAt: now,
+          visitorName: visitor.name,
+          message: "Check-in confirmed offline. Queued for automatic sync.",
+        };
+      } catch (err) {
+        console.error("Failed offline pre-registration check-in:", err);
+        return { success: false, error: "Failed to record entry locally." };
+      } finally {
+        setConfirmingPreRegisteredId(null);
+      }
+    }
+
     try {
       setConfirmingPreRegisteredId(visitor.id);
       const headers = await getAuthHeaders(true);
@@ -410,14 +539,37 @@ export function useGuardDashboard() {
 
       return {
         success: true,
-        checkedInAt: result.checkedInAt || new Date().toISOString(),
+        checkedInAt: result.checkedInAt || now,
         visitorName: visitor.name,
         message: result.message,
       };
     } catch (error) {
-      console.error("Failed to confirm pre-registered visitor:", error);
-      alert(error instanceof Error ? error.message : "Failed to confirm visitor entry.");
-      return { success: false, error: error instanceof Error ? error.message : "Error" };
+      console.error("Failed to confirm pre-registered visitor, attempting offline fallback:", error);
+      try {
+        await markVisitorCheckedInLocally(visitor.id, now);
+        await enqueueSyncAction("confirm_entry", visitor.id, {
+          visitorId: visitor.id,
+          gateId: guardGateId || visitor.gate_id || null,
+        });
+        setVisitors((prev) =>
+          prev.map((v) => (v.id === visitor.id ? { ...v, status: "checked_in", checked_in_at: now } : v))
+        );
+        setGuardStats((prev) => ({
+          ...prev,
+          checkedInCount: prev.checkedInCount + 1,
+          preRegisteredCount: Math.max(0, (prev.preRegisteredCount || 1) - 1),
+        }));
+        void offlineSync.refreshPendingCount();
+        return {
+          success: true,
+          checkedInAt: now,
+          visitorName: visitor.name,
+          message: "Network issue: Check-in saved offline and queued for sync.",
+        };
+      } catch {
+        alert(error instanceof Error ? error.message : "Failed to confirm visitor entry.");
+        return { success: false, error: error instanceof Error ? error.message : "Error" };
+      }
     } finally {
       setConfirmingPreRegisteredId(null);
     }
@@ -455,6 +607,15 @@ export function useGuardDashboard() {
     checkedInCount: guardStats.checkedInCount,
     pendingCount: guardStats.pendingCount,
     preRegisteredCount: guardStats.preRegisteredCount || visitors.filter((v) => v.status === "pre_registered").length,
+    isOnline: offlineSync.isOnline,
+    pendingSyncCount: offlineSync.pendingCount,
+    failedSyncCount: offlineSync.failedCount,
+    isSyncing: offlineSync.isSyncing,
+    lastSynced: offlineSync.lastSynced,
+    syncNow: offlineSync.syncNow,
+    syncPendingOfflineQueue: offlineSync.syncNow,
+    refreshPendingCount: offlineSync.refreshPendingCount,
+    clearFailedSyncs: offlineSync.clearFailedSyncs,
     setSearchTerm,
     setStatusFilter,
     setOtpInput,

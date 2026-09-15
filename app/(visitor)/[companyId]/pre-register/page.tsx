@@ -16,6 +16,8 @@ type CompanyPublicData = {
   name: string;
   logo_url?: string | null;
   is_locked?: boolean | null;
+  group_label?: string | null;
+  user_label?: string | null;
 };
 
 type HostData = {
@@ -249,7 +251,7 @@ function PreRegisterContent() {
             </div>
             {currentHost && (
               <div className="flex justify-between">
-                <span className="font-semibold text-zinc-500">Host:</span>
+                <span className="font-semibold text-zinc-500">{company?.user_label || "Host"}:</span>
                 <span className="font-extrabold text-zinc-900">{currentHost.name}</span>
               </div>
             )}
@@ -295,16 +297,22 @@ function PreRegisterContent() {
       {/* Company Branding */}
       <div className="text-center">
         {company.logo_url ? (
-          <div className="mx-auto mb-4 flex justify-center">
-            <Image
-              src={company.logo_url}
-              alt={`${company.name} logo`}
-              width={160}
-              height={48}
-              unoptimized
-              className="h-12 w-auto max-w-[180px] object-contain"
-              priority
-            />
+          <div className="mx-auto mb-4 flex flex-col items-center justify-center">
+            <div className="flex justify-center">
+              <Image
+                src={company.logo_url}
+                alt={`${company.name} logo`}
+                width={160}
+                height={48}
+                unoptimized
+                className="h-12 w-auto max-w-[180px] object-contain"
+                priority
+              />
+            </div>
+            <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-zinc-200/80 bg-zinc-50 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-600">
+              <Image src="/icon.svg" width={13} height={13} alt="Karibu VMS" className="h-3.5 w-3.5 object-contain" />
+              <span>Powered by <strong className="font-bold text-zinc-800">Karibu VMS</strong></span>
+            </div>
           </div>
         ) : (
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-2xl font-black text-white shadow-md">
@@ -392,7 +400,7 @@ function PreRegisterContent() {
         {!hostId && hosts.length > 0 && (
           <div>
             <Label htmlFor="vHost" className="text-xs font-bold uppercase tracking-wider text-zinc-600">
-              Host / Person to Meet
+              {company?.user_label || "Host"} / Person to Meet
             </Label>
             <select
               id="vHost"
@@ -400,7 +408,7 @@ function PreRegisterContent() {
               onChange={(e) => setSelectedHostId(e.target.value)}
               className="mt-1.5 flex h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 focus:border-blue-500 focus:outline-none"
             >
-              <option value="">Select a host (optional)</option>
+              <option value="">Select a {(company?.user_label || "host").toLowerCase()} (optional)</option>
               {hosts.map((h) => (
                 <option key={h.id} value={h.id}>
                   {h.name}

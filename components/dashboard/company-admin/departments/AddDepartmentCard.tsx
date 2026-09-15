@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type AddDepartmentCardProps = {
+  groupLabel?: string;
   newDeptName: string;
   onNewDeptNameChange: (value: string) => void;
   onSubmit: (event: React.FormEvent) => void;
@@ -14,6 +15,7 @@ type AddDepartmentCardProps = {
 };
 
 export default function AddDepartmentCard({
+  groupLabel = "Department",
   newDeptName,
   onNewDeptNameChange,
   onSubmit,
@@ -24,7 +26,7 @@ export default function AddDepartmentCard({
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <CardTitle className="text-xl font-bold">Add Department</CardTitle>
+            <CardTitle className="text-xl font-bold">Add {groupLabel}</CardTitle>
             <CardDescription className="mt-1">Create a visitor host group for check-in.</CardDescription>
           </div>
           {onClose && (
@@ -37,10 +39,10 @@ export default function AddDepartmentCard({
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="deptName" className="font-bold text-slate-700">Department Name</Label>
+            <Label htmlFor="deptName" className="font-bold text-slate-700">{groupLabel} Name</Label>
             <Input
               id="deptName"
-              placeholder="e.g. Human Resources"
+              placeholder={`e.g. ${groupLabel === "Department" ? "Human Resources" : groupLabel === "House / Unit" ? "Block A - Unit 12" : "Main Office"}`}
               value={newDeptName}
               onChange={(e) => onNewDeptNameChange(e.target.value)}
               className="bg-slate-50 border-slate-200 rounded-xl h-11"
@@ -53,7 +55,7 @@ export default function AddDepartmentCard({
                 Cancel
               </Button>
             )}
-            <Button type="submit" className="h-11 rounded-xl bg-blue-600 px-8 font-bold text-white hover:bg-blue-700">Add Department</Button>
+            <Button type="submit" className="h-11 rounded-xl bg-blue-600 px-8 font-bold text-white hover:bg-blue-700">Add {groupLabel}</Button>
           </div>
         </form>
       </CardContent>

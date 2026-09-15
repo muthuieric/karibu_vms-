@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Ban, CalendarClock, CheckCircle2, ClipboardCheck, Eye, Flag, Loader2, Plus, RefreshCw, ShieldAlert, ShieldCheck, X } from "lucide-react";
+import { AlertCircle, Ban, CalendarClock, CheckCircle2, ClipboardCheck, Compass, Eye, Flag, Loader2, Plus, RefreshCw, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useCompanyBlacklist, type RedFlag, type RedFlagForm } from "@/hooks/useCompanyBlacklist";
 import { getAuthHeaders } from "@/lib/client-auth";
+import { useAppTour } from "@/hooks/useAppTour";
 import "react-phone-input-2/lib/style.css";
 
 type IncidentType = "visitor_related" | "gate_issue" | "restricted_attempt" | "suspicious_activity" | "property_issue" | "emergency" | "other";
@@ -143,6 +144,7 @@ function visitorIdentifierSummary(visitor: { phone: string | null; id_number: st
 }
 
 export default function CompanyAdminSecurityPage() {
+  const tour = useAppTour();
   const restrictedVisitors = useCompanyBlacklist();
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Incident Reports");
   const [incidentFilter, setIncidentFilter] = useState<IncidentFilter>("pending_review");
@@ -266,18 +268,30 @@ export default function CompanyAdminSecurityPage() {
   return (
     <div className="min-h-full bg-background p-4 pb-20 md:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <PageHeader title="Security Center" description="Review access reports and manage restricted visitors." icon={ShieldCheck} tone="warning">
-          <Button type="button" variant="outline" onClick={() => void loadReports()} disabled={loadingReports} className="w-full sm:w-auto">
-            {loadingReports ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Refresh
-          </Button>
-        </PageHeader>
+        <div id="tour-security-header">
+          <PageHeader title="Security Center" description="Review access reports and manage restricted visitors." icon={ShieldCheck} tone="warning">
+            <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={tour.startSecurityTour}
+                className="w-full sm:w-auto border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-xl h-11 px-4"
+              >
+               Page Tour
+              </Button>
+              <Button type="button" variant="outline" onClick={() => void loadReports()} disabled={loadingReports} className="w-full sm:w-auto font-bold rounded-xl h-11 px-4">
+                {loadingReports ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Refresh
+              </Button>
+            </div>
+          </PageHeader>
+        </div>
 
-        <div className="rounded-[1.4rem] border border-slate-100 bg-white p-2 shadow-sm">
+        <div id="tour-security-tabs" className="rounded-[1.4rem] border border-slate-100 bg-white p-2 shadow-sm">
           <div className="grid gap-2 sm:inline-grid sm:grid-cols-2">
             {tabs.map((tab) => (
-              <Button key={tab} type="button" variant={activeTab === tab ? "default" : "ghost"} onClick={() => setActiveTab(tab)} className="justify-center">
-                {tab === "Incident Reports" ? <ClipboardCheck className="h-4 w-4" /> : <Flag className="h-4 w-4" />}
+              <Button key={tab} type="button" variant={activeTab === tab ? "default" : "ghost"} onClick={() => setActiveTab(tab)} className="justify-center font-bold">
+                {tab === "Incident Reports" ? <ClipboardCheck className="h-4 w-4 mr-2" /> : <Flag className="h-4 w-4 mr-2" />}
                 {tab}
               </Button>
             ))}
@@ -285,8 +299,9 @@ export default function CompanyAdminSecurityPage() {
         </div>
 
         {activeTab === "Incident Reports" ? (
-          <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
-            <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+          <div id="tour-security-reports">
+            <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <CardTitle className="text-xl font-black text-slate-900">Incident Reports</CardTitle>
@@ -396,6 +411,7 @@ export default function CompanyAdminSecurityPage() {
               )}
             </CardContent>
           </Card>
+          </div>
         ) : (
           <RestrictedVisitorsTab
             blacklist={restrictedVisitors}
@@ -484,19 +500,20 @@ function RestrictedVisitorsTab({
   onViewDetails: (redFlag: RedFlag) => void;
 }) {
   return (
-    <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
-      <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <CardTitle className="text-xl font-black text-slate-900">Restricted Visitors</CardTitle>
-            <CardDescription>This visitor should not be allowed entry.</CardDescription>
+    <div id="tour-security-watchlist-card">
+      <Card className="rounded-[1.4rem] border-slate-100 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="text-xl font-black text-slate-900">Restricted Visitors</CardTitle>
+              <CardDescription>This visitor should not be allowed entry.</CardDescription>
+            </div>
+            <Button id="tour-security-add-btn" type="button" variant="destructive" onClick={onAdd} className="w-full sm:w-auto font-bold rounded-xl">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Restricted Visitor
+            </Button>
           </div>
-          <Button type="button" variant="destructive" onClick={onAdd} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
-            Add Restricted Visitor
-          </Button>
-        </div>
-      </CardHeader>
+        </CardHeader>
       <CardContent className="p-0 sm:p-6">
         {blacklist.identifierWarning && (
           <div className="m-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-950 sm:m-0 sm:mb-5">
@@ -552,6 +569,7 @@ function RestrictedVisitorsTab({
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
 

@@ -145,6 +145,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { profile, user, supabaseAdmin } = await requireRole(request, ["host", "company_admin", "superadmin"]);
+    if (profile.role !== "host") {
+      return NextResponse.json(
+        { error: "Administrators cannot pre-register visits on behalf of hosts. Only hosts can manage their visits." },
+        { status: 403 }
+      );
+    }
     const body = await request.json();
     const { name, phone, purpose, expected_arrival, host_id } = body;
 
@@ -218,6 +224,12 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const { profile, user, supabaseAdmin } = await requireRole(request, ["host", "company_admin", "superadmin"]);
+    if (profile.role !== "host") {
+      return NextResponse.json(
+        { error: "Administrators cannot cancel or delete visits on behalf of hosts. Only hosts can manage their visits." },
+        { status: 403 }
+      );
+    }
     const body = await request.json();
     const visitorId = requireUuid(body.visitor_id, "visitor_id");
     const action = body.action === "delete" ? "delete" : "cancel";

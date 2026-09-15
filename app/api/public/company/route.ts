@@ -23,11 +23,13 @@ const PUBLIC_COMPANY_FIELDS = [
   "geofence_radius",
   "plan_tier",
   "visitor_verification_method",
+  "group_label",
+  "user_label",
 ].join(", ");
 
 const PUBLIC_COMPANY_FIELDS_FALLBACK = PUBLIC_COMPANY_FIELDS
   .split(", ")
-  .filter((field) => field !== "visitor_verification_method" && field !== "logo_url")
+  .filter((field) => field !== "visitor_verification_method" && field !== "logo_url" && field !== "group_label" && field !== "user_label")
   .join(", ");
 
 const PRIVATE_ACCESS_FIELDS = [
@@ -57,6 +59,8 @@ type PublicCompany = {
   geofence_radius: number | null;
   plan_tier: string | null;
   visitor_verification_method: string | null;
+  group_label?: string | null;
+  user_label?: string | null;
   hard_locked?: boolean | null;
   current_balance?: number | null;
   subscription_status?: string | null;
@@ -96,6 +100,8 @@ function publicCompanyPayload(company: PublicCompany) {
     geofence_radius: company.geofence_radius,
     plan_tier: company.plan_tier,
     visitor_verification_method: resolveVisitorVerificationMethod(company.plan_tier, company.visitor_verification_method),
+    group_label: company.group_label || "Department",
+    user_label: company.user_label || "Host",
   };
 }
 

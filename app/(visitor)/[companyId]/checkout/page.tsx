@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { AlertOctagon, BadgeCheck, CheckCircle2, KeyRound, Loader2 } from "lucide-react";
@@ -11,8 +12,23 @@ import { Label } from "@/components/ui/label";
 
 function PublicActionShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-x-hidden bg-zinc-50 p-4 font-sans text-zinc-900 selection:bg-blue-100 selection:text-blue-900 sm:p-6 lg:p-8">
-      <main className="w-full">{children}</main>
+    <div className="flex min-h-screen flex-col items-center justify-between overflow-x-hidden bg-zinc-50 p-4 font-sans text-zinc-900 selection:bg-blue-100 selection:text-blue-900 sm:p-6 lg:p-8">
+      <div className="flex w-full flex-1 items-center justify-center">
+        <main className="w-full">{children}</main>
+      </div>
+      <footer className="mt-8 pb-2 flex items-center justify-center gap-1.5 text-xs text-zinc-400">
+        <span>Powered by</span>
+        <Link
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 font-bold text-zinc-600 hover:text-blue-600 transition-colors"
+          title="Karibu Visitor Management System"
+        >
+          <Image src="/icon.svg" width={16} height={16} alt="Karibu VMS" className="h-4 w-4 object-contain" />
+          <span>Karibu VMS</span>
+        </Link>
+      </footer>
     </div>
   );
 }

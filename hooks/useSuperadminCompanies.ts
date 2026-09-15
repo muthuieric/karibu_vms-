@@ -20,6 +20,7 @@ export type Company = {
   hard_locked_at?: string | null;
   plan_tier?: string;
   current_balance?: number | null;
+  logo_url?: string | null;
 };
 
 export type PlanType = "basic" | "premium" | "custom" | "trial_basic" | "trial_premium";
@@ -39,6 +40,7 @@ export function useSuperadminCompanies() {
   const [visitorStats, setVisitorStats] = useState({ total: 0, inside: 0, departed: 0, pending: 0 });
   const [loadingVisitors, setLoadingVisitors] = useState(false);
   const [viewingCompanyName, setViewingCompanyName] = useState("");
+  const [viewingCompanyLogoUrl, setViewingCompanyLogoUrl] = useState<string | null>(null);
   const [totalGuards, setTotalGuards] = useState(0);
 
   const fetchCompanies = async () => {
@@ -56,6 +58,7 @@ export function useSuperadminCompanies() {
       setCompanies(
         ((companiesRes.data || []) as Company[]).map((company) => ({
           ...company,
+          logo_url: company.logo_url || null,
           subscription_status: company.subscription_status || "trial",
           is_locked: company.is_locked || false,
           hard_locked: company.hard_locked || false,
@@ -84,9 +87,9 @@ export function useSuperadminCompanies() {
     endsAt.setMonth(endsAt.getMonth() + 1);
     const isTrial = planType === "trial_basic" || planType === "trial_premium";
     const isCustom = planType === "custom";
-    const status = isTrial ? "trial" : isCustom ? "active" : "unpaid";
-    const startLocked = false;
     const currentBalance = isTrial || isCustom ? 0 : calculateMonthlyCharge(planType, 0).totalAmount;
+    const status = isTrial ? "trial" : isCustom ? "active" : currentBalance > 0 ? "unpaid" : "active";
+    const startLocked = false;
 
     const { error } = await supabase
       .from("companies")
@@ -155,8 +158,9 @@ export function useSuperadminCompanies() {
     }
   };
 
-  const viewCompanyVisitors = async (companyId: string, companyName: string) => {
+  const viewCompanyVisitors = async (companyId: string, companyName: string, logoUrl?: string | null) => {
     setViewingCompanyName(companyName);
+    setViewingCompanyLogoUrl(logoUrl || null);
     setLoadingVisitors(true);
 
     const { data, error } = await supabase.from("visitors").select("status").eq("company_id", companyId);
@@ -319,6 +323,7 @@ export function useSuperadminCompanies() {
     visitorStats,
     loadingVisitors,
     viewingCompanyName,
+    viewingCompanyLogoUrl,
     totalGuards,
     accountsGoodStanding,
     accountsOwing,

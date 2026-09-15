@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withSerwistInit from "@serwist/next";
 
 const isDev = process.env.NODE_ENV === "development" || process.argv.includes("dev");
+
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV !== "production",
+});
 
 const nextConfig: NextConfig = {
   // Minimize RAM by purging inactive compiled routes from memory
@@ -27,10 +34,12 @@ const nextConfig: NextConfig = {
   },
 };
 
+const finalConfig = withSerwist(nextConfig);
+
 // In development, skip heavy Sentry instrumentation to save massive memory and avoid freezing
 export default isDev
-  ? nextConfig
-  : withSentryConfig(nextConfig, {
+  ? finalConfig
+  : withSentryConfig(finalConfig, {
       org: process.env.SENTRY_ORG,
       project: process.env.SENTRY_PROJECT,
       silent: !process.env.CI,
@@ -43,3 +52,4 @@ export default isDev
         automaticVercelMonitors: true,
       },
     });
+

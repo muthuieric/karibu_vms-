@@ -100,6 +100,33 @@ export function useLoginPage() {
           throw new Error(`Profile not found! Please check your database. Your exact Auth UUID is: ${authData.user.id}`);
         }
 
+        // 3. Track session and check for impossible travel anomalies
+        try {
+          const sessionRes = await fetch("/api/auth/record-session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(authData.session?.access_token
+                ? { Authorization: `Bearer ${authData.session.access_token}` }
+                : {}),
+            },
+            body: JSON.stringify({ userId: authData.user.id }),
+          });
+
+          if (sessionRes.ok) {
+            const sessionData = await sessionRes.json();
+            if (sessionData.compromised) {
+              alert(
+                "Security Alert: An unexpected login from a distant location was detected. For your protection, your account has been secured and you must reset your password."
+              );
+              window.location.href = "/forgot-password?alert=compromised";
+              return;
+            }
+          }
+        } catch (sessionErr) {
+          console.warn("Session tracking check failed:", sessionErr);
+        }
+
         const rawRole = profile.role || "";
         const userRole = rawRole.trim().toLowerCase();
 

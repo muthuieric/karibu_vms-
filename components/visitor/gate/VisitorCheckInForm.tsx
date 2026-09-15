@@ -73,6 +73,8 @@ type VisitorCheckInFormProps = {
   companyName: string;
   logoUrl?: string | null;
   gateName?: string | null;
+  groupLabel?: string;
+  userLabel?: string;
   rules: Rules;
   customFields: CustomField[];
   customAnswers: Record<string, string>;
@@ -128,6 +130,8 @@ export default function VisitorCheckInForm({
   companyName,
   logoUrl,
   gateName,
+  groupLabel = "Department",
+  userLabel = "Host",
   rules,
   customFields,
   customAnswers,
@@ -158,16 +162,22 @@ export default function VisitorCheckInForm({
       <Card className="overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
         <div className="border-b border-zinc-100 bg-white px-5 py-7 text-center">
           {logoUrl ? (
-            <div className="mx-auto mb-5 flex max-h-16 items-center justify-center">
-              <Image
-                src={logoUrl}
-                alt={`${companyName} logo`}
-                width={180}
-                height={56}
-                className="max-h-14 w-auto object-contain"
-                priority
-                unoptimized
-              />
+            <div className="mx-auto mb-5 flex flex-col items-center justify-center">
+              <div className="flex max-h-16 items-center justify-center">
+                <Image
+                  src={logoUrl}
+                  alt={`${companyName} logo`}
+                  width={180}
+                  height={56}
+                  className="max-h-14 w-auto object-contain"
+                  priority
+                  unoptimized
+                />
+              </div>
+              <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-zinc-200/80 bg-zinc-50 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-600">
+                <Image src="/icon.svg" width={13} height={13} alt="Karibu VMS" className="h-3.5 w-3.5 object-contain" />
+                <span>Powered by <strong className="font-bold text-zinc-800">Karibu VMS</strong></span>
+              </div>
             </div>
           ) : (
             <Image
@@ -279,7 +289,7 @@ export default function VisitorCheckInForm({
                   {rules.askHost && (
                     <div className="relative" ref={dropdownRef}>
                       <Label htmlFor="visitor-host-search" className="mb-1.5 block text-sm font-medium text-zinc-700">
-                        Who are you visiting?
+                        {userLabel === "Host" ? "Who are you visiting?" : `Select ${userLabel}`}
                       </Label>
 
                       <div className="relative">
@@ -287,7 +297,7 @@ export default function VisitorCheckInForm({
                         <Input
                           id="visitor-host-search"
                           type="text"
-                          placeholder="Search for a host..."
+                          placeholder={`Search for a ${userLabel.toLowerCase()} or ${groupLabel.toLowerCase()}...`}
                           value={hostSearchQuery}
                           onChange={(e) => {
                             onHostSearchQueryChange(e.target.value);
@@ -307,7 +317,7 @@ export default function VisitorCheckInForm({
                         <div className="absolute z-10 mt-2 max-h-60 w-full overflow-y-auto overflow-x-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
                           {filteredDepartments.length === 0 ? (
                             <div className="p-4 text-center text-sm font-medium text-zinc-500">
-                              No matching hosts found.
+                              No matching {userLabel.toLowerCase()}s found.
                             </div>
                           ) : (
                             filteredDepartments.map((dept) => (

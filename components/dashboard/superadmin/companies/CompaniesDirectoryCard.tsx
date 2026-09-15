@@ -18,6 +18,7 @@ import { DataTableShell } from "@/components/dashboard/shared/DataTableShell";
 import { SearchInput } from "@/components/dashboard/shared/Fields";
 import { EmptyState, LoadingState } from "@/components/dashboard/shared/StateBlocks";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
+import { WorkspaceLogo } from "@/components/dashboard/shared/WorkspaceLogo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,6 +39,7 @@ type Company = {
   hard_locked_at?: string | null;
   plan_tier?: string;
   current_balance?: number | null;
+  logo_url?: string | null;
 };
 
 type CompaniesDirectoryCardProps = {
@@ -47,7 +49,7 @@ type CompaniesDirectoryCardProps = {
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   onOpenAdminModal: (companyId: string) => void;
-  onViewCompanyVisitors: (companyId: string, companyName: string) => void;
+  onViewCompanyVisitors: (companyId: string, companyName: string, logoUrl?: string | null) => void;
   onToggleCompanyLock: (companyId: string, currentLockStatus: boolean) => void;
   onToggleCompanyHardLock: (companyId: string, currentHardLockStatus: boolean) => void;
   onApproveCompany: (companyId: string) => void;
@@ -126,9 +128,7 @@ export default function CompaniesDirectoryCard({
                   <TableRow key={company.id}>
                     <TableCell className="pl-6">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
-                          <Building2 className="h-5 w-5" />
-                        </span>
+                        <WorkspaceLogo name={company.name} logoUrl={company.logo_url} size="md" />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 font-bold text-slate-900">
                             <span className="max-w-[220px] truncate">{company.name}</span>
@@ -203,7 +203,7 @@ export default function CompaniesDirectoryCard({
                             <Button size="sm" variant="outline" onClick={() => onOpenAdminModal(company.id)}>
                               <UserPlus className="h-4 w-4" /> Admin
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => onViewCompanyVisitors(company.id, company.name)}>
+                            <Button size="sm" variant="outline" onClick={() => onViewCompanyVisitors(company.id, company.name, company.logo_url)}>
                               <Eye className="h-4 w-4" /> Data
                             </Button>
                             <Button
@@ -241,8 +241,8 @@ export default function CompaniesDirectoryCard({
               <div key={company.id} className="space-y-4 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 font-bold text-slate-900">
-                      <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
+                    <div className="flex items-center gap-2.5 font-bold text-slate-900">
+                      <WorkspaceLogo name={company.name} logoUrl={company.logo_url} size="sm" />
                       <span className="truncate">{company.name}</span>
                       {company.hard_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-red-600" />}
                       {company.is_locked && !company.hard_locked && <Lock className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
@@ -308,7 +308,7 @@ export default function CompaniesDirectoryCard({
                       <Button size="sm" variant="outline" className="flex-1" onClick={() => onOpenAdminModal(company.id)}>
                         <UserPlus className="h-4 w-4" /> Admin
                       </Button>
-                      <Button size="sm" variant="outline" className="flex-1" onClick={() => onViewCompanyVisitors(company.id, company.name)}>
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => onViewCompanyVisitors(company.id, company.name, company.logo_url)}>
                         <Eye className="h-4 w-4" /> Data
                       </Button>
                       <Button

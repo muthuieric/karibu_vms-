@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAppTour } from "@/hooks/useAppTour";
 
 export default function DepartmentsPage() {
+  const tour = useAppTour();
   const departmentsPage = useCompanyDepartments();
   const [showAddDepartment, setShowAddDepartment] = useState(false);
 
@@ -28,16 +30,26 @@ export default function DepartmentsPage() {
 
   return (
     <PageContainer className="max-w-6xl space-y-8">
-      <DepartmentsHeader onAddDepartment={() => setShowAddDepartment(true)} />
+      <DepartmentsHeader
+        groupLabel={departmentsPage.groupLabel}
+        userLabel={departmentsPage.userLabel}
+        onAddDepartment={() => setShowAddDepartment(true)}
+        onTakeTour={tour.startDepartmentsTour}
+      />
 
       {departmentsPage.departments.length > 0 && (
-        <DepartmentsSearch
-          searchQuery={departmentsPage.searchQuery}
-          onSearchQueryChange={departmentsPage.setSearchQuery}
-        />
+        <div id="tour-departments-search">
+          <DepartmentsSearch
+            searchQuery={departmentsPage.searchQuery}
+            onSearchQueryChange={departmentsPage.setSearchQuery}
+          />
+        </div>
       )}
 
+      <div id="tour-departments-list">
       <DepartmentsHostsList
+        groupLabel={departmentsPage.groupLabel}
+        userLabel={departmentsPage.userLabel}
         departmentsCount={departmentsPage.departments.length}
         filteredDepartments={departmentsPage.filteredDepartments}
         searchQuery={departmentsPage.searchQuery}
@@ -71,9 +83,11 @@ export default function DepartmentsPage() {
         onDeleteHost={departmentsPage.handleDeleteHost}
         onClearSearch={() => departmentsPage.setSearchQuery("")}
       />
+      </div>
 
       {showAddDepartment && (
         <AddDepartmentCard
+          groupLabel={departmentsPage.groupLabel}
           newDeptName={departmentsPage.newDeptName}
           onNewDeptNameChange={departmentsPage.setNewDeptName}
           onSubmit={handleAddDepartment}
@@ -87,8 +101,8 @@ export default function DepartmentsPage() {
             <CardHeader className="pb-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <CardTitle className="text-xl font-bold text-slate-900">Edit Department</CardTitle>
-                  <CardDescription className="mt-1">Update the department name shown on check-in forms.</CardDescription>
+                  <CardTitle className="text-xl font-bold text-slate-900">Edit {departmentsPage.groupLabel}</CardTitle>
+                  <CardDescription className="mt-1">Update the {departmentsPage.groupLabel.toLowerCase()} name shown on check-in forms.</CardDescription>
                 </div>
                 <Button type="button" variant="ghost" onClick={() => departmentsPage.setEditingDeptId(null)} className="h-9 w-9 shrink-0 rounded-full p-0 text-slate-400 hover:bg-slate-100 hover:text-slate-900">
                   <X className="h-4 w-4" />
@@ -98,7 +112,7 @@ export default function DepartmentsPage() {
             <CardContent className="pb-0">
               <form onSubmit={departmentsPage.handleUpdateDepartment} className="space-y-5">
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-department-name" className="font-bold text-slate-700">Department Name</Label>
+                  <Label htmlFor="edit-department-name" className="font-bold text-slate-700">{departmentsPage.groupLabel} Name</Label>
                   <Input
                     id="edit-department-name"
                     value={departmentsPage.editingDeptName}

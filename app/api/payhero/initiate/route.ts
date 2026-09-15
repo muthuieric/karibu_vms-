@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Your trial is active. No payment is due." }, { status: 400 });
     }
     if (summary.currentBalance <= 0) {
-      return NextResponse.json({ error: "Your account is already settled." }, { status: 400 });
+      return NextResponse.json({ error: "Your current plan is Free or your account has no payment due." }, { status: 400 });
     }
 
     const appUrl = getAppUrl();

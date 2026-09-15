@@ -1,0 +1,103 @@
+@import "driver.js/dist/driver.css";
+
+/* Custom Karibu VMS styling for driver.js popover */
+.driver-popover.karibu-tour-popover {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  font-family: inherit;
+  max-width: 360px;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-description {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #475569;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-progress-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2563eb;
+  background-color: #eff6ff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-navigation-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-prev-btn {
+  background-color: #f1f5f9;
+  color: #334155;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.625rem;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-prev-btn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-next-btn {
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 0.625rem;
+  border: 1px solid #2563eb;
+  cursor: pointer;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-next-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-close-btn {
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-close-btn:hover {
+  color: #0f172a;
+}
+
+.driver-popover.karibu-tour-popover .driver-popover-arrow {
+  border-color: #ffffff;
+}
+

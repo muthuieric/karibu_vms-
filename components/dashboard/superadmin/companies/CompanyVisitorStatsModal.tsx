@@ -2,6 +2,7 @@
 
 import { Clock, Loader2, LogIn, LogOut } from "lucide-react";
 import { ModalShell } from "@/components/dashboard/shared/ModalShell";
+import { WorkspaceLogo } from "@/components/dashboard/shared/WorkspaceLogo";
 
 type VisitorStats = {
   total: number;
@@ -12,6 +13,7 @@ type VisitorStats = {
 
 type CompanyVisitorStatsModalProps = {
   companyName: string;
+  companyLogoUrl?: string | null;
   visitorStats: VisitorStats;
   loadingVisitors: boolean;
   onClose: () => void;
@@ -19,12 +21,20 @@ type CompanyVisitorStatsModalProps = {
 
 export default function CompanyVisitorStatsModal({
   companyName,
+  companyLogoUrl,
   visitorStats,
   loadingVisitors,
   onClose,
 }: CompanyVisitorStatsModalProps) {
+  const modalTitle = (
+    <div className="flex items-center gap-3">
+      <WorkspaceLogo name={companyName} logoUrl={companyLogoUrl} size="md" />
+      <span className="truncate">{companyName}</span>
+    </div>
+  );
+
   return (
-    <ModalShell title={companyName} description="Real-time visitor analytics snapshot." onClose={onClose}>
+    <ModalShell title={modalTitle} description="Real-time visitor analytics snapshot." onClose={onClose}>
           {loadingVisitors ? (
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="mb-3 h-8 w-8 animate-spin text-blue-600" />

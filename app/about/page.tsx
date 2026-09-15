@@ -28,7 +28,7 @@ const values = [
   },
   {
     title: "Built for local operations",
-    description: "Karibu VMS supports practical Kenyan workflows including guard dashboards, QR registration, visitor rules, gates, and billing visibility.",
+    description: "Karibu VMS supports practical Kenyan workflows including guard dashboards, QR registration, PMS directory syncing, visitor rules, gates, and M-Pesa billing visibility.",
     icon: Building2,
   },
 ];
@@ -36,6 +36,9 @@ const values = [
 const operatingPrinciples = [
   "Know who is inside at any time",
   "Give guards a faster check-in flow",
+  "Integrate effortlessly with real estate PMS systems",
+  "Respect privacy with compliant visitor data anonymization",
+  "Deliver multi-tenant adaptability for residential estates, business parks, and offices",
   "Set up multiple entry points or gates",
   "Choose visitor details and custom fields",
   "Keep host, department, and gate records organized",

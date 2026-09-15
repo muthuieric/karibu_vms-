@@ -94,6 +94,9 @@ export async function POST(request: Request) {
 
       currentBalance = calculateMonthlyCharge(newPlan, count || 0).totalAmount;
       subscriptionStatus = currentBalance > 0 ? "unpaid" : "active";
+      if (currentBalance <= 0) {
+        isLocked = false;
+      }
       updatePayload.subscription_status = subscriptionStatus;
       updatePayload.current_balance = currentBalance;
       updatePayload.is_locked = isLocked;

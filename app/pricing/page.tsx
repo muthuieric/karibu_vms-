@@ -9,9 +9,9 @@ import { publicMetadata } from "@/lib/seo/site";
 import { BadgeCheck, Building2, CheckCircle2, CreditCard, ShieldCheck, XCircle } from "lucide-react";
 
 export const metadata: Metadata = publicMetadata({
-  title: "Karibu VMS Pricing | Visitor Management Plans",
+  title: "Karibu VMS Pricing | Free & Premium Visitor Management Plans",
   description:
-    "Compare Karibu VMS pricing plans for digital visitor management, QR Pass Verification, SMS OTP Verification, digital visitor passes, guard dashboards, and checkout.",
+    "Compare Karibu VMS pricing plans: Free Basic plan for digital visitor management and Premium at KES 500/month for QR Pass Verification, SMS OTP, digital passes, and higher capacity.",
   path: "/pricing",
 });
 
@@ -21,15 +21,15 @@ const planDetails = [
   {
     key: "basic" as const,
     name: "Basic",
-    description: "Best for small offices that need clean visitor records and simple guard desk registration.",
-    features: ["Digital visitor records", "Guard desk registration", "QR self check-in", "Visitor form settings", "Department/team organization", "Restricted visitor list"],
-    cta: "Book Demo",
+    description: "Free plan for small offices and residences that need clean digital visitor records and simple guard desk registration.",
+    features: ["Digital visitor records", "Guard desk registration", "QR self check-in", "Visitor form settings", "Dynamic building terminology", "Restricted visitor list", "Data privacy anonymization"],
+    cta: "Get Started Free",
   },
   {
     key: "premium" as const,
     name: "Premium",
-    description: "For busier facilities that need verification, digital visitor passes, host confirmation, and higher visitor capacity.",
-    features: ["Everything in Basic", "QR Pass Verification", "SMS OTP Verification", "Choose one active verification method", "Digital visitor passes", "Host confirmation", "Visitor checkout", "Advanced visitor rules"],
+    description: "For busier facilities that need verification, digital visitor passes, PMS directory sync, host confirmation, and higher capacity.",
+    features: ["Everything in Basic", "QR Pass Verification", "SMS OTP Verification", "Pre-registration visitor passes", "PMS Directory Sync REST API", "Digital visitor passes", "Host confirmation", "Visitor checkout", "Advanced visitor rules"],
     cta: "Book Demo",
     featured: true,
   },
@@ -37,7 +37,7 @@ const planDetails = [
     key: "custom" as const,
     name: "Custom",
     description: "For enterprise, multi-site, or specialized facilities that need a tailored visitor management setup.",
-    features: ["Custom visitor volume", "Multi-site or complex gate workflows", "Tailored onboarding support", "Workflow configuration guidance", "Sales-assisted setup"],
+    features: ["Custom visitor volume", "Multi-site or complex gate workflows", "Tailored onboarding support", "PMS integration engineering", "Sales-assisted setup"],
     cta: "Book Demo",
   },
 ];
@@ -50,10 +50,12 @@ const notes = [
 ];
 
 const comparisonRows = [
+  { feature: "Monthly base price", basic: "Free (KES 0)", premium: "KES 500 / month" },
   { feature: "Digital visitor records", basic: "Included", premium: "Included" },
   { feature: "Guard desk registration", basic: "Included", premium: "Included" },
   { feature: "QR self check-in", basic: "Included", premium: "Included" },
   { feature: "Visitor form settings", basic: "Included", premium: "Included" },
+  { feature: "Dynamic building terminology", basic: "Included", premium: "Included" },
   { feature: "Restricted visitor list", basic: "Included", premium: "Included" },
   { feature: "Department/team organization", basic: "Included", premium: "Included" },
   { feature: "Custom questions", basic: "Included", premium: "Included" },
@@ -62,6 +64,8 @@ const comparisonRows = [
   { feature: "Extra visitors at KES 2 each", basic: "Included", premium: "Not included" },
   { feature: "Up to 1,000 visitors/month", basic: "Not included", premium: "Included" },
   { feature: "Extra visitors at KES 3 each", basic: "Not included", premium: "Included" },
+  { feature: "Pre-registration visitor passes", basic: "Not included", premium: "Included" },
+  { feature: "PMS Directory Sync API", basic: "Not included", premium: "Included" },
   { feature: "QR Pass Verification", basic: "Not included", premium: "Included" },
   { feature: "SMS OTP Verification", basic: "Not included", premium: "Included" },
   { feature: "Digital visitor passes", basic: "Not included", premium: "Included" },
@@ -108,8 +112,14 @@ export default function PricingPage() {
                     <div className="mb-8">
                       <p className={`mb-2 text-sm font-semibold ${plan.featured ? "text-white/80" : "text-zinc-500"}`}>Monthly base price</p>
                       <div className="flex items-end gap-2">
-                        <span className="text-4xl font-black tracking-tight md:text-5xl">{pricing ? formatKes(pricing.basePrice) : "Custom"}</span>
-                        {pricing ? <span className={`pb-2 text-sm ${plan.featured ? "text-white/70" : "text-zinc-500"}`}>/ month</span> : null}
+                        <span className="text-4xl font-black tracking-tight md:text-5xl">
+                          {pricing ? (pricing.basePrice === 0 ? "Free" : formatKes(pricing.basePrice)) : "Custom"}
+                        </span>
+                        {pricing ? (
+                          <span className={`pb-2 text-sm ${plan.featured ? "text-white/70" : "text-zinc-500"}`}>
+                            {pricing.basePrice === 0 ? "/ month (KES 0)" : "/ month"}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -133,11 +143,19 @@ export default function PricingPage() {
                       ))}
                     </div>
 
-                    <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer">
-                      <Button className={`h-12 w-full rounded-xl font-bold ${plan.featured ? "bg-white text-blue-700 hover:bg-zinc-50" : "bg-blue-600 text-white hover:bg-blue-700"}`}>
-                        {plan.cta}
-                      </Button>
-                    </a>
+                    {plan.key === "basic" ? (
+                      <Link href="/register" className="block w-full">
+                        <Button className="h-12 w-full rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700">
+                          {plan.cta}
+                        </Button>
+                      </Link>
+                    ) : (
+                      <a href={demoWhatsAppUrl} target="_blank" rel="noopener noreferrer">
+                        <Button className={`h-12 w-full rounded-xl font-bold ${plan.featured ? "bg-white text-blue-700 hover:bg-zinc-50" : "bg-blue-600 text-white hover:bg-blue-700"}`}>
+                          {plan.cta}
+                        </Button>
+                      </a>
+                    )}
                   </div>
                 );
               })}
@@ -153,7 +171,7 @@ export default function PricingPage() {
                 <h2 className="text-3xl font-black tracking-tight text-zinc-950 md:text-4xl">Basic vs Premium</h2>
               </div>
               <p className="text-lg leading-8 text-zinc-600">
-                Basic covers the core visitor management flow. Premium adds higher capacity, digital visitor passes, host confirmation, priority support, and advanced visitor rules.
+                Basic is Free forever and covers the core visitor management flow. Premium is KES 500 / month and adds higher capacity, digital visitor passes, host confirmation, priority support, and advanced visitor rules.
               </p>
             </div>
 

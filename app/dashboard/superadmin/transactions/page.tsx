@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { EmptyState, LoadingState } from "@/components/dashboard/shared/StateBlocks";
 import { StatCard } from "@/components/dashboard/shared/StatCard";
 import { StatusBadge } from "@/components/dashboard/shared/StatusBadge";
+import { WorkspaceLogo } from "@/components/dashboard/shared/WorkspaceLogo";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/lib/supabase";
@@ -24,11 +25,11 @@ type Transaction = {
   provider: string | null;
   plan_name: string | null;
   status: string;
-  companies: { name: string } | null;
+  companies: { name: string; logo_url?: string | null } | null;
 };
 
 type TransactionRow = Omit<Transaction, "companies"> & {
-  companies: { name: string } | { name: string }[] | null;
+  companies: { name: string; logo_url?: string | null } | { name: string; logo_url?: string | null }[] | null;
 };
 
 function normalizeStatus(status: string) {
@@ -55,6 +56,7 @@ export default function SuperadminTransactionsPage() {
       const { data: txData, error: txError } = await supabase
         .from("transactions")
         .select("id, created_at, amount, tracking_id, provider_reference, checkout_request_id, provider, plan_name, status, companies(name)")
+        .select("id, created_at, amount, tracking_id, provider_reference, checkout_request_id, provider, plan_name, status, companies(name, logo_url)")
         .order("created_at", { ascending: false });
 
       if (txError) throw txError;
@@ -200,8 +202,8 @@ export default function SuperadminTransactionsPage() {
                         })}
                       </TableCell>
                       <TableCell className="font-semibold text-slate-900">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
+                        <div className="flex items-center gap-2.5">
+                          <WorkspaceLogo name={tx.companies?.name} logoUrl={tx.companies?.logo_url} size="sm" />
                           <span className="block max-w-[200px] truncate">{tx.companies?.name || "Unknown Workspace"}</span>
                         </div>
                       </TableCell>
@@ -226,8 +228,8 @@ export default function SuperadminTransactionsPage() {
                 <div key={tx.id} className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 font-semibold text-slate-900">
-                      <div className="flex items-start gap-2">
-                        <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                      <div className="flex items-center gap-2.5">
+                        <WorkspaceLogo name={tx.companies?.name} logoUrl={tx.companies?.logo_url} size="sm" />
                         <span className="line-clamp-2">{tx.companies?.name || "Unknown Workspace"}</span>
                       </div>
                     </div>

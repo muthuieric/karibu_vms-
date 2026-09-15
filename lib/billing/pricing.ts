@@ -25,11 +25,11 @@ export type BillingCalculationOptions = {
   isTrialActive?: boolean;
 };
 
-export const BASIC_BASE_PRICE = 1500;
+export const BASIC_BASE_PRICE = 0;
 export const BASIC_INCLUDED_VISITORS = 500;
 export const BASIC_EXTRA_VISITOR_RATE = 2;
 
-export const PREMIUM_BASE_PRICE = 3000;
+export const PREMIUM_BASE_PRICE = 500;
 export const PREMIUM_INCLUDED_VISITORS = 1000;
 export const PREMIUM_EXTRA_VISITOR_RATE = 3;
 
@@ -65,6 +65,29 @@ export const BILLING_PLANS: Record<BillingPlan, PricingSnapshot> = {
     extraVisitorRate: PREMIUM_EXTRA_VISITOR_RATE,
   },
 };
+
+export const PLANS = BILLING_PLANS;
+
+export function formatPrice(amount: number) {
+  if (amount === 0) return "Free";
+  return `KES ${amount.toLocaleString()}`;
+}
+
+export function calculateStatement(
+  plan: string | null | undefined,
+  visitorCount: number,
+  amountPaid = 0,
+  options: BillingCalculationOptions = {}
+) {
+  const charge = calculateMonthlyCharge(plan, visitorCount, options);
+  const safePaid = Math.max(0, Number(amountPaid) || 0);
+  const currentBalance = Math.max(0, charge.totalAmount - safePaid);
+  return {
+    ...charge,
+    amountPaid: safePaid,
+    currentBalance,
+  };
+}
 
 function normalizePlanText(plan?: string | null) {
   return String(plan || "")

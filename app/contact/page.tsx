@@ -29,7 +29,7 @@ const contactOptions = [
   {
     title: "Call Sales",
     detail: "+254 702 104 690",
-    description: "Speak directly about pricing, rollout, gates, hosts, visitor rules, QR check-in, and checkout workflows.",
+    description: "Speak directly about PMS integrations, pricing, rollout, gates, hosts, visitor rules, QR check-in, and checkout workflows.",
     button: "Call Now",
     href: "tel:+254702104690",
     icon: Phone,
@@ -38,8 +38,8 @@ const contactOptions = [
   },
   {
     title: "Send a Message",
-    detail: "For setup and support questions",
-    description: "Ask about features, billing, account setup, onboarding, or the best visitor flow for your organization.",
+    detail: "For setup, API integration, and support",
+    description: "Ask about PMS directory sync, features, billing, account setup, onboarding, or the best visitor flow for your organization.",
     button: "Request Support",
     href: demoWhatsAppUrl,
     icon: MessageCircle,
@@ -51,24 +51,25 @@ const contactOptions = [
 const demoSteps = [
   {
     title: "Tell us about your facility",
-    description: "Share whether you manage an office, apartment, Airbnb, school, estate, clinic, warehouse, or another controlled entrance.",
+    description: "Share whether you manage an office, residential estate, apartment block, commercial building, school, clinic, or another entrance.",
   },
   {
     title: "Review your visitor flow",
-    description: "We look at how visitors arrive, who approves them, how guards work, and whether QR check-in or verification is needed.",
+    description: "We look at how visitors arrive, who approves them, how guards work, and whether QR check-in, PMS sync, or verification is needed.",
   },
   {
     title: "Recommend the setup",
-    description: "You get guidance on gates, guards, hosts, visitor rules, checkout, billing, and the plan that fits your visitor volume.",
+    description: "You get guidance on PMS sync, gates, guards, hosts/tenants, visitor rules, checkout, billing, and the plan that fits your volume.",
   },
 ];
 
 const facilityFit = [
-  "Offices and receptions",
-  "Apartments and gated estates",
-  "Airbnbs and short stays",
-  "Schools and institutions",
-  "Clinics and service facilities",
+  "Offices and corporate receptions",
+  "Apartments and residential gated estates",
+  "Commercial complexes using PMS",
+  "Airbnbs and short-stay properties",
+  "Schools and university campuses",
+  "Clinics and healthcare facilities",
   "Organizations with guards or front-desk teams",
 ];
 

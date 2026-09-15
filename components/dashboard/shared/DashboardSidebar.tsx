@@ -73,6 +73,13 @@ function SidebarHeader({
   );
 }
 
+function getTourId(href: string) {
+  if (href === "/dashboard/company-admin") return "tour-sidebar-home";
+  const parts = href.split("/").filter(Boolean);
+  const lastPart = parts[parts.length - 1];
+  return lastPart ? `tour-sidebar-${lastPart}` : undefined;
+}
+
 function NavLinks({
   pathname,
   navItems,
@@ -87,10 +94,12 @@ function NavLinks({
       {navItems.map((item) => {
         const active = isActive(pathname, item);
         const Icon = item.icon;
+        const tourId = getTourId(item.href);
 
         return (
           <Link
             key={item.href}
+            id={tourId}
             href={item.href}
             onClick={onNavigate}
             className={cn(

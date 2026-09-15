@@ -158,7 +158,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabaseAdmin
       .from("hosts")
       .insert([{ company_id: companyId, department_id: departmentId, name: hostName, phone: optionalText(phone, 30), email: cleanEmail }])
-      .select("id, company_id, department_id, name, phone, email, created_at")
+      .select("id, company_id, department_id, name, phone, email, created_at, external_id")
       .single();
 
     if (error) throw error;
@@ -191,7 +191,7 @@ export async function GET(request: Request) {
       supabaseAdmin = auth.supabaseAdmin;
       assertCompanyAccess(auth.profile, companyId);
       if (auth.profile.role === "company_admin" || auth.profile.role === "superadmin") {
-        selectFields = "id, company_id, department_id, name, phone, email, created_at";
+        selectFields = "id, company_id, department_id, name, phone, email, created_at, external_id";
       }
     } else {
       const { createSupabaseAdmin } = await import("@/lib/billing/server");
@@ -227,7 +227,7 @@ export async function PUT(request: Request) {
       .from("hosts")
       .update({ name: hostName, phone: optionalText(phone, 30), email: cleanEmail })
       .eq("id", hostId)
-      .select("id, company_id, department_id, name, phone, email, created_at, user_id")
+      .select("id, company_id, department_id, name, phone, email, created_at, user_id, external_id")
       .single();
 
     if (error) throw error;

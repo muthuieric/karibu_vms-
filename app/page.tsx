@@ -9,10 +9,12 @@ import { publicMetadata } from "@/lib/seo/site";
 import {
   BadgeCheck,
   ClipboardList,
+  Database,
   DoorOpen,
   FileSearch,
   LockKeyhole,
   QrCode,
+  ShieldCheck,
   SlidersHorizontal,
   UsersRound,
   WalletCards,
@@ -38,7 +40,7 @@ const softwareApplicationJsonLd = {
     "Visitor management system in Kenya for secure check-ins, digital visitor passes, guard dashboards, host confirmation, visitor status records, and checkout.",
   offers: {
     "@type": "AggregateOffer",
-    lowPrice: "1500",
+    lowPrice: "0",
     priceCurrency: "KES",
     offerCount: "2",
     url: "https://www.karibuvms.com/pricing",
@@ -77,6 +79,18 @@ const platformHighlights = [
     icon: UsersRound,
   },
   {
+    title: "PMS Directory Sync",
+    description:
+      "Automate tenant and host data sync with real estate Property Management Systems.",
+    icon: Database,
+  },
+  {
+    title: "Impossible Travel & Cyber Defense",
+    description:
+      "Protect your facilities with brute-force rate limiters, security watchlists, and impossible travel speed anomaly detection.",
+    icon: ShieldCheck,
+  },
+  {
     title: "Searchable records",
     description:
       "Find visitor history, gate activity, active visit status, checkout records, restricted records, and billing information faster.",
@@ -110,15 +124,15 @@ const steps = [
 const roleDetails = [
   {
     role: "Admins",
-    details: ["Configure visitor rules", "Manage guards, hosts, gates, and departments", "Review records and billing history"],
+    details: ["Configure visitor rules & terminology", "Sync tenants/staff via PMS API", "Review records and billing history"],
   },
   {
     role: "Guards",
-    details: ["Register walk-in visitors", "Review submitted details", "Approve entry and manage checkout"],
+    details: ["Register walk-in visitors", "Scan pre-registered QR passes", "Approve entry and manage checkout"],
   },
   {
     role: "Visitors",
-    details: ["Scan QR codes when enabled", "Submit visit details", "Receive digital pass or verification instructions"],
+    details: ["Scan QR codes when enabled", "Show pre-registration passes", "Receive digital pass or verification instructions"],
   },
 ];
 

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ExternalLink, KeyRound, Loader2, Pencil, Trash2, X } from "lucide-react";
+import { KeyRound, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,10 +19,12 @@ type Host = {
   company_id?: string;
   user_id?: string | null;
   created_at?: string;
+  external_id?: string | null;
 };
 type FilteredDepartment = {
   id: string;
   name: string;
+  external_id?: string | null;
   hostsToDisplay: Host[];
   isVisible: boolean;
 };
@@ -35,6 +36,8 @@ type HostFormData = {
 };
 
 type DepartmentsHostsListProps = {
+  groupLabel?: string;
+  userLabel?: string;
   departmentsCount: number;
   filteredDepartments: FilteredDepartment[];
   searchQuery: string;
@@ -64,6 +67,8 @@ type DepartmentsHostsListProps = {
 };
 
 export default function DepartmentsHostsList({
+  groupLabel = "Department",
+  userLabel = "Host",
   departmentsCount,
   filteredDepartments,
   searchQuery,
@@ -95,7 +100,7 @@ export default function DepartmentsHostsList({
 
   const handleResetHostPassword = async (host: Host) => {
     const confirmed = window.confirm(
-      `Reset login password for ${host.name} to the standard default password (${DEFAULT_HOST_PASSWORD})?\n\nThe host will be required to change it upon first login.`
+      `Reset login password for ${host.name} to the standard default password (${DEFAULT_HOST_PASSWORD})?\n\nThe ${userLabel.toLowerCase()} will be required to change it upon first login.`
     );
     if (!confirmed) return;
 
@@ -105,20 +110,17 @@ export default function DepartmentsHostsList({
       const res = await fetch("/api/hosts/reset-password", {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          hostId: host.id,
-          companyId: host.company_id || companyId,
-        }),
+        body: JSON.stringify({ host_id: host.id }),
       });
 
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || "Failed to reset password.");
+        throw new Error(json.error || `Failed to reset ${userLabel.toLowerCase()} password.`);
       }
 
-      alert(`Password for ${host.name} has been reset to:\n\n${json.defaultPassword || DEFAULT_HOST_PASSWORD}\n\nHost must change this password upon their next login.`);
+      alert(`Password reset successfully for ${host.name}.\nTemporary password: ${DEFAULT_HOST_PASSWORD}`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to reset password.");
+      alert(err instanceof Error ? err.message : `Failed to reset ${userLabel.toLowerCase()} password.`);
     } finally {
       setResettingHostId(null);
     }
@@ -152,15 +154,20 @@ export default function DepartmentsHostsList({
               </form>
             ) : (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <CardTitle className="text-lg font-bold text-slate-900 m-0">{dept.name}</CardTitle>
+                  {dept.external_id && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200" title={`Synced from external PMS: ${dept.external_id}`}>
+                      Synced: {dept.external_id}
+                    </span>
+                  )}
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       onClick={() => onEditDeptStart(dept.id, dept.name)}
-                      title="Edit Department"
+                      title={`Edit ${groupLabel}`}
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
@@ -169,14 +176,14 @@ export default function DepartmentsHostsList({
                       size="sm"
                       className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       onClick={() => onDeleteDepartment(dept.id, dept.name)}
-                      title="Delete Department"
+                      title={`Delete ${groupLabel}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => onSelectDept(dept.id)} className="w-fit h-9 font-bold border-blue-200 text-blue-700 hover:bg-blue-50 rounded-lg">
-                  Add Host
+                  Add {userLabel}
                 </Button>
               </div>
             )}
@@ -196,13 +203,13 @@ export default function DepartmentsHostsList({
                     </span>
                   </div>
                   <span className="text-[11px] font-medium text-slate-500">
-                    Host will be prompted to set a personal password upon first login.
+                    {userLabel} will be prompted to set a personal password upon first login.
                   </span>
                 </div>
 
                 <div className="flex gap-4 items-end flex-wrap">
                   <div className="grid gap-1.5 flex-1 min-w-[200px]">
-                    <Label htmlFor={`host-name-${dept.id}`} className="font-bold text-blue-900">Host Name *</Label>
+                    <Label htmlFor={`host-name-${dept.id}`} className="font-bold text-blue-900">{userLabel} Name *</Label>
                     <Input id={`host-name-${dept.id}`} required value={newHost.name} onChange={(e) => onNewHostChange({ ...newHost, name: e.target.value })} placeholder="John Doe" className="bg-white border-blue-200 rounded-xl h-10" />
                   </div>
                   <div className="grid gap-1.5 flex-1 min-w-[200px]">
@@ -214,7 +221,7 @@ export default function DepartmentsHostsList({
                     <Input id={`host-email-${dept.id}`} type="email" value={newHost.email} onChange={(e) => onNewHostChange({ ...newHost, email: e.target.value })} placeholder="john@example.com" className="bg-white border-blue-200 rounded-xl h-10" />
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto">
-                    <Button type="submit" className="flex-1 sm:flex-none h-10 px-6 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl">Add Host</Button>
+                    <Button type="submit" className="flex-1 sm:flex-none h-10 px-6 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl">Add {userLabel}</Button>
                     <Button type="button" variant="ghost" onClick={() => onSelectDept(null)} className="h-10 px-4 font-bold text-blue-700 hover:bg-blue-100 rounded-xl">Cancel</Button>
                   </div>
                 </div>
@@ -225,7 +232,7 @@ export default function DepartmentsHostsList({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-100">
-                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-xs h-10">Host Name</TableHead>
+                    <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-xs h-10">{userLabel} Name</TableHead>
                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-xs h-10">Phone</TableHead>
                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-xs h-10">Email</TableHead>
                     <TableHead className="text-slate-500 font-bold uppercase tracking-wider text-xs h-10 text-right">Actions</TableHead>
@@ -255,20 +262,20 @@ export default function DepartmentsHostsList({
                       </TableRow>
                     ) : (
                       <TableRow key={host.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <TableCell className="font-bold text-slate-900 h-12">{host.name}</TableCell>
+                        <TableCell className="font-bold text-slate-900 h-12">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{host.name}</span>
+                            {host.external_id && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200" title={`Synced External ID: ${host.external_id}`}>
+                                {host.external_id}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-slate-500 font-medium h-12">{host.phone || "-"}</TableCell>
                         <TableCell className="text-slate-500 font-medium h-12">{host.email || "-"}</TableCell>
                         <TableCell className="text-right h-12">
                           <div className="flex items-center justify-end gap-1.5">
-                            <Link
-                              href={`/dashboard/host?hostId=${host.id}`}
-                              target="_blank"
-                              className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50/70 px-2 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
-                              title="Open Host Portal for this host"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              Portal
-                            </Link>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -284,7 +291,7 @@ export default function DepartmentsHostsList({
                               size="sm"
                               className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg"
                               onClick={() => onEditHostStart(host)}
-                              title="Edit Host"
+                              title={`Edit ${userLabel}`}
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -293,7 +300,7 @@ export default function DepartmentsHostsList({
                               size="sm"
                               className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
                               onClick={() => onDeleteHost(host.id, host.name)}
-                              title="Delete Host"
+                              title={`Delete ${userLabel}`}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -305,7 +312,9 @@ export default function DepartmentsHostsList({
                   {dept.hostsToDisplay.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-slate-500 font-medium py-8 border-b-0">
-                        {searchQuery ? "No matching hosts found in this department." : "No hosts added to this department yet."}
+                        {searchQuery
+                          ? `No matching ${userLabel.toLowerCase()}s found in this ${groupLabel.toLowerCase()}.`
+                          : `No ${userLabel.toLowerCase()}s added to this ${groupLabel.toLowerCase()} yet.`}
                       </TableCell>
                     </TableRow>
                   )}
@@ -319,7 +328,7 @@ export default function DepartmentsHostsList({
       {departmentsCount > 0 && filteredDepartments.length === 0 && (
         <div className="text-center py-10 text-slate-500 bg-white rounded-[1.4rem] border border-slate-100 shadow-sm font-medium">
           <p className="font-bold text-slate-900 mb-1">No results found</p>
-          <p>No departments or hosts matched &quot;{searchQuery}&quot;</p>
+          <p>No {groupLabel.toLowerCase()}s or {userLabel.toLowerCase()}s matched &quot;{searchQuery}&quot;</p>
           <Button variant="link" onClick={onClearSearch} className="text-blue-600 font-bold mt-2">
             Clear search
           </Button>

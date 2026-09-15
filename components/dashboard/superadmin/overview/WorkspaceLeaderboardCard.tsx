@@ -3,10 +3,12 @@
 import { Crown, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/dashboard/shared/StateBlocks";
+import { WorkspaceLogo } from "@/components/dashboard/shared/WorkspaceLogo";
 
 type TopCompany = {
   id: string;
   name: string;
+  logo_url?: string | null;
   visitors: number;
 };
 
@@ -67,6 +69,10 @@ export default function WorkspaceLeaderboardCard({ topCompanies }: WorkspaceLead
                         <div className="w-5 text-center text-sm font-bold text-slate-400">{index + 1}</div>
                       )}
                       <span className="max-w-[120px] truncate text-sm font-bold text-slate-900">{company.name}</span>
+                      <div className="flex items-center gap-2">
+                        <WorkspaceLogo name={company.name} logoUrl={company.logo_url} size="xs" />
+                        <span className="max-w-[120px] truncate text-sm font-bold text-slate-900">{company.name}</span>
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-black leading-none text-blue-600">{company.visitors.toLocaleString()}</div>

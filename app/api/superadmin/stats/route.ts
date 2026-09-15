@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       guardsRes,
       visitorCompaniesRes,
     ] = await Promise.all([
-      supabaseAdmin.from("companies").select("id, name, is_locked, hard_locked, current_balance, plan_tier, subscription_status"),
+      supabaseAdmin.from("companies").select("id, name, logo_url, is_locked, hard_locked, current_balance, plan_tier, subscription_status"),
       supabaseAdmin.from("transactions").select("amount, status"),
       supabaseAdmin.from("visitors").select("id", { count: "exact", head: true }),
       supabaseAdmin.from("visitors").select("id", { count: "exact", head: true }).gte("created_at", startOfToday.toISOString()),
@@ -68,6 +68,7 @@ export async function GET(request: Request) {
       .map((company) => ({
         id: company.id,
         name: company.name,
+        logo_url: company.logo_url || null,
         visitors: companyCounts[company.id] || 0,
       }))
       .sort((a, b) => b.visitors - a.visitors)

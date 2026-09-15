@@ -44,6 +44,8 @@ export default function CurrentStatementCard({
 }: CurrentStatementCardProps) {
   const amountDue = summary.currentBalance;
   const isTrial = summary.isTrial === true;
+  const normalizedPlan = (summary.planName || "").toLowerCase();
+  const isBasicFree = normalizedPlan === "basic" || normalizedPlan === "trial_basic";
 
   return (
     <Card className="shadow-sm border-slate-100 rounded-[1.4rem] h-fit overflow-hidden bg-white">
@@ -60,6 +62,10 @@ export default function CurrentStatementCard({
           ) : amountDue > 0 ? (
             <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
               Action Required
+            </span>
+          ) : isBasicFree ? (
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Free Plan
             </span>
           ) : (
             <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
@@ -103,7 +109,7 @@ export default function CurrentStatementCard({
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Base Price</span>
-            <span className="text-slate-900 font-bold text-base">{formatCurrency(summary.basePrice)}</span>
+            <span className="text-slate-900 font-bold text-base">{summary.basePrice === 0 ? "Free (KES 0)" : formatCurrency(summary.basePrice)}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-500 font-bold">Extra Visitor Rate</span>
@@ -134,42 +140,51 @@ export default function CurrentStatementCard({
           </div>
         )}
 
-        <div className="space-y-2">
-          <label htmlFor="mpesa-phone-number" className="flex items-center gap-2 text-sm font-bold text-slate-600">
-            <Smartphone className="h-4 w-4" />
-            M-Pesa Phone Number
-          </label>
-          <Input
-            id="mpesa-phone-number"
-            value={phoneNumber}
-            onChange={(event) => onPhoneNumberChange(event.target.value)}
-            placeholder="07XXXXXXXX"
-            inputMode="tel"
-            className="h-11 rounded-xl border-slate-200 font-semibold"
-          />
-        </div>
+        {isBasicFree && amountDue <= 0 ? (
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-center">
+            <p className="text-sm font-black text-emerald-800">Current Plan: Free (No Payment Due)</p>
+            <p className="mt-1 text-xs font-medium text-emerald-600">Your Basic plan includes up to 500 visitors each month at no cost.</p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <label htmlFor="mpesa-phone-number" className="flex items-center gap-2 text-sm font-bold text-slate-600">
+                <Smartphone className="h-4 w-4" />
+                M-Pesa Phone Number
+              </label>
+              <Input
+                id="mpesa-phone-number"
+                value={phoneNumber}
+                onChange={(event) => onPhoneNumberChange(event.target.value)}
+                placeholder="07XXXXXXXX"
+                inputMode="tel"
+                className="h-11 rounded-xl border-slate-200 font-semibold"
+              />
+            </div>
 
-        <Button
-          onClick={onPayment}
-          disabled={isPaying || isTrial || amountDue <= 0 || !phoneNumber.trim()}
-          className={`w-full font-bold h-12 shadow-sm rounded-xl transition-all active:scale-[0.98] ${
-            amountDue > 0
-              ? "bg-blue-600 hover:bg-blue-700 text-white"
-              : "bg-slate-100 text-slate-400 cursor-not-allowed"
-          }`}
-        >
-          {isPaying ? (
-            <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</>
-          ) : isTrial ? (
-            <><CheckCircle2 className="w-5 h-5 mr-2" /> Trial Active</>
-          ) : amountDue <= 0 ? (
-            <><CheckCircle2 className="w-5 h-5 mr-2" /> Account Settled</>
-          ) : (
-            <><WalletCards className="w-5 h-5 mr-2" /> Pay with M-Pesa</>
-          )}
-        </Button>
+            <Button
+              onClick={onPayment}
+              disabled={isPaying || isTrial || amountDue <= 0 || !phoneNumber.trim()}
+              className={`w-full font-bold h-12 shadow-sm rounded-xl transition-all active:scale-[0.98] ${
+                amountDue > 0
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-slate-100 text-slate-400 cursor-not-allowed"
+              }`}
+            >
+              {isPaying ? (
+                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing...</>
+              ) : isTrial ? (
+                <><CheckCircle2 className="w-5 h-5 mr-2" /> Trial Active</>
+              ) : amountDue <= 0 ? (
+                <><CheckCircle2 className="w-5 h-5 mr-2" /> Account Settled</>
+              ) : (
+                <><WalletCards className="w-5 h-5 mr-2" /> Pay with M-Pesa</>
+              )}
+            </Button>
+          </>
+        )}
 
-        {amountDue <= 0 && !isTrial && (
+        {amountDue <= 0 && !isTrial && !isBasicFree && (
           <div className="text-center">
             <p className="text-sm text-emerald-600 font-bold mt-2">
               Your account is fully active!

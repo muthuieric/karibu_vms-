@@ -12,7 +12,7 @@ import GuardVisitorsTable from "@/components/GuardVisitorsTable";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, RefreshCw, ScanQrCode, ShieldCheck, UserPlus2, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, RefreshCw, ScanQrCode, ShieldCheck, UserPlus2, Wifi, WifiOff, X } from "lucide-react";
 
 const AddVisitorModal = dynamic(() => import("@/components/dashboard/guard/add-visitor/AddVisitorModal"), { ssr: false });
 const GuardAccessNoteModal = dynamic(() => import("@/components/dashboard/guard/GuardAccessNoteModal"), { ssr: false });
@@ -87,7 +87,44 @@ export default function GuardDashboard() {
           <div className="rounded-[1.6rem] border border-blue-100 bg-white p-6 text-slate-900 shadow-sm">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <Badge className="border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100">Live security desk</Badge>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge className="border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100">Live security desk</Badge>
+                  {!dashboard.isOnline ? (
+                    <Badge className="border-amber-300 bg-amber-100 text-amber-900 font-bold flex items-center gap-1">
+                      <WifiOff className="h-3 w-3 text-amber-700" /> Working Offline
+                    </Badge>
+                  ) : dashboard.pendingSyncCount > 0 ? (
+                    <Badge className="border-blue-300 bg-blue-100 text-blue-900 font-semibold flex items-center gap-1">
+                      <RefreshCw className={`h-3 w-3 text-blue-700 ${dashboard.isSyncing ? "animate-spin" : ""}`} />
+                      {dashboard.pendingSyncCount} to sync
+                    </Badge>
+                  ) : (
+                    <Badge className="border-emerald-200 bg-emerald-50 text-emerald-800 font-medium flex items-center gap-1">
+                      <Wifi className="h-3 w-3 text-emerald-600" /> Online
+                    </Badge>
+                  )}
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => dashboard.syncNow()}
+                    disabled={dashboard.isSyncing}
+                    title="Sync and refresh local cache"
+                    className="h-7 px-2.5 text-xs font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1.5 rounded-lg border border-slate-200/80 bg-white shadow-xs"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${dashboard.isSyncing ? "animate-spin text-blue-600" : "text-slate-600"}`} />
+                    <span>{dashboard.isSyncing ? "Syncing..." : "Sync Now"}</span>
+                  </Button>
+
+                  <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                    <span>Last Synced:</span>
+                    <span className="font-semibold text-slate-700">
+                      {dashboard.lastSynced
+                        ? dashboard.lastSynced.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+                        : "Just now"}
+                    </span>
+                  </span>
+                </div>
                 <h2 className="mt-4 text-3xl font-black tracking-tight md:text-4xl text-slate-900">{dashboard.guardGateName}</h2>
                 <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
                   Process arrivals, verify approvals, and move checked-in visitors out quickly from one queue.
@@ -120,13 +157,88 @@ export default function GuardDashboard() {
                   <UserPlus2 className="mr-2 h-4 w-4" />
                   New Visitor
                 </Button>
-                <div className="hidden rounded-2xl border border-blue-100 bg-blue-50 p-3 text-blue-600 lg:flex">
+                {/* <div className="hidden rounded-2xl border border-blue-100 bg-blue-50 p-3 text-blue-600 lg:flex">
                   <ShieldCheck className="h-7 w-7" />
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
         </section>
+
+        {!dashboard.isOnline && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
+                <WifiOff className="h-5 w-5 animate-pulse" />
+              </div>
+              <div>
+                <p className="text-sm font-bold">
+                  Working Offline (Local Mode)
+                </p>
+                <p className="text-xs text-amber-700">
+                  Internet connection lost. You can continue registering and checking in visitors. Changes are saved locally and will sync automatically once reconnected.
+                  {dashboard.pendingSyncCount > 0 && ` (${dashboard.pendingSyncCount} action${dashboard.pendingSyncCount > 1 ? "s" : ""} queued)`}
+                </p>
+              </div>
+            </div>
+            <Badge className="border-amber-300 bg-amber-200 text-amber-900 text-xs font-semibold shrink-0">
+              Offline Storage Active
+            </Badge>
+          </div>
+        )}
+
+        {dashboard.isOnline && dashboard.pendingSyncCount > 0 && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-blue-900 shadow-sm animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-blue-100 p-2 text-blue-600">
+                <RefreshCw className={`h-5 w-5 ${dashboard.isSyncing ? "animate-spin" : ""}`} />
+              </div>
+              <div>
+                <p className="text-sm font-bold">
+                  Syncing Local Changes ({dashboard.pendingSyncCount} action{dashboard.pendingSyncCount > 1 ? "s" : ""} queued)
+                </p>
+                <p className="text-xs text-blue-700">
+                  Back online. Uploading offline check-ins and registrations to the central server...
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={dashboard.syncPendingOfflineQueue}
+              disabled={dashboard.isSyncing}
+              className="border-blue-300 bg-white text-blue-700 hover:bg-blue-100 font-semibold shrink-0"
+            >
+              {dashboard.isSyncing ? "Syncing..." : "Sync Now"}
+            </Button>
+          </div>
+        )}
+
+        {dashboard.failedSyncCount > 0 && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-900 shadow-sm animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-rose-100 p-2 text-rose-600 shrink-0">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold">
+                  Some offline actions failed to sync.
+                </p>
+                <p className="text-xs text-rose-700">
+                  {dashboard.failedSyncCount} action{dashboard.failedSyncCount > 1 ? "s" : ""} could not be processed by the server. Clear them to remove this warning.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={dashboard.clearFailedSyncs}
+              className="border-rose-300 bg-white text-rose-700 hover:bg-rose-100 font-semibold shrink-0"
+            >
+              Clear Failed Actions
+            </Button>
+          </div>
+        )}
 
         {!dashboard.isLocked && (
           <GuardStats

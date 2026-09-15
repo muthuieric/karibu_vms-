@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Printer, Copy, CheckCircle2, BadgeCheck, LogOut, SquareCode } from "lucide-react";
+import { Printer, Copy, CheckCircle2, BadgeCheck, LogOut, SquareCode, Compass } from "lucide-react";
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { QRDisplayCard } from "@/components/dashboard/shared/QRDisplayCard";
 import { ErrorState, LoadingState } from "@/components/dashboard/shared/StateBlocks";
+import { useAppTour } from "@/hooks/useAppTour";
 
 export default function QRCodeGenerator() {
+  const tour = useAppTour();
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiedGate, setCopiedGate] = useState(false);
@@ -85,7 +87,7 @@ export default function QRCodeGenerator() {
   const checkoutQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=20&data=${encodeURIComponent(checkoutUrl)}`;
 
   return (
-    <PageContainer className="max-w-6xl">
+    <PageContainer className="max-w-6xl space-y-6">
       {/* Print CSS to make them print on separate pages beautifully */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
@@ -107,6 +109,7 @@ export default function QRCodeGenerator() {
         }
       `}} />
 
+      <div id="tour-qr-header">
         <PageHeader
           title="Gate QR Code"
           eyebrow="Entrance and exit posters"
@@ -114,78 +117,88 @@ export default function QRCodeGenerator() {
           icon={SquareCode}
           className="hide-on-print"
         >
-          <Button onClick={handlePrint} className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 font-bold rounded-xl h-11 px-6">
-            <Printer className="h-4 w-4 mr-2" /> Print poster
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={tour.startQrTour}
+              className="w-full sm:w-auto border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-xl h-11 px-4"
+            >
+              Page Tour
+            </Button>
+            <Button id="tour-qr-print-btn" onClick={handlePrint} className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 font-bold rounded-xl h-11 px-6">
+              <Printer className="h-4 w-4 mr-2" /> Print poster
+            </Button>
+          </div>
         </PageHeader>
+      </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div className="space-y-3">
-            <QRDisplayCard
-              title="Visitor check-in"
-              description="Secure rotating link for guests arriving at your building."
-              qrUrl={gateQrCodeUrl}
-              icon={BadgeCheck}
-              printClassName="print-poster-container"
-              footer={
-                <div className="w-full max-w-xs space-y-2 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-900 print:max-w-xs print:p-6">
-                  <p><span className="mr-2 rounded-full bg-blue-600 px-2 py-1 text-xs text-white">1</span> Open camera</p>
-                  <p><span className="mr-2 rounded-full bg-blue-600 px-2 py-1 text-xs text-white">2</span> Enter details</p>
-                  <p><span className="mr-2 rounded-full bg-blue-600 px-2 py-1 text-xs text-white">3</span> Show approval screen</p>
-                </div>
-              }
-            />
-
-            <div className="hide-on-print rounded-[1.25rem] border border-slate-100 bg-white p-4 shadow-sm flex flex-col gap-2">
-              <p className="text-xs font-bold text-slate-500">Check-in link</p>
-              <div className="flex gap-2">
-                <Input value={gateUrl} readOnly className="font-mono text-xs h-10 bg-slate-50 border-slate-200 rounded-lg focus-visible:ring-0" />
-                <Button 
-                  variant="outline" 
-                  className={`h-10 px-4 font-bold rounded-lg border-blue-200 text-blue-700 hover:bg-blue-50 ${copiedGate ? "bg-blue-50 border-blue-300" : ""}`}
-                  onClick={() => handleCopy(gateUrl, setCopiedGate)}
-                >
-                  {copiedGate ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                  {copiedGate ? "Copied" : "Copy link"}
-                </Button>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div id="tour-qr-checkin-card" className="space-y-3">
+          <QRDisplayCard
+            title="Visitor check-in"
+            description="Secure rotating link for guests arriving at your building."
+            qrUrl={gateQrCodeUrl}
+            icon={BadgeCheck}
+            printClassName="print-poster-container"
+            footer={
+              <div className="w-full max-w-xs space-y-2 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-900 print:max-w-xs print:p-6">
+                <p><span className="mr-2 rounded-full bg-blue-600 px-2 py-1 text-xs text-white">1</span> Open camera</p>
+                <p><span className="mr-2 rounded-full bg-blue-600 px-2 py-1 text-xs text-white">2</span> Enter details</p>
+                <p><span className="mr-2 rounded-full bg-blue-600 px-2 py-1 text-xs text-white">3</span> Show approval screen</p>
               </div>
+            }
+          />
+
+          <div id="tour-qr-checkin-link" className="hide-on-print rounded-[1.25rem] border border-slate-100 bg-white p-4 shadow-sm flex flex-col gap-2">
+            <p className="text-xs font-bold text-slate-500">Check-in link</p>
+            <div className="flex gap-2">
+              <Input value={gateUrl} readOnly className="font-mono text-xs h-10 bg-slate-50 border-slate-200 rounded-lg focus-visible:ring-0" />
+              <Button 
+                variant="outline" 
+                className={`h-10 px-4 font-bold rounded-lg border-blue-200 text-blue-700 hover:bg-blue-50 ${copiedGate ? "bg-blue-50 border-blue-300" : ""}`}
+                onClick={() => handleCopy(gateUrl, setCopiedGate)}
+              >
+                {copiedGate ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                {copiedGate ? "Copied" : "Copy link"}
+              </Button>
             </div>
           </div>
-
-          <div className="space-y-3">
-            <QRDisplayCard
-              title="Visitor checkout"
-              description="Scan to check out securely using the visitor code."
-              qrUrl={checkoutQrCodeUrl}
-              icon={LogOut}
-              tone="warning"
-              printClassName="print-poster-container"
-              footer={
-                <div className="w-full max-w-xs space-y-2 rounded-2xl border border-orange-100 bg-orange-50 p-4 text-sm font-semibold text-orange-900 print:max-w-xs print:p-6">
-                  <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">1</span> Open camera</p>
-                  <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">2</span> Enter visitor code</p>
-                  <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">3</span> Exit securely</p>
-                </div>
-              }
-            />
-
-            <div className="hide-on-print rounded-[1.25rem] border border-slate-100 bg-white p-4 shadow-sm flex flex-col gap-2">
-              <p className="text-xs font-bold text-slate-500">Checkout link</p>
-              <div className="flex gap-2">
-                <Input value={checkoutUrl} readOnly className="font-mono text-xs h-10 bg-slate-50 border-slate-200 rounded-lg focus-visible:ring-0" />
-                <Button 
-                  variant="outline" 
-                  className={`h-10 px-4 font-bold rounded-lg border-blue-200 text-blue-700 hover:bg-blue-50 ${copiedCheckout ? "bg-blue-50 border-blue-300" : ""}`}
-                  onClick={() => handleCopy(checkoutUrl, setCopiedCheckout)}
-                >
-                  {copiedCheckout ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                  {copiedCheckout ? "Copied" : "Copy link"}
-                </Button>
-              </div>
-            </div>
-          </div>
-          
         </div>
+
+        <div id="tour-qr-checkout-card" className="space-y-3">
+          <QRDisplayCard
+            title="Visitor checkout"
+            description="Scan to check out securely using the visitor code."
+            qrUrl={checkoutQrCodeUrl}
+            icon={LogOut}
+            tone="warning"
+            printClassName="print-poster-container"
+            footer={
+              <div className="w-full max-w-xs space-y-2 rounded-2xl border border-orange-100 bg-orange-50 p-4 text-sm font-semibold text-orange-900 print:max-w-xs print:p-6">
+                <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">1</span> Open camera</p>
+                <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">2</span> Enter visitor code</p>
+                <p><span className="mr-2 rounded-full bg-orange-500 px-2 py-1 text-xs text-white">3</span> Exit securely</p>
+              </div>
+            }
+          />
+
+          <div id="tour-qr-checkout-link" className="hide-on-print rounded-[1.25rem] border border-slate-100 bg-white p-4 shadow-sm flex flex-col gap-2">
+            <p className="text-xs font-bold text-slate-500">Checkout link</p>
+            <div className="flex gap-2">
+              <Input value={checkoutUrl} readOnly className="font-mono text-xs h-10 bg-slate-50 border-slate-200 rounded-lg focus-visible:ring-0" />
+              <Button 
+                variant="outline" 
+                className={`h-10 px-4 font-bold rounded-lg border-blue-200 text-blue-700 hover:bg-blue-50 ${copiedCheckout ? "bg-blue-50 border-blue-300" : ""}`}
+                onClick={() => handleCopy(checkoutUrl, setCopiedCheckout)}
+              >
+                {copiedCheckout ? <CheckCircle2 className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                {copiedCheckout ? "Copied" : "Copy link"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
     </PageContainer>
   );
 }

@@ -8,11 +8,13 @@ import MasterVisitorLog from "@/components/dashboard/company-admin/MasterVisitor
 import { PageContainer } from "@/components/dashboard/shared/AppShell";
 import { PageHeader } from "@/components/dashboard/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { FileDown, LayoutDashboard } from "lucide-react";
+import { FileDown, LayoutDashboard, Sparkles } from "lucide-react";
 import { AdminVisitor, useCompanyAdminDashboard } from "@/hooks/useCompanyAdminDashboard";
+import { useAppTour } from "@/hooks/useAppTour";
 
 export default function AdminDashboard() {
   const dashboard = useCompanyAdminDashboard();
+  const tour = useAppTour();
   const [infoModalVisitor, setInfoModalVisitor] = useState<AdminVisitor | null>(null);
   const [enlargedPhoto, setEnlargedPhoto] = useState<string | null>(null); 
 
@@ -26,6 +28,7 @@ export default function AdminDashboard() {
 
   return (
     <PageContainer>
+      <div id="tour-overview-header">
         <PageHeader
           title={dashboard.companyName ? `${dashboard.companyName} Admin` : "Admin Home"}
           eyebrow="Company Admin"
@@ -34,7 +37,19 @@ export default function AdminDashboard() {
           logoUrl={dashboard.companyLogoUrl}
         >
           <div className="flex flex-col gap-3 sm:flex-row shrink-0 w-full sm:w-auto">
-            <Button onClick={dashboard.exportVisitorsToPdf} variant="outline" className="w-full sm:w-auto bg-white border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-xl h-11">
+            <Button
+              onClick={tour.startPlatformTour}
+              variant="outline"
+              className="w-full sm:w-auto bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-bold rounded-xl h-11"
+            >
+              App Tour
+            </Button>
+            <Button
+              id="tour-export-pdf"
+              onClick={dashboard.exportVisitorsToPdf}
+              variant="outline"
+              className="w-full sm:w-auto bg-white border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-xl h-11"
+            >
               <FileDown className="h-4 w-4 mr-2" />
               Export PDF
             </Button>
@@ -45,14 +60,18 @@ export default function AdminDashboard() {
             )}
           </div>
         </PageHeader>
+      </div>
         
+      <div id="tour-stats-grid">
         <AdminStatsGrid
           totalToday={dashboard.totalToday}
           currentlyInside={dashboard.currentlyInside}
           pendingCount={dashboard.pendingCount}
           lifetimeVisitors={dashboard.lifetimeVisitors}
         />
+      </div>
 
+      <div id="tour-visitor-log">
         <MasterVisitorLog
           loading={dashboard.loading}
           visitors={dashboard.filteredVisitors}
@@ -72,6 +91,7 @@ export default function AdminDashboard() {
           onPhotoClick={setEnlargedPhoto}
           onInfoClick={setInfoModalVisitor}
         />
+      </div>
 
       {displayedInfoModalVisitor && (
         <AdminVisitInfoModal

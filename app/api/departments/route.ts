@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabaseAdmin
       .from("departments")
-      .select("id, name")
+      .select("id, name, external_id")
       .eq("company_id", companyId)
       .order("name", { ascending: true });
 

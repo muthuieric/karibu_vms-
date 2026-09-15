@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getAuthHeaders } from "@/lib/client-auth";
 
-export type Department = { id: string; name: string };
+export type Department = { id: string; name: string; external_id?: string | null };
 export type Host = {
   id: string;
   name: string;
@@ -14,12 +14,15 @@ export type Host = {
   company_id?: string;
   user_id?: string | null;
   created_at?: string;
+  external_id?: string | null;
 };
 
 export function useCompanyDepartments() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [hosts, setHosts] = useState<Host[]>([]);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [groupLabel, setGroupLabel] = useState<string>("Department");
+  const [userLabel, setUserLabel] = useState<string>("Host");
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [newDeptName, setNewDeptName] = useState("");
@@ -75,6 +78,17 @@ export function useCompanyDepartments() {
 
         if (profile?.company_id) {
           setCompanyId(profile.company_id);
+          const { data: company } = await supabase
+            .from("companies")
+            .select("group_label, user_label")
+            .eq("id", profile.company_id)
+            .maybeSingle();
+
+          if (company) {
+            if (company.group_label) setGroupLabel(company.group_label);
+            if (company.user_label) setUserLabel(company.user_label);
+          }
+
           await loadDepartmentsAndHosts(profile.company_id);
         } else {
           alert("Warning: Your profile does not have an assigned company_id.");
@@ -242,6 +256,8 @@ export function useCompanyDepartments() {
   return {
     departments,
     companyId,
+    groupLabel,
+    userLabel,
     isLoading,
     searchQuery,
     newDeptName,

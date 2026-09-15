@@ -22,6 +22,7 @@ type SupportTicketRow = {
 type CompanyRow = {
   id: string;
   name: string | null;
+  logo_url: string | null;
 };
 
 type ProfileRow = {
@@ -45,7 +46,7 @@ async function hydrateTickets(supabaseAdmin: ReturnType<typeof import("@/lib/bil
 
   const [companiesRes, profilesRes] = await Promise.all([
     companyIds.length
-      ? supabaseAdmin.from("companies").select("id, name").in("id", companyIds)
+      ? supabaseAdmin.from("companies").select("id, name, logo_url").in("id", companyIds)
       : Promise.resolve({ data: [] as CompanyRow[], error: null }),
     profileIds.length
       ? supabaseAdmin.from("profiles").select("id, full_name, email").in("id", profileIds)
@@ -66,6 +67,7 @@ async function hydrateTickets(supabaseAdmin: ReturnType<typeof import("@/lib/bil
       id: ticket.id,
       company_id: ticket.company_id,
       company_name: company?.name || "Unknown workspace",
+      company_logo_url: company?.logo_url || null,
       submitted_by: profile?.full_name || "Unknown user",
       submitted_by_email: profile?.email || null,
       subject: ticket.subject,
